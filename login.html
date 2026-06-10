@@ -88,7 +88,7 @@ const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
 const REDIRECT_URL = 'https://giovanifpc.github.io/fox-app/login.html';
 
 // Inicializar cliente Supabase
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ── Processar token do magic link ─────────────────────────
 async function processAuthCallback(){
@@ -108,7 +108,7 @@ async function processAuthCallback(){
   if(!access_token) return false;
 
   // Definir sessão via SDK
-  const {data, error: sessErr} = await supabase.auth.setSession({
+  const {data, error: sessErr} = await supa.auth.setSession({
     access_token, refresh_token
   });
 
@@ -124,7 +124,7 @@ async function processAuthCallback(){
 
 // ── Verificar sessão ativa ────────────────────────────────
 async function checkSession(){
-  const {data:{session}} = await supabase.auth.getSession();
+  const {data:{session}} = await supa.auth.getSession();
   if(session) window.location.replace('index.html');
 }
 
@@ -142,7 +142,7 @@ async function sendMagicLink(){
   btn.innerHTML = '<span class="spinner"></span>Enviando...';
   document.getElementById('loginMsg').style.display = 'none';
 
-  const {error} = await supabase.auth.signInWithOtp({
+  const {error} = await supa.auth.signInWithOtp({
     email,
     options:{ emailRedirectTo: REDIRECT_URL }
   });
