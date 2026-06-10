@@ -119,65 +119,50 @@ body.in-module #entry{display:none}
 
 </style>
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="foxInitAuth()" onerror="console.error('SDK falhou')"></script>
 <script>
-// ── Proteção de sessão — redireciona para login se não autenticado ──
-(async function(){
-  const supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co', 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
-  
-  // Processar callback do magic link se houver hash na URL
-  const hash = window.location.hash;
-  if(hash && hash.includes('access_token')){
-    const params = new URLSearchParams(hash.substring(1));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    if(access_token){
-      await supa.auth.setSession({access_token, refresh_token});
-      window.history.replaceState(null,'',window.location.pathname);
-    }
-  }
-
-  const {data:{session}} = await supa.auth.getSession();
-  
-  if(!session){
-    // Sem sessão — redirecionar para login
-    window.location.replace('login.html');
-    return;
-  }
-
-  // Sessão válida — carregar perfil do cliente
-  window.FOX_SESSION = session;
-  window.FOX_USER_EMAIL = session.user.email;
-
-  // Buscar perfil no banco
-  const {data: profile} = await supa.from('clients')
-    .select('nome, ciclo_atual, semana_atual, total_semanas, folder_id')
-    .eq('email', session.user.email)
-    .single();
+function foxInitAuth(){
+  var supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
 
   function applyClientProfile(p){
     var nome = p ? p.nome : 'Atleta';
     var greet = document.getElementById('greeting');
     if(greet) greet.textContent = 'Ola, ' + nome;
-    document.querySelectorAll('.client-name, #clientName, #clientNameSub').forEach(function(el){
+    document.querySelectorAll('.client-name,#clientName,#clientNameSub').forEach(function(el){
       el.textContent = nome;
     });
     window.CLIENT_NAME_DYNAMIC = nome;
   }
 
-  function openModuleWithName(mod){
-    setTimeout(function(){var fr=document.getElementById('frame-'+mod);if(fr&&fr.contentWindow&&window.CLIENT_NAME_DYNAMIC){fr.contentWindow.postMessage({type:'fox-set-client-name',nome:window.CLIENT_NAME_DYNAMIC},'*');}},800);
-  }
-
-  if(profile){
-    window.FOX_PROFILE = profile;
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', function(){ applyClientProfile(profile); });
-    } else {
-      applyClientProfile(profile);
+  supa.auth.getSession().then(function(res){
+    var session = res.data && res.data.session;
+    if(!session){
+      window.location.replace('login.html');
+      return;
     }
-  }
-})();
+    window.FOX_SESSION = session;
+    window.FOX_USER_EMAIL = session.user.email;
+    window.FOX_SUPA = supa;
+
+    supa.from('clients')
+      .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
+      .eq('email', session.user.email)
+      .single()
+      .then(function(r){
+        if(r.data){
+          window.FOX_PROFILE = r.data;
+          if(document.readyState==='loading'){
+            document.addEventListener('DOMContentLoaded',function(){ applyClientProfile(r.data); });
+          } else {
+            applyClientProfile(r.data);
+          }
+        } else {
+          console.log('Perfil não encontrado:', r.error);
+          applyClientProfile(null);
+        }
+      });
+  });
+}
 </script>
 </head>
 <body>
