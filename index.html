@@ -118,51 +118,50 @@ html,body{overscroll-behavior:none}
 body.in-module #entry{display:none}
 
 </style>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="foxInitAuth()" onerror="console.error('SDK falhou')"></script>
+<!-- Supabase Auth Guard -->
 <script>
-function foxInitAuth(){
-  var supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
+(function(){
+  var sdk = document.createElement('script');
+  sdk.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  sdk.onload = function(){
+    var supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
 
-  function applyClientProfile(p){
-    var nome = p ? p.nome : 'Atleta';
-    var greet = document.getElementById('greeting');
-    if(greet) greet.textContent = 'Ola, ' + nome;
-    document.querySelectorAll('.client-name,#clientName,#clientNameSub').forEach(function(el){
-      el.textContent = nome;
-    });
-    window.CLIENT_NAME_DYNAMIC = nome;
-  }
-
-  supa.auth.getSession().then(function(res){
-    var session = res.data && res.data.session;
-    if(!session){
-      window.location.replace('login.html');
-      return;
-    }
-    window.FOX_SESSION = session;
-    window.FOX_USER_EMAIL = session.user.email;
-    window.FOX_SUPA = supa;
-
-    supa.from('clients')
-      .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
-      .eq('email', session.user.email)
-      .single()
-      .then(function(r){
-        if(r.data){
-          window.FOX_PROFILE = r.data;
-          if(document.readyState==='loading'){
-            document.addEventListener('DOMContentLoaded',function(){ applyClientProfile(r.data); });
-          } else {
-            applyClientProfile(r.data);
-          }
-        } else {
-          console.log('Perfil não encontrado:', r.error);
-          applyClientProfile(null);
-        }
+    function applyProfile(p){
+      var nome = p ? p.nome : 'Atleta';
+      var g = document.getElementById('greeting');
+      if(g) g.textContent = 'Ola, ' + nome;
+      document.querySelectorAll('.client-name,#clientName,#clientNameSub').forEach(function(el){
+        el.textContent = nome;
       });
-  });
-}
+      window.CLIENT_NAME_DYNAMIC = nome;
+    }
+
+    supa.auth.getSession().then(function(res){
+      var session = res.data && res.data.session;
+      if(!session){ window.location.replace('login.html'); return; }
+      window.FOX_SESSION = session;
+      window.FOX_USER_EMAIL = session.user.email;
+      window.FOX_SUPA = supa;
+
+      supa.from('clients')
+        .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
+        .eq('email', session.user.email)
+        .single()
+        .then(function(r){
+          if(r.data){
+            window.FOX_PROFILE = r.data;
+            if(document.readyState==='loading'){
+              document.addEventListener('DOMContentLoaded',function(){ applyProfile(r.data); });
+            } else { applyProfile(r.data); }
+          } else {
+            console.log('perfil:', r.error);
+            applyProfile(null);
+          }
+        });
+    });
+  };
+  document.head.appendChild(sdk);
+})();
 </script>
 </head>
 <body>
