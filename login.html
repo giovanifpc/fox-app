@@ -211,6 +211,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <span class="success-email" id="successEmail"></span><br><br>
     Abra seu e-mail e clique no link para entrar. O link expira em 1 hora.
   </div>
+  <button onclick="tryAgain()" style="margin-top:28px;background:transparent;border:1px solid #333;border-radius:10px;padding:12px 28px;color:#888;font-size:.85rem;cursor:pointer;font-family:sans-serif">
+    Não recebeu? Tentar novamente
+  </button>
 </div>
 
 <script>
@@ -313,6 +316,14 @@ async function sendMagicLink(){
     btn.disabled = false;
     btn.innerHTML = 'Enviar link de acesso';
   }
+}
+
+function tryAgain(){
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').innerHTML = 'Enviar link de acesso';
+  document.getElementById('loginMsg').style.display = 'none';
 }
 
 function showMsg(text, type){
