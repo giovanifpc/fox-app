@@ -155,10 +155,27 @@ body.in-module #entry{display:none}
     .eq('email', session.user.email)
     .single();
 
+  function applyClientProfile(p){
+    var nome = p ? p.nome : 'Atleta';
+    var greet = document.getElementById('greeting');
+    if(greet) greet.textContent = 'Ola, ' + nome;
+    document.querySelectorAll('.client-name, #clientName, #clientNameSub').forEach(function(el){
+      el.textContent = nome;
+    });
+    window.CLIENT_NAME_DYNAMIC = nome;
+  }
+
+  function openModuleWithName(mod){
+    setTimeout(function(){var fr=document.getElementById('frame-'+mod);if(fr&&fr.contentWindow&&window.CLIENT_NAME_DYNAMIC){fr.contentWindow.postMessage({type:'fox-set-client-name',nome:window.CLIENT_NAME_DYNAMIC},'*');}},800);
+  }
+
   if(profile){
     window.FOX_PROFILE = profile;
-    // Sobrescrever CLIENT_NAME hardcoded com o nome real do banco
-    window.CLIENT_NAME_DYNAMIC = profile.nome;
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', function(){ applyClientProfile(profile); });
+    } else {
+      applyClientProfile(profile);
+    }
   }
 })();
 </script>
@@ -232,26 +249,19 @@ body.in-module #entry{display:none}
 
   </div>
 
-  <button onclick="foxLogout()" style="background:transparent;border:none;color:#333;font-size:.7rem;cursor:pointer;padding:8px;letter-spacing:.5px;font-family:inherit;margin-bottom:4px">Sair da conta</button>
   <div class="entry-foot">
     Os aplicativos <b>Training</b> e <b>NutriTracker</b> são de uso<br>
     exclusivo dos <b>membros</b> da consultoria Fox Performance.
+  </div>
+  <div style="text-align:center;padding:16px 0 24px">
+    <button onclick="foxLogout()" style="background:transparent;border:none;color:#2a2a2a;font-size:.65rem;cursor:pointer;padding:8px 20px;letter-spacing:1px;font-family:inherit;text-transform:uppercase">Sair da conta</button>
   </div>
 </div>
 
 <script>
 const CLIENT_NAME = "Rafael"; // fallback — será substituído pelo dado do Supabase
 // Aguardar o perfil carregar e atualizar o nome na UI
-// Nome dinâmico aplicado após perfil carregar (chamado pelo guard de sessão)
-function applyClientProfile(profile){
-  const nome = profile ? profile.nome : CLIENT_NAME;
-  document.getElementById("greeting").textContent = "Olá, " + nome;
-  document.querySelectorAll(".client-name, #clientName, #clientNameSub").forEach(el=>{
-    el.textContent = nome;
-  });
-  // Atualizar CLIENT_NAME global para os módulos usarem
-  window.CLIENT_NAME_DYNAMIC = nome;
-}
+// applyClientProfile definida no guard de sessão acima
 // ── Logout ──────────────────────────────────────────────────────────
 
 // ── Salvar Training no Supabase ──────────────────────────────────────────────
