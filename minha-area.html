@@ -324,6 +324,138 @@ canvas{display:block;width:100%}
 .dev-btn{background:linear-gradient(135deg,#8B6420,#6B4A10);border:none;border-radius:6px;padding:8px 14px;font-family:'Courier New',monospace;font-size:10px;font-weight:700;letter-spacing:1px;color:#F5E8C0;cursor:pointer;text-transform:uppercase;flex-shrink:0}
 
 </style>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function(){
+  const supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co', 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
+
+  // Verificar sessão — redirecionar para login se não autenticado
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session){
+    window.location.replace('login.html');
+    return;
+  }
+
+  window.FOX_SUPA = supa;
+  window.FOX_EMAIL = session.user.email;
+
+  // Buscar perfil do cliente
+  const {data: profile} = await supa.from('clients')
+    .select('nome, ciclo_atual, semana_atual, total_semanas, folder_id')
+    .eq('email', session.user.email)
+    .single();
+
+  if(profile){
+    window.FOX_PROFILE = profile;
+
+    // Atualizar DRIVE_CONFIG com folder_id do banco
+    if(profile.folder_id && typeof DRIVE_CONFIG !== 'undefined'){
+      DRIVE_CONFIG.folderId = profile.folder_id;
+      DRIVE_CONFIG.clientName = profile.nome;
+    }
+
+    // Atualizar UI após DOM pronto
+    function applyProfile(){
+      // Nome na aba do fichário
+      var nameEl = document.getElementById('dash-client-name');
+      if(nameEl) nameEl.textContent = profile.nome;
+
+      // Ciclo e semana
+      var cycleEl = document.getElementById('dash-cycle');
+      if(cycleEl) cycleEl.textContent =
+        'CICLO ' + profile.ciclo_atual + ' · SEMANA ' + profile.semana_atual + ' DE ' + profile.total_semanas;
+
+      // clientNameSub (header das abas)
+      var subEl = document.getElementById('clientNameSub');
+      if(subEl) subEl.textContent = profile.nome;
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', applyProfile);
+    } else {
+      applyProfile();
+    }
+
+    // Buscar metas da semana atual
+    loadWeeklyGoals(supa, session.user.email, profile.ciclo_atual, profile.semana_atual);
+  }
+})();
+
+// ── Carregar metas semanais do Supabase ──────────────────────────────────────
+async function loadWeeklyGoals(supa, email, ciclo, semana){
+  try{
+    const {data} = await supa.from('weekly_goals')
+      .select('metas, foco_semana, data_inicio, data_fim')
+      .eq('client_email', email)
+      .eq('ciclo', ciclo)
+      .eq('semana', semana)
+      .eq('publicado', true)
+      .single();
+
+    if(!data) return; // sem metas — mantém dados estáticos
+
+    // Atualizar foco da semana
+    if(data.foco_semana){
+      var focoEl = document.getElementById('dash-foco');
+      if(focoEl) focoEl.textContent = '"' + data.foco_semana + '"';
+    }
+
+    // Atualizar range da semana
+    if(data.data_inicio && data.data_fim){
+      var rangeEl = document.getElementById('dash-week-range');
+      if(rangeEl){
+        var ini = new Date(data.data_inicio);
+        var fim = new Date(data.data_fim);
+        var opts = {day:'2-digit', month:'short', year:'numeric'};
+        rangeEl.textContent = ini.toLocaleDateString('pt-BR', {day:'2-digit',month:'short'}).toUpperCase() +
+          '–' + fim.toLocaleDateString('pt-BR', opts).toUpperCase();
+      }
+    }
+
+    // Atualizar rings com metas reais
+    // metas = [{nome, meta_valor, unidade, realizado}]
+    if(data.metas && data.metas.length){
+      updateRingsFromGoals(data.metas);
+    }
+  }catch(e){ console.log('goals:', e.message); }
+}
+
+// ── Atualizar rings com dados reais ─────────────────────────────────────────
+function updateRingsFromGoals(metas){
+  const C = 188.5;
+  const ringMap = {
+    'Treinos':     'ring-treinos',
+    'Hidratação':  'ring-hidrat',
+    'Diário Nutri':'ring-nutri',
+    'Sono 7h+':    'ring-sono',
+  };
+  const pctMap = {
+    'Treinos':     'rs-treinos',
+    'Hidratação':  'rs-hidrat',
+    'Diário Nutri':'rs-nutri',
+    'Sono 7h+':    'rs-sono',
+  };
+  const valMap = {
+    'Treinos':     'rp-treinos',
+    'Hidratação':  'rp-hidrat',
+    'Diário Nutri':'rp-nutri',
+    'Sono 7h+':    'rp-sono',
+  };
+
+  metas.forEach(function(m){
+    const ringId = ringMap[m.nome];
+    if(!ringId) return;
+    const pct = m.meta_valor > 0 ? Math.min(1, (m.realizado||0) / m.meta_valor) : 0;
+    const el = document.getElementById(ringId);
+    if(el) el.style.strokeDashoffset = C * (1 - pct);
+    const pctEl = document.getElementById(pctMap[m.nome]);
+    if(pctEl) pctEl.textContent = Math.round(pct * 100) + '%';
+    const valEl = document.getElementById(valMap[m.nome]);
+    if(valEl) valEl.textContent = (m.realizado||0);
+  });
+}
+</script>
 </head>
 <body>
 <div id="fhb" onclick="parent.postMessage('fox-back','*')">
@@ -335,7 +467,7 @@ canvas{display:block;width:100%}
 <div class="page" id="page-dashboard">
   <div class="dossie-folder">
     <div class="folder-tab">
-      <div class="folder-tab-label" id="dash-client-name">Rafael</div>
+      <div class="folder-tab-label" id="dash-client-name">Cliente</div>
     </div>
     <div class="folder-body">
       <div class="dossie-header">
@@ -526,7 +658,7 @@ canvas{display:block;width:100%}
 <script>
 /* ── CONFIGURAÇÃO ─────────────────────────────────────────────────────────── */
 const DRIVE_CONFIG = {
-  clientName: "Rafael",
+  clientName: "Cliente",
   apiKey: "AIzaSyAzGaqmVrf6p4L2w1ebOVrPdbsF7KLXRRg",
   folderId: "1_9UFXRFe5D1ya5y-2nGVkP04BlHWIDYb",
   folderTypes: { "Devolutivas":"devolutiva","Treinos":"treino","Fotos":"foto","Documentos":"documento" },
@@ -862,7 +994,7 @@ function generatePDF(checkins, today){
   doc.text("PERFORMANCE",PW/2,112,{align:"center"});
   doc.setTextColor(100,100,100); doc.setFontSize(9);
   doc.text("RELATÓRIO COMPLETO",PW/2,124,{align:"center"});
-  const nm = trainingData?.clientName || "Rafael";
+  const nm = trainingData?.clientName || "Cliente";
   doc.setTextColor(240,240,240); doc.setFontSize(16); doc.setFont("helvetica","bold");
   doc.text(nm, PW/2, 148, {align:"center"});
   doc.setTextColor(100,100,100); doc.setFontSize(8); doc.setFont("helvetica","normal");
@@ -973,7 +1105,7 @@ function generatePDF(checkins, today){
 function buildPreview(checkins){
   const el = document.getElementById("relPreview");
   const cnt = document.getElementById("relPreviewContent");
-  const nm = trainingData?.clientName||"Rafael";
+  const nm = trainingData?.clientName||"Cliente";
   const completed = trainingData ? (trainingData.history||[]).filter(h=>!h.incomplete).length : "—";
   const diasNutri = nutriData ? Object.keys(nutriData.days||{}).length : "—";
   const pesoAtual = checkins.length ? checkins[0].peso||"—" : "—";
