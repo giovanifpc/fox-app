@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Fox Training — Fox Performance · Training</title>
+<style>
+:root{
+  --bg:#0a0a0a; --bg-card:#141414; --bg-card-2:#1c1c1c; --bg-elev:#202020;
+  --gold:#FF8C42; --gold-soft:#FFA864; --gold-dim:#C25E1E;
+  --blue:#4A9EBF; --txt:#f0f0f0; --txt-dim:#9a9a9a; --txt-faint:#5e5e5e;
+  --line:#2a2a2a; --ok:#5aa86b; --done:#3a7a48; --danger:#a8504a;
+  --radius:16px; --radius-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --nav-h:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;animation:fade .35s ease}
+.screen.active{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 14px) 18px 14px;position:sticky;top:0;z-index:30;background:linear-gradient(180deg,var(--bg) 70%,transparent);backdrop-filter:blur(8px)}
+.back-btn{background:var(--bg-card);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:11px;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:.2s}
+.back-btn:active{background:var(--bg-elev);transform:scale(.94)}
+.topbar h2{font-size:17px;font-weight:700;letter-spacing:.3px;flex:1}
+.topbar .sub{font-size:12px;color:var(--txt-dim);font-weight:500}
+
+/* LOGO */
+.logo-fox{width:54px;height:54px}
+.logo-fox img{width:100%;height:100%;object-fit:contain}
+.logo-wrap{display:flex;flex-direction:column;align-items:center}
+.logo-text-block{position:relative;display:inline-flex;flex-direction:column;align-items:center}
+.logo-txt-main{font-weight:800;font-size:30px;letter-spacing:3px;color:#f0f0f0;line-height:1}
+.logo-txt-performance{font-weight:600;font-size:10.5px;letter-spacing:7px;color:var(--blue);text-transform:uppercase;margin-top:1px;padding-left:2px}
+.logo-tag{position:absolute;bottom:-13px;right:-2px;font-size:9.5px;font-style:italic;font-weight:500;color:var(--txt-faint);letter-spacing:1.5px;white-space:nowrap}
+.logo-wrap.big-variant .logo-fox{width:88px;height:88px;margin-bottom:10px}
+.logo-wrap.big-variant .logo-txt-main{font-size:38px;letter-spacing:4px}
+.logo-wrap.big-variant .logo-txt-performance{font-size:12px;letter-spacing:8px}
+.logo-wrap.big-variant .logo-tag{font-size:11px;bottom:-16px}
+.logo-topbar{display:flex;align-items:center;gap:10px}
+.logo-topbar .logo-fox{width:32px;height:32px}
+.logo-topbar-text{position:relative;display:inline-flex;flex-direction:column}
+.logo-topbar-text .lt-main{font-weight:800;font-size:14px;letter-spacing:1.5px;color:#f0f0f0;line-height:1}
+.logo-topbar-text .lt-perf{font-size:8.5px;letter-spacing:5px;color:var(--blue);font-weight:600;text-transform:uppercase;margin-top:1px}
+.logo-topbar-text .lt-tag{position:absolute;bottom:-10px;right:-2px;font-size:7.5px;font-style:italic;color:var(--txt-faint);letter-spacing:1px}
+
+/* WELCOME */
+#welcome{justify-content:center;align-items:center;text-align:center;padding:40px 28px}
+#welcome .logo-wrap{animation:logoIn .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes logoIn{0%{opacity:0;transform:translateY(20px) scale(.85)}100%{opacity:1;transform:none}}
+.welcome-name{font-size:26px;font-weight:800;margin-top:32px;letter-spacing:.3px}
+.welcome-cycle{font-size:13px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:8px}
+.welcome-tag{font-size:13px;color:var(--txt-dim);margin-top:24px;line-height:1.7;max-width:300px;font-style:italic}
+.welcome-actions{margin-top:48px;width:100%;display:flex;flex-direction:column;gap:12px}
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--radius-sm);font-family:var(--font);font-weight:700;cursor:pointer;transition:.18s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dim) 100%);color:#0a0a0a;padding:17px;font-size:15px;letter-spacing:.5px;box-shadow:0 6px 20px -6px rgba(255,140,66,.5)}
+.btn-primary:active{transform:scale(.97)}
+.btn-ghost{background:var(--bg-card);color:var(--txt);padding:15px;font-size:14px;border:1px solid var(--line)}
+.btn-ghost:active{background:var(--bg-elev);transform:scale(.97)}
+.btn-danger{background:rgba(168,80,74,.12);color:var(--danger);padding:15px;font-size:14px;border:1px solid var(--danger)}
+.btn-danger:active{background:rgba(168,80,74,.2)}
+
+/* CONTENT (com espaço pro menu inferior) */
+.content{flex:1;padding:4px 18px calc(var(--nav-h) + 30px);overflow-y:auto}
+
+/* BANNER ciclo encerrado */
+.cycle-ended-banner{background:linear-gradient(135deg,rgba(255,140,66,.18),var(--bg-card));border:1px solid var(--gold);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;gap:13px;align-items:center}
+.ceb-ico{font-size:26px;flex-shrink:0}
+.ceb-txt{flex:1}
+.ceb-txt .ceb-title{font-size:14px;font-weight:800;color:var(--gold-soft)}
+.ceb-txt .ceb-sub{font-size:12px;color:var(--txt-dim);margin-top:3px;line-height:1.5}
+
+/* CYCLE PROGRESS */
+.cycle-progress{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px}
+.cp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cp-title{font-size:14px;font-weight:700}
+.cp-week{font-size:12px;color:var(--gold);font-weight:700}
+.cp-days{font-size:11px;color:var(--txt-faint);margin-bottom:12px}
+.cycle-bar{height:8px;background:var(--bg-elev);border-radius:6px;overflow:hidden;display:flex;gap:3px}
+.cycle-seg{flex:1;background:var(--bg-elev);border-radius:2px;transition:.4s}
+.cycle-seg.filled{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
+.cycle-seg.current{background:var(--gold);box-shadow:0 0 8px rgba(255,140,66,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt-faint);font-weight:700;margin:22px 2px 12px}
+
+/* NEXT WORKOUT card (destaque) */
+.next-workout{background:linear-gradient(135deg,rgba(255,140,66,.14),var(--bg-card) 65%);border:1px solid var(--gold-dim);border-radius:var(--radius);padding:20px;margin-bottom:16px;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+.next-workout:active{transform:scale(.98)}
+.nw-tag{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase}
+.nw-name{font-size:21px;font-weight:800;margin-top:6px}
+.nw-meta{font-size:12px;color:var(--txt-dim);margin-top:8px}
+.nw-go{position:absolute;right:18px;bottom:18px;width:44px;height:44px;border-radius:50%;background:var(--gold);color:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800}
+
+/* STATS */
+.stat-row{display:flex;gap:12px;margin-bottom:6px}
+.stat-card{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px;text-align:center}
+.stat-card .sc-num{font-size:26px;font-weight:800;color:var(--gold);line-height:1}
+.stat-card .sc-lbl{font-size:11px;color:var(--txt-dim);margin-top:6px;font-weight:500}
+
+/* WORKOUT LIST (todos os treinos do loop) */
+.wk-card{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:10px;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+.wk-card:active{transform:scale(.98);background:var(--bg-card-2)}
+.wk-card.is-next{border-color:var(--gold)}
+.wk-letter{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;background:var(--bg-elev);color:var(--gold)}
+.wk-card.is-next .wk-letter{background:var(--gold);color:#0a0a0a}
+.wk-info{flex:1;min-width:0}
+.wk-info .wi-title{font-size:15px;font-weight:700}
+.wk-info .wi-sub{font-size:12px;color:var(--txt-dim);margin-top:3px}
+.wk-chev{color:var(--txt-faint);font-size:20px}
+.next-pill{position:absolute;top:0;right:0;background:var(--gold);color:#0a0a0a;font-size:9px;font-weight:800;letter-spacing:1px;padding:3px 10px;border-bottom-left-radius:10px;text-transform:uppercase}
+
+/* OVERVIEW (pré-treino) */
+.wo-hero{background:linear-gradient(135deg,rgba(255,140,66,.15),var(--bg-card));border:1px solid var(--gold-dim);border-radius:var(--radius);padding:20px;margin-bottom:8px}
+.wo-hero .wo-name{font-size:22px;font-weight:800}
+.wo-hero .wo-week{font-size:12px;color:var(--gold);font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.wo-hero .wo-meta{display:flex;gap:18px;margin-top:14px}
+.wo-meta-item{display:flex;flex-direction:column}
+.wo-meta-item .wm-num{font-size:20px;font-weight:800;color:var(--gold)}
+.wo-meta-item .wm-lbl{font-size:11px;color:var(--txt-dim);margin-top:2px}
+.ex-list-item{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px;margin-bottom:9px}
+.ex-thumb{width:52px;height:52px;border-radius:10px;background:var(--bg-elev);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ex-thumb img{width:100%;height:100%;object-fit:cover}
+.ex-thumb .ph{font-size:22px}
+.ex-li-info{flex:1;min-width:0}
+.ex-li-info .eli-name{font-size:14px;font-weight:700}
+.ex-li-info .eli-sets{font-size:12px;color:var(--gold);font-weight:600;margin-top:3px}
+.ex-li-num{font-size:13px;color:var(--txt-faint);font-weight:700;width:22px;text-align:center}
+
+/* pré-treino footer com botões padrão */
+.prestart-actions{padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,var(--bg) 75%,transparent);display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0}
+
+/* EXEC */
+.exec-progress-top{display:flex;gap:4px;padding:0 18px 4px}
+.exec-pseg{flex:1;height:3px;background:var(--bg-elev);border-radius:2px;transition:.3s}
+.exec-pseg.done{background:var(--gold)}
+.exec-pseg.active{background:var(--gold-soft);box-shadow:0 0 6px rgba(255,140,66,.5)}
+.exec-body{flex:1;overflow-y:auto;padding:8px 18px 120px}
+.exec-counter{font-size:12px;color:var(--txt-faint);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.exec-name{font-size:26px;font-weight:800;line-height:1.15;margin-bottom:16px}
+.exec-media{width:100%;aspect-ratio:1/1;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative;margin-bottom:16px;display:flex;align-items:center;justify-content:center}
+.exec-media img{width:100%;height:100%;object-fit:contain;background:#fff}
+.exec-media iframe{width:100%;height:100%;border:none}
+.exec-media .media-ph{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--txt-faint);font-size:13px;padding:20px;text-align:center}
+.exec-media .media-ph .ph-ico{font-size:46px}
+.media-badge{position:absolute;top:10px;left:10px;background:rgba(10,10,10,.8);backdrop-filter:blur(4px);color:var(--gold);font-size:10px;font-weight:700;padding:5px 10px;border-radius:8px;letter-spacing:.5px;text-transform:uppercase}
+.coach-note{background:linear-gradient(135deg,rgba(74,158,191,.1),var(--bg-card));border-left:3px solid var(--blue);border-radius:10px;padding:13px 15px;margin-bottom:14px}
+.coach-note .cn-lbl{font-size:10px;color:var(--blue);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.coach-note .cn-txt{font-size:13px;color:var(--txt);line-height:1.5}
+/* recomendação de carga */
+.carga-rec{display:flex;align-items:center;gap:8px;background:var(--bg-card-2);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:13px;font-weight:600}
+.carga-rec.subir{color:var(--ok)}
+.carga-rec.descer{color:var(--gold-soft)}
+.carga-rec .cr-ico{font-size:16px}
+
+.sets-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sets-head .sh-title{font-size:14px;font-weight:700}
+.sets-head .sh-target{font-size:12px;color:var(--txt-dim)}
+.set-row{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;transition:.18s}
+.set-row.done{background:linear-gradient(135deg,rgba(58,122,72,.18),var(--bg-card));border-color:var(--done)}
+.set-check{width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:transparent;transition:.18s}
+.set-row.done .set-check{background:var(--done);border-color:var(--done);color:#fff}
+.set-num{font-size:13px;font-weight:700;color:var(--txt-dim);width:54px}
+.set-row.done .set-num{color:var(--txt)}
+.set-inputs{display:flex;gap:8px;flex:1;justify-content:flex-end}
+.set-field{display:flex;flex-direction:column;align-items:center;gap:3px}
+.set-field input{width:58px;background:var(--bg-elev);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:15px;font-weight:700;text-align:center;padding:7px 4px;font-family:var(--font)}
+.set-field input:focus{outline:none;border-color:var(--gold)}
+.set-field label{font-size:9px;color:var(--txt-faint);text-transform:uppercase;letter-spacing:.5px}
+
+/* REST */
+.rest-bar{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:var(--bg-card-2);border-top:1px solid var(--gold-dim);padding:16px 18px calc(16px + env(safe-area-inset-bottom));transform:translateY(110%);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:50}
+.rest-bar.show{transform:translateY(0)}
+.rest-inner{display:flex;align-items:center;gap:16px}
+.rest-circle{width:56px;height:56px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center}
+.rest-circle svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.rest-circle .rc-num{font-size:18px;font-weight:800;color:var(--gold)}
+.rest-info{flex:1}
+.rest-info .ri-lbl{font-size:11px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.rest-info .ri-sub{font-size:13px;color:var(--txt);margin-top:2px;font-weight:600}
+.rest-actions{display:flex;gap:8px}
+.rest-mini-btn{background:var(--bg-elev);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:700;cursor:pointer}
+.rest-mini-btn:active{transform:scale(.93)}
+.exec-footer{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,var(--bg) 70%,transparent);display:flex;gap:10px;z-index:40}
+.exec-footer .btn{flex:1}
+
+/* FINISH */
+#finish{justify-content:center;align-items:center;text-align:center;padding:40px 28px}
+.finish-ring{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:16px;animation:popRing .6s cubic-bezier(.2,1.4,.4,1);box-shadow:0 10px 40px -8px rgba(255,140,66,.6)}
+.finish-ring.silver{background:linear-gradient(135deg,#c8ccd2,#8b9099);box-shadow:0 10px 40px -8px rgba(160,168,180,.5)}
+@keyframes popRing{0%{transform:scale(0)}100%{transform:scale(1)}}
+.finish-status{font-size:15px;font-weight:800;margin-bottom:24px;display:flex;align-items:center;gap:7px}
+.finish-status.complete{color:var(--gold-soft)}
+.finish-status.incomplete{color:#aab0ba}
+.finish-title{font-size:24px;font-weight:800;margin-bottom:6px}
+.finish-quote{font-size:15px;color:var(--gold-soft);font-style:italic;line-height:1.6;margin:20px 0 32px;max-width:320px}
+.finish-stats{display:flex;gap:14px;width:100%;margin-bottom:32px}
+.finish-stat{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 8px}
+.finish-stat .fs-num{font-size:24px;font-weight:800;color:var(--gold)}
+.finish-stat .fs-lbl{font-size:10px;color:var(--txt-dim);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.finish-actions{width:100%;display:flex;flex-direction:column;gap:11px}
+.confetti{position:fixed;top:-10px;width:9px;height:9px;z-index:999;pointer-events:none;border-radius:1px}
+
+/* HISTORY */
+.hist-item{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:15px;margin-bottom:10px}
+.hist-item.hist-incomplete{background:rgba(168,80,74,.08);border-color:var(--danger)}
+.hist-top{display:flex;justify-content:space-between;align-items:center}
+.hist-date{font-size:14px;font-weight:700}
+.hist-badge{font-size:11px;color:var(--gold);font-weight:700;background:rgba(255,140,66,.12);padding:4px 10px;border-radius:8px}
+.hist-incomplete .hist-badge{color:var(--danger);background:rgba(168,80,74,.15)}
+.hist-meta{font-size:12px;color:var(--txt-dim);margin-top:8px;display:flex;gap:16px}
+.empty-state{text-align:center;padding:60px 30px;color:var(--txt-faint)}
+.empty-state .es-ico{font-size:48px;margin-bottom:16px;opacity:.35}
+.empty-state .es-txt{font-size:14px;line-height:1.6}
+.evo-card{background:linear-gradient(135deg,rgba(90,168,107,.1),var(--bg-card));border:1px solid var(--done);border-radius:var(--radius);padding:16px;margin-bottom:18px}
+.evo-card .evo-lbl{font-size:10px;color:var(--ok);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.evo-card .evo-txt{font-size:14px;line-height:1.6}
+.evo-card .evo-txt b{color:var(--gold-soft)}
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge-item{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 8px;text-align:center}
+.badge-item.locked{opacity:.4}
+.badge-item .bi-ico{font-size:30px;margin-bottom:6px;height:32px;display:flex;align-items:center;justify-content:center}
+.badge-item .bi-ico img{width:30px;height:30px;object-fit:contain}
+.badge-item .bi-name{font-size:10px;color:var(--txt-dim);font-weight:600;line-height:1.3}
+.badge-item.earned .bi-name{color:var(--gold-soft)}
+.ach-summary{background:linear-gradient(135deg,rgba(255,140,66,.15),var(--bg-card));border:1px solid var(--gold-dim);border-radius:var(--radius);padding:20px;margin-bottom:6px;text-align:center}
+.ach-summary .as-big{font-size:34px;font-weight:800;color:var(--gold)}
+.ach-summary .as-lbl{font-size:13px;color:var(--txt-dim);margin-top:4px}
+.ach-summary .as-bar{height:8px;background:var(--bg-elev);border-radius:6px;overflow:hidden;margin-top:14px}
+.ach-summary .as-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:6px;transition:.5s}
+
+/* PROFILE */
+.profile-head{display:flex;flex-direction:column;align-items:center;padding:24px 0 20px}
+.profile-name{font-size:20px;font-weight:800;margin-top:14px}
+.profile-cycle{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.menu-item{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:11px;text-decoration:none;color:var(--txt);transition:.18s;cursor:pointer;width:100%;text-align:left;font-family:var(--font)}
+.menu-item:active{background:var(--bg-card-2);transform:scale(.98)}
+.menu-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.menu-ico.report{background:rgba(255,140,66,.15);border:1px solid var(--gold-dim)}
+.menu-ico.nutri{background:rgba(74,158,191,.15);border:1px solid var(--blue)}
+.menu-ico.wpp{background:rgba(90,168,107,.15);border:1px solid var(--ok)}
+.menu-ico.reset{background:rgba(168,80,74,.12);border:1px solid var(--danger)}
+.menu-info{flex:1}
+.menu-info .mi-title{font-size:15px;font-weight:700}
+.menu-info .mi-sub{font-size:12px;color:var(--txt-dim);margin-top:2px}
+.menu-chev{color:var(--txt-faint);font-size:18px}
+.profile-foot{text-align:center;font-size:11px;color:var(--txt-faint);line-height:1.7;margin-top:24px;padding:0 20px}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--bg-card);border-top:1px solid var(--line);display:flex;z-index:60}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--txt-faint);cursor:pointer;font-family:var(--font);transition:.18s;padding-top:8px}
+.nav-btn .nav-ico{font-size:21px;line-height:1}
+.nav-btn .nav-lbl{font-size:10px;font-weight:600;letter-spacing:.3px}
+.nav-btn.active{color:var(--gold)}
+.nav-btn:active{transform:scale(.92)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.25s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--bg-card);border:1px solid var(--line);border-radius:24px 24px 0 0;padding:28px 22px calc(28px + env(safe-area-inset-bottom));width:100%;max-width:520px;transform:translateY(40px);transition:.3s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow-y:auto}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+.modal-icon{font-size:38px;margin-bottom:14px;display:flex;justify-content:center}
+.modal-icon img{width:42px;height:42px;object-fit:contain}
+.modal-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:10px}
+.modal-body{font-size:14px;color:var(--txt-dim);text-align:center;line-height:1.65;margin-bottom:24px}
+.modal-body b{color:var(--txt);font-weight:700}
+.modal-actions{display:flex;flex-direction:column;gap:10px}
+.modal-step{display:flex;align-items:center;gap:10px;background:var(--bg-card-2);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px;text-align:left}
+.modal-step .ms-num{width:24px;height:24px;border-radius:50%;background:var(--bg-elev);color:var(--txt-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.modal-step.done .ms-num{background:var(--done);color:#fff}
+.modal-step.done{color:var(--txt)}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg-elev);border:1px solid var(--gold-dim);color:var(--txt);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.training-help-card{background:rgba(255,140,66,.06);border:1px solid rgba(255,140,66,.2);border-radius:12px;padding:14px 16px;margin:12px 16px;display:flex;align-items:center;gap:12px}
+.thc-text{flex:1;font-size:.8rem;color:#aaa;line-height:1.4}
+.thc-text strong{color:var(--amber);display:block;margin-bottom:2px}
+.thc-btns{display:flex;flex-direction:column;gap:6px}
+.thc-btn{border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.thc-btn.p{background:rgba(255,140,66,.15);color:var(--amber);border:1px solid rgba(255,140,66,.3)}
+.thc-btn.d{background:transparent;color:#666;border:1px solid #333}
+</style>
+<!-- Supabase Auth Guard -->
+<script>
+(function(){
+  var sdk = document.createElement('script');
+  sdk.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  sdk.onload = function(){
+    var supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
+    supa.auth.getSession().then(function(res){
+      var session = res.data && res.data.session;
+      if(!session){ window.location.replace('https://giovanifpc.github.io/fox-app/login.html'); return; }
+      window.FOX_SESSION = session;
+      window.FOX_EMAIL = session.user.email;
+      window.FOX_SUPA = supa;
+      // Buscar perfil
+      supa.from('clients')
+        .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
+        .eq('email', session.user.email)
+        .single()
+        .then(function(r){
+          if(r.data){
+            window.FOX_PROFILE = r.data;
+            window.CLIENT_NAME_DYNAMIC = r.data.nome;
+            // Disparar evento para o módulo usar
+            document.dispatchEvent(new CustomEvent('fox-profile-ready', {detail: r.data}));
+          }
+        });
+    });
+  };
+  document.head.appendChild(sdk);
+})();
+</script>
+</head>
+<body><style>
+#fhb{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(10,10,10,.95);border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;padding:0 16px;gap:10px;z-index:99999;cursor:pointer;font-family:sans-serif}
+#fhb:active{opacity:.7}
+#fhb .a{color:#FF8C42;font-size:22px;font-weight:700;line-height:1}
+#fhb .t{color:#f0f0f0;font-size:13px;font-weight:600}
+body{padding-top:44px!important}
+</style>
+<div id="fhb" onclick="parent.postMessage('fox-back','*')"><span class="a">&#8249;</span><span class="t">Fox Performance</span></div>
+
+<!-- ========================= WELCOME ========================= -->
+<section class="screen active" id="welcome">
+  <div class="logo-wrap big-variant" style="margin-bottom:18px">
+    <div class="logo-fox" id="welcomeLogo"></div>
+    <div class="logo-text-block">
+      <div class="logo-txt-main">FOX</div>
+      <div class="logo-txt-performance">Performance</div>
+      <span class="logo-tag">training</span>
+    </div>
+  </div>
+  <div class="welcome-name" id="welcomeName">Olá</div>
+  <div class="welcome-cycle" id="welcomeCycle">Ciclo 1 — Semana 1 de 8</div>
+  <div class="welcome-tag">"Hábito. Qualidade de vida. Consistência.<br>É assim que a Fox funciona."</div>
+  <div class="welcome-actions">
+    <button class="btn btn-primary" onclick="goTab('home')">ENTRAR</button>
+  </div>
+</section>
+
+<!-- ========================= HOME ========================= -->
+<section class="screen" id="home">
+<div id="training-help-card" class="training-help-card" style="display:none">
+  <div class="thc-text">
+    <strong>Como funciona?</strong>
+    Registre suas cargas após cada série. O app ajusta sua progressão automaticamente semana a semana.
+  </div>
+  <div class="thc-btns">
+    <button class="thc-btn p" onclick="showTrainingTutorial()">Como usar</button>
+    <button class="thc-btn d" onclick="dismissTrainingHelp()">Já sei</button>
+  </div>
+</div>
+
+  <div class="topbar">
+    <div class="logo-topbar">
+      <div class="logo-fox" id="homeLogo"></div>
+      <div class="logo-topbar-text">
+        <div class="lt-main">FOX</div>
+        <div class="lt-perf">Performance</div>
+        <span class="lt-tag">training</span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div id="cycleEndedBanner"></div>
+
+    <div class="cycle-progress">
+      <div class="cp-head">
+        <span class="cp-title" id="cycleTitle">Ciclo 1</span>
+        <span class="cp-week" id="cycleWeek">Semana 1 de 8</span>
+      </div>
+      <div class="cp-days" id="cycleDays">Dia 1 de 56</div>
+      <div class="cycle-bar" id="cycleBar"></div>
+    </div>
+
+    <div class="section-label">Próximo treino</div>
+    <div class="next-workout" id="nextWorkout" onclick="openOverviewNext()">
+      <div class="nw-tag" id="nwTag">Treino A</div>
+      <div class="nw-name" id="nwName">—</div>
+      <div class="nw-meta" id="nwMeta">—</div>
+      <div class="nw-go">▶</div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card"><div class="sc-num" id="statWeekStreak">0</div><div class="sc-lbl">semanas seguidas</div></div>
+      <div class="stat-card"><div class="sc-num" id="statTotal">0</div><div class="sc-lbl">treinos no ciclo</div></div>
+    </div>
+
+    <div class="section-label">Todos os treinos</div>
+    <div id="workoutsList"></div>
+  </div>
+</section>
+
+<!-- ========================= OVERVIEW (pré-treino) ========================= -->
+<section class="screen" id="overview">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTab('home')">‹</button>
+    <h2 id="ovTitle">Treino</h2>
+  </div>
+  <div class="content" style="padding-bottom:20px">
+    <div class="wo-hero">
+      <div class="wo-name" id="ovName">Treino A</div>
+      <div class="wo-week" id="ovWeek">Semana 1</div>
+      <div class="wo-meta">
+        <div class="wo-meta-item"><span class="wm-num" id="ovExCount">0</span><span class="wm-lbl">exercícios</span></div>
+        <div class="wo-meta-item"><span class="wm-num" id="ovSetCount">0</span><span class="wm-lbl">séries</span></div>
+        <div class="wo-meta-item"><span class="wm-num" id="ovTime">~0</span><span class="wm-lbl">minutos</span></div>
+      </div>
+    </div>
+    <div class="section-label">Exercícios de hoje</div>
+    <div id="ovExList"></div>
+  </div>
+  <div class="prestart-actions">
+    <button class="btn btn-primary" onclick="startWorkout()">COMEÇAR TREINO</button>
+    <button class="btn btn-ghost" onclick="goTab('home')">Voltar</button>
+  </div>
+</section>
+
+<!-- ========================= EXEC ========================= -->
+<section class="screen" id="exec">
+  <div class="topbar">
+    <button class="back-btn" onclick="confirmExit()">‹</button>
+    <h2 id="execWoName" style="font-size:15px">Treino</h2>
+    <span class="sub" id="execCounter2"></span>
+  </div>
+  <div class="exec-progress-top" id="execProgress"></div>
+  <div class="exec-body" id="execBody"></div>
+
+  <div class="rest-bar" id="restBar">
+    <div class="rest-inner">
+      <div class="rest-circle">
+        <svg viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#202020" stroke-width="4"/>
+          <circle id="restRing" cx="28" cy="28" r="24" fill="none" stroke="#FF8C42" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="0"/>
+        </svg>
+        <span class="rc-num" id="restNum">60</span>
+      </div>
+      <div class="rest-info">
+        <div class="ri-lbl">Descanso</div>
+        <div class="ri-sub" id="restNext">Próxima série</div>
+      </div>
+      <div class="rest-actions">
+        <button class="rest-mini-btn" onclick="adjustRest(-15)">−15s</button>
+        <button class="rest-mini-btn" onclick="adjustRest(15)">+15s</button>
+        <button class="rest-mini-btn" onclick="skipRest()" style="background:var(--gold);color:#0a0a0a;border-color:var(--gold)">Pular</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="exec-footer" id="execFooter">
+    <button class="btn btn-ghost" id="prevBtn" onclick="prevExercise()" style="flex:0 0 90px">Anterior</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextExercise()">Próximo</button>
+  </div>
+</section>
+
+<!-- ========================= FINISH ========================= -->
+<section class="screen" id="finish">
+  <div class="finish-ring">🥇</div>
+  <div class="finish-status complete" id="finishStatus">✅ Treino completo</div>
+  <div class="finish-title">Treino concluído</div>
+  <div class="finish-quote" id="finishQuote">"Mais um. Guardado."</div>
+  <div class="finish-stats">
+    <div class="finish-stat"><div class="fs-num" id="fsEx">0</div><div class="fs-lbl">exercícios</div></div>
+    <div class="finish-stat"><div class="fs-num" id="fsSets">0</div><div class="fs-lbl">séries</div></div>
+    <div class="finish-stat"><div class="fs-num" id="fsTime">0</div><div class="fs-lbl">minutos</div></div>
+  </div>
+  <div class="finish-actions">
+    <button class="btn btn-primary" onclick="shareWorkout()">📲 Enviar feedback ao Giovani</button>
+    <button class="btn btn-ghost" onclick="goTab('home')">Voltar ao início</button>
+  </div>
+</section>
+
+<!-- ========================= HISTORY ========================= -->
+<section class="screen" id="history">
+  <div class="topbar">
+    <div class="logo-topbar">
+      <div class="logo-fox" id="histLogo"></div>
+      <div class="logo-topbar-text">
+        <div class="lt-main">Histórico</div>
+        <div class="lt-perf">Fox training</div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div id="evoBox"></div>
+    <div class="section-label">Treinos realizados</div>
+    <div id="histList"></div>
+  </div>
+</section>
+
+<!-- ========================= CONQUISTAS ========================= -->
+<section class="screen" id="achievements">
+  <div class="topbar">
+    <div class="logo-topbar">
+      <div class="logo-fox" id="achLogo"></div>
+      <div class="logo-topbar-text">
+        <div class="lt-main">Conquistas</div>
+        <div class="lt-perf">Fox training</div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="ach-summary" id="achSummary"></div>
+    <div class="section-label">Conquistas do ciclo</div>
+    <div class="badge-grid" id="badgeGrid"></div>
+  </div>
+</section>
+
+<!-- ========================= PROFILE ========================= -->
+<section class="screen" id="profile">
+  <div class="topbar">
+    <div class="logo-topbar">
+      <div class="logo-fox" id="profLogo"></div>
+      <div class="logo-topbar-text">
+        <div class="lt-main">Perfil</div>
+        <div class="lt-perf">Fox training</div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="profile-head">
+      <div class="logo-fox" style="width:56px;height:56px" id="profileLogo"></div>
+      <div class="profile-name" id="profileName">Cliente</div>
+      <div class="profile-cycle" id="profileCycle">Ciclo 1 · Semana 1</div>
+    </div>
+
+    <div class="section-label">Ecossistema Fox</div>
+    <a class="menu-item" id="linkNutri" href="#" target="_blank">
+      <div class="menu-ico nutri">🥗</div>
+      <div class="menu-info"><div class="mi-title">NutriTracker</div><div class="mi-sub">Acompanhe sua alimentação</div></div>
+      <div class="menu-chev">›</div>
+    </a>
+    <a class="menu-item" id="linkWpp" href="#" target="_blank">
+      <div class="menu-ico wpp">💬</div>
+      <div class="menu-info"><div class="mi-title">Falar com o Giovani</div><div class="mi-sub">Dúvidas e feedback</div></div>
+      <div class="menu-chev">›</div>
+    </a>
+
+    <div class="section-label">Ciclo</div>
+    <button class="menu-item" onclick="openResetFlow()">
+      <div class="menu-ico reset">🔄</div>
+      <div class="menu-info"><div class="mi-title">Reiniciar ciclo</div><div class="mi-sub">Recomeçar as 8 semanas do zero</div></div>
+      <div class="menu-chev">›</div>
+    </button>
+
+    <div class="profile-foot">
+      Fox Performance · training<br>
+      Desenvolvido exclusivamente para clientes da consultoria.<br>
+      <span id="profileFootCycle"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= BOTTOM NAV ========================= -->
+<nav class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-btn active" id="navHome" onclick="goTab('home')">
+    <span class="nav-ico">🏠</span><span class="nav-lbl">Início</span>
+  </button>
+  <button class="nav-btn" id="navHistory" onclick="goTab('history')">
+    <span class="nav-ico">📊</span><span class="nav-lbl">Histórico</span>
+  </button>
+  <button class="nav-btn" id="navAchievements" onclick="goTab('achievements')">
+    <span class="nav-ico">🏅</span><span class="nav-lbl">Conquistas</span>
+  </button>
+  <button class="nav-btn" id="navProfile" onclick="goTab('profile')">
+    <span class="nav-ico">👤</span><span class="nav-lbl">Perfil</span>
+  </button>
+</nav>
+
+<!-- ========================= MODAIS ========================= -->
+<div class="modal-overlay" id="modalSkipEx">
+  <div class="modal-box">
+    <span class="modal-icon">⚠️</span>
+    <div class="modal-title">Pular este exercício?</div>
+    <div class="modal-body">
+      Se algum equipamento estiver ocupado, tudo bem — <b>anote mentalmente e volte depois</b> usando o botão "Anterior".<br><br>
+      Sempre que puder, <b>siga a sequência em ordem</b>. Ela foi montada com um motivo.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalSkipEx')">Voltar e continuar</button>
+      <button class="btn" style="background:var(--bg-elev);color:var(--txt-dim);border:1px solid var(--line);padding:14px;font-size:13px;font-weight:600;border-radius:10px" onclick="confirmSkipEx()">Pular mesmo assim</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalIncomplete">
+  <div class="modal-box">
+    <span class="modal-icon"><img id="modalIncompleteIcon" src="" alt="Fox"></span>
+    <div class="modal-title" id="modalIncompleteTitle">Exercícios pendentes</div>
+    <div class="modal-body" id="modalIncompleteBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal('modalIncomplete')">Voltar e completar</button>
+      <button class="btn btn-ghost" onclick="finishIncomplete()">Encerrar mesmo assim</button>
+    </div>
+  </div>
+</div>
+
+<!-- reset: passo a passo com relatório obrigatório -->
+<div class="modal-overlay" id="modalReset">
+  <div class="modal-box">
+    <span class="modal-icon">🔄</span>
+    <div class="modal-title">Reiniciar o ciclo</div>
+    <div class="modal-body">
+      Isto vai <b>apagar todo o seu progresso</b> (histórico, conquistas e cargas) e recomeçar as 8 semanas do zero a partir de hoje. Não dá para desfazer.<br><br>
+      Antes de continuar, complete os passos:
+    </div>
+    <div id="resetSteps">
+      <div class="modal-step" id="resetStep1">
+        <div class="ms-num">1</div>
+        <div>Acesse Minha Área e gere o relatório completo</div>
+      </div>
+      <div class="modal-step" id="resetStep2">
+        <div class="ms-num">2</div>
+        <div>Confirme que deseja reiniciar</div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:8px">
+      <button class="btn btn-primary" id="resetReportBtn" onclick="resetGenerateReport()">📊 Ir para Minha Área</button>
+      <button class="btn btn-danger" id="resetConfirmBtn" onclick="confirmReset()" style="opacity:.4;pointer-events:none">Reiniciar ciclo do zero</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalReset')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ╔════════════════════════════════════════════════════════════════╗
+   ║                                                                  ║
+   ║   FOX PERFORMANCE · TRAINING                                     ║
+   ║                                                                  ║
+   ║   ⚠️  ATENÇÃO GIOVANI:                                           ║
+   ║   A cada novo ciclo de 8 semanas, você troca APENAS o bloco      ║
+   ║   abaixo (entre as marcas "INÍCIO DO TREINO" e "FIM DO TREINO"). ║
+   ║   NÃO mexa em mais nada abaixo da marca "FIM DO TREINO".         ║
+   ║                                                                  ║
+   ╚════════════════════════════════════════════════════════════════╝ */
+
+/* ═══════════════════════ INÍCIO DO TREINO ═══════════════════════ */
+const CLIENT = {
+  /* ---- DADOS DO CLIENTE ---- */
+  nome: "Atleta",
+  cycleNumber: 1,
+  startDate: "2026-06-09",          // AAAA-MM-DD — data de início do ciclo. O app conta 56 dias a partir daqui.
+  cycleWeeks: 8,                    // duração do ciclo (padrão Fox: 8 semanas)
+
+  /* ---- LINKS ---- */
+  nutriUrl: "https://giovanifpc.github.io/foxperformance-app/",
+  whatsappNumber: "5511943503379",  // internacional, só números
+
+  /* ---- PROGRESSÃO POR SEMANA (definida UMA VEZ, vale para todos os treinos) ----
+     8 entradas, uma por semana. Cada uma define:
+       sets       : número de séries naquela semana
+       reps       : faixa de reps (texto livre)
+       cargaRec   : recomendação de carga — "subir", "descer" ou "" (manter/sem aviso)
+     O número de séries/reps aqui SUBSTITUI o padrão durante aquela semana. */
+  progressao: [
+    {semana:1, sets:3, reps:"12",   cargaRec:""},
+    {semana:2, sets:3, reps:"12",   cargaRec:""},
+    {semana:3, sets:3, reps:"10",   cargaRec:"subir"},
+    {semana:4, sets:3, reps:"10",   cargaRec:""},
+    {semana:5, sets:4, reps:"8",    cargaRec:"subir"},
+    {semana:6, sets:4, reps:"8",    cargaRec:""},
+    {semana:7, sets:4, reps:"6-8",  cargaRec:"subir"},
+    {semana:8, sets:3, reps:"12",   cargaRec:"descer"}   // deload
+  ],
+
+  /* ---- TREINOS DO LOOP (A → B → C → A ...) ----
+     Os exercícios são FIXOS durante todo o ciclo.
+     As séries/reps vêm da progressão acima (não precisa repetir aqui).
+     media     : URL do GIF (ExerciseDB) ou "gifs/arquivo.gif" (local) ou ID do YouTube
+     mediaType : "img" | "yt"
+     rest      : descanso padrão em segundos (cliente pode ajustar na hora)
+     note      : orientação do Giovani */
+  workouts: [
+    {
+      id:"A", name:"Treino A — Corpo Inteiro",
+      exercises:[
+        {nome:"Agachamento livre", rest:60, media:"", mediaType:"img",
+         note:"Desça como se fosse sentar numa cadeira. Joelhos na direção dos pés, peito aberto."},
+        {nome:"Supino reto com halteres", rest:75, media:"", mediaType:"img",
+         note:"Desça os halteres até a linha do peito, controlando 3 segundos. Não trave os cotovelos no topo."},
+        {nome:"Remada curvada com halteres", rest:75, media:"", mediaType:"img",
+         note:"Coluna neutra, puxe os cotovelos para trás levando os halteres à cintura. Aperte as escápulas."},
+        {nome:"Desenvolvimento de ombros sentado", rest:60, media:"", mediaType:"img",
+         note:"Empurre os halteres para cima sem travar os cotovelos. Não arqueie a lombar."},
+        {nome:"Rosca direta com halteres", rest:45, media:"", mediaType:"img",
+         note:"Cotovelos colados ao corpo. Suba controlando, desça devagar. Nada de balançar o tronco."},
+        {nome:"Prancha abdominal", rest:45, media:"", mediaType:"img",
+         note:"Corpo reto da cabeça aos calcanhares. Contraia abdômen e glúteo. O quadril não cai."}
+      ]
+    },
+    {
+      id:"B", name:"Treino B — Corpo Inteiro",
+      exercises:[
+        {nome:"Leg press", rest:75, media:"", mediaType:"img",
+         note:"Pés na largura do quadril. Desça até 90° no joelho, empurre pelo calcanhar."},
+        {nome:"Puxada na frente (pulldown)", rest:75, media:"", mediaType:"img",
+         note:"Puxe a barra até a altura do queixo, levando os cotovelos para baixo. Controle a volta."},
+        {nome:"Supino inclinado com halteres", rest:75, media:"", mediaType:"img",
+         note:"Banco a 30-45°. Trabalha a parte superior do peito. Execução controlada."},
+        {nome:"Elevação lateral", rest:45, media:"", mediaType:"img",
+         note:"Suba os halteres até a linha dos ombros, cotovelos levemente flexionados. Sem impulso."},
+        {nome:"Tríceps na polia", rest:45, media:"", mediaType:"img",
+         note:"Cotovelos fixos ao lado do corpo. Estenda totalmente embaixo, controle a subida."},
+        {nome:"Abdominal supra no solo", rest:45, media:"", mediaType:"img",
+         note:"Suba contraindo o abdômen, sem puxar o pescoço. Desça devagar."}
+      ]
+    },
+    {
+      id:"C", name:"Treino C — Pernas e Core",
+      exercises:[
+        {nome:"Agachamento sumô com halter", rest:75, media:"", mediaType:"img",
+         note:"Pés mais abertos que os ombros, pontas para fora. Foco em glúteo e interno de coxa."},
+        {nome:"Afundo alternado", rest:60, media:"", mediaType:"img",
+         note:"Passo à frente, desça o joelho de trás em direção ao chão. Joelho da frente alinhado ao pé."},
+        {nome:"Cadeira extensora", rest:60, media:"", mediaType:"img",
+         note:"Estenda controlando, segure 1 segundo no topo. Não jogue a perna."},
+        {nome:"Panturrilha em pé", rest:40, media:"", mediaType:"img",
+         note:"Suba na ponta dos pés o máximo possível, segure 1 segundo, desça alongando."},
+        {nome:"Prancha lateral", rest:40, media:"", mediaType:"img",
+         note:"Apoie no antebraço, corpo reto e alinhado. Contraia o oblíquo. Quadril não cai."}
+      ]
+    }
+  ],
+
+  /* ---- FRASES (fim do treino) — filosofia Fox + estoicismo ---- */
+  quotes:[
+    "Mais um. Guardado.",
+    "O progresso não pede permissão. Ele aparece pra quem aparece.",
+    "Nenhum treino perfeito vale mais do que dez treinos feitos.",
+    "A disciplina é silenciosa. Os resultados falam.",
+    "Concentra-te no que podes controlar: a série à tua frente.",
+    "Não perguntes se é difícil. Pergunta se vale a pena.",
+    "O corpo segue a mente que insiste.",
+    "Não tens de sentir vontade. Tens de começar.",
+    "Hábito é o que você faz quando não está motivado.",
+    "Recomeçar não é fracasso. É o método.",
+    "Qualidade de vida se constrói em dias comuns, não em dias perfeitos.",
+    "A Fox não te cobra perfeição. Te cobra presença.",
+    "Treino concluído. Hábito reforçado.",
+    "O que está sob teu poder, fizeste. Descansa."
+  ]
+};
+/* ═══════════════════════ FIM DO TREINO ═══════════════════════ */
+/* ⚠️ NÃO EDITE NADA ABAIXO DESTA LINHA — É O MOTOR DO APP ⚠️ */
+
+/* ---- LOGO (base64 injetado no build) ---- */
+const FOX_LOGO_SRC = "data:image/png;base64,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";
+function logoImg(){ return `<img src="${FOX_LOGO_SRC}" alt="Fox Performance">`; }
+function foxIcon(size){ return `<img src="${FOX_LOGO_SRC}" alt="Fox" style="width:${size||24}px;height:${size||24}px;object-fit:contain;vertical-align:middle">`; }
+
+/* ---- STORAGE ---- */
+const STORAGE_KEY = "foxTraining_" + (CLIENT.nome||"cliente").toLowerCase().replace(/\s/g,"");
+function loadStore(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const def = { history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:null };
+    if(!raw) return def;
+    return Object.assign(def, JSON.parse(raw));
+  }catch(e){ return { history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:null }; }
+}
+function saveStore(d){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+  catch(e){ toast("Não foi possível salvar. Verifique o armazenamento."); }
+}
+
+/* ---- DATA / CICLO ---- */
+function getStartDate(){
+  const store = loadStore();
+  // se o cliente reiniciou, usa a data de override; senão a do CLIENT
+  const d = store.startOverride || CLIENT.startDate;
+  return new Date(d + "T00:00:00");
+}
+function daysSinceStart(){
+  const start = getStartDate();
+  const now = new Date();
+  const startMid = new Date(start.getFullYear(),start.getMonth(),start.getDate());
+  const nowMid = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  return Math.floor((nowMid - startMid)/86400000);
+}
+function currentDayNumber(){ return Math.max(1, daysSinceStart()+1); }     // dia 1..56+
+function totalDays(){ return CLIENT.cycleWeeks*7; }                         // 56
+function currentWeek(){
+  const w = Math.floor(daysSinceStart()/7)+1;
+  return Math.min(Math.max(1,w), CLIENT.cycleWeeks);
+}
+function cycleEnded(){ return daysSinceStart() >= totalDays(); }
+function weekProgression(wk){
+  return CLIENT.progressao.find(p=>p.semana===wk) || CLIENT.progressao[CLIENT.progressao.length-1];
+}
+
+/* ---- LOOP DE TREINOS ---- */
+function nextWorkoutIndex(){
+  const store = loadStore();
+  return store.loopPos % CLIENT.workouts.length;
+}
+function advanceLoop(){
+  const store = loadStore();
+  store.loopPos = (store.loopPos||0) + 1;
+  saveStore(store);
+}
+
+/* ---- ESTADO DA SESSÃO ---- */
+let state = { workoutIndex:0, currentExercise:0, sessionData:[], startTime:null,
+  restInterval:null, restRemaining:0, restTotal:0 };
+
+/* ---- NAVEGAÇÃO / TABS ---- */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+function goTab(tab){
+  // tabs com barra inferior: home, history, achievements, profile
+  document.getElementById("bottomNav").style.display = "flex";
+  ["home","history","achievements","profile"].forEach(t=>{
+    const btn = document.getElementById("nav"+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn) btn.classList.toggle("active", t===tab);
+  });
+  if(tab==="home"){ buildHome(); showScreen("home"); }
+  else if(tab==="history"){ buildHistory(); showScreen("history"); }
+  else if(tab==="achievements"){ buildAchievements(); showScreen("achievements"); }
+  else if(tab==="profile"){ buildProfile(); showScreen("profile"); }
+  pushNav(tab);
+}
+function hideNav(){ document.getElementById("bottomNav").style.display="none"; }
+
+/* ---- BOTÃO VOLTAR FÍSICO (Android) ----
+   Mantém o usuário dentro do app. Em vez de fechar o navegador,
+   o voltar leva pra Início (ou pede confirmação se estiver treinando). */
+function pushNav(screen){
+  try{ history.pushState({screen}, "", location.href); }catch(e){}
+}
+function handleBack(){
+  const active = document.querySelector(".screen.active");
+  const id = active ? active.id : "home";
+  if(id==="exec"){
+    // está treinando — confirma antes de sair
+    confirmExit();
+    pushNav("exec");
+  } else if(id==="overview"||id==="history"||id==="achievements"||id==="profile"||id==="finish"){
+    goTab("home");
+  } else {
+    // já na home — empurra de volta pra não fechar; segunda vez deixa sair
+    pushNav("home");
+  }
+}
+
+/* ---- INIT ---- */
+
+function showTrainingHelp(){
+  if(!localStorage.getItem('t_help_done')){
+    var c=document.getElementById('training-help-card');
+    if(c) c.style.display='flex';
+  }
+}
+function dismissTrainingHelp(){
+  localStorage.setItem('t_help_done','1');
+  var c=document.getElementById('training-help-card');
+  if(c) c.style.display='none';
+}
+function showTrainingTutorial(){
+  dismissTrainingHelp();
+  toast('Selecione um treino, registre o peso em cada série e toque em concluir.');
+}
+
+
+// Receber perfil do Supabase quando carregar
+document.addEventListener('fox-profile-ready', function(e){
+  var p = e.detail;
+  if(p && p.nome){
+    CLIENT.nome = p.nome;
+    CLIENT.cycleNumber = p.ciclo_atual || CLIENT.cycleNumber;
+    var wn = document.getElementById('welcomeName');
+    if(wn) wn.textContent = 'Olá, ' + p.nome;
+    var pn = document.getElementById('profileName');
+    if(pn) pn.textContent = p.nome;
+  }
+});
+
+function init(){
+  // logos
+  ["welcomeLogo","homeLogo","histLogo","profLogo","profileLogo","achLogo"].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.innerHTML = logoImg();
+  });
+  const mi = document.getElementById("modalIncompleteIcon"); if(mi) mi.src = FOX_LOGO_SRC;
+
+  document.getElementById("welcomeName").textContent = "Olá, " + CLIENT.nome;
+  showTrainingHelp();
+  document.getElementById("welcomeCycle").textContent =
+    `Ciclo ${CLIENT.cycleNumber} — ${CLIENT.cycleWeeks} semanas`;
+
+  document.getElementById("linkNutri").href = CLIENT.nutriUrl;
+  document.getElementById("linkWpp").href = `https://wa.me/${CLIENT.whatsappNumber}?text=`+
+    encodeURIComponent(`Olá Giovani! Sou ${CLIENT.nome}, quero falar sobre meu treino.`);
+
+  // botão voltar físico (Android) — navega dentro do app
+  try{ history.replaceState({screen:"welcome"}, "", location.href); }catch(e){}
+  window.addEventListener("popstate", handleBack);
+}
+
+/* ---- HOME ---- */
+function buildHome(){
+  const wk = currentWeek();
+  document.getElementById("cycleTitle").textContent = "Ciclo " + CLIENT.cycleNumber;
+  document.getElementById("cycleWeek").textContent = `Semana ${wk} de ${CLIENT.cycleWeeks}`;
+  const dnum = Math.min(currentDayNumber(), totalDays());
+  document.getElementById("cycleDays").textContent = `Dia ${dnum} de ${totalDays()}`;
+
+  // barra de semanas
+  const bar = document.getElementById("cycleBar"); bar.innerHTML="";
+  for(let i=1;i<=CLIENT.cycleWeeks;i++){
+    const seg=document.createElement("div"); seg.className="cycle-seg";
+    if(i<wk) seg.classList.add("filled"); else if(i===wk && !cycleEnded()) seg.classList.add("current");
+    else if(i<=wk && cycleEnded()) seg.classList.add("filled");
+    bar.appendChild(seg);
+  }
+
+  // banner ciclo encerrado
+  const banner = document.getElementById("cycleEndedBanner");
+  if(cycleEnded()){
+    banner.innerHTML = `<div class="cycle-ended-banner">
+      <div class="ceb-ico">🏁</div>
+      <div class="ceb-txt">
+        <div class="ceb-title">Ciclo de 8 semanas concluído!</div>
+        <div class="ceb-sub">Fale com o Giovani para montar seu próximo ciclo. Você ainda pode treinar normalmente enquanto isso.</div>
+      </div></div>`;
+  } else banner.innerHTML="";
+
+  // próximo treino
+  const nextIdx = nextWorkoutIndex();
+  const w = CLIENT.workouts[nextIdx];
+  const prog = weekProgression(wk);
+  document.getElementById("nwTag").textContent = "Treino " + w.id;
+  document.getElementById("nwName").textContent = w.name.replace(/^Treino [A-Z] — /,"");
+  document.getElementById("nwMeta").textContent =
+    `${w.exercises.length} exercícios · ${prog.sets}×${prog.reps} · Semana ${wk}`;
+
+  // stats
+  const store = loadStore();
+  document.getElementById("statWeekStreak").textContent = store.weekStreak||0;
+  document.getElementById("statTotal").textContent = store.history.filter(h=>!h.incomplete).length;
+
+  // lista de todos os treinos do loop
+  const list = document.getElementById("workoutsList"); list.innerHTML="";
+  CLIENT.workouts.forEach((wo,idx)=>{
+    const isNext = idx===nextIdx;
+    const card=document.createElement("div");
+    card.className="wk-card"+(isNext?" is-next":"");
+    card.onclick=()=>openOverview(idx);
+    card.innerHTML=`
+      ${isNext?'<div class="next-pill">Próximo</div>':''}
+      <div class="wk-letter">${wo.id}</div>
+      <div class="wk-info">
+        <div class="wi-title">${wo.name.replace(/^Treino [A-Z] — /,"")}</div>
+        <div class="wi-sub">${wo.exercises.length} exercícios · ${prog.sets}×${prog.reps}</div>
+      </div>
+      <div class="wk-chev">›</div>`;
+    list.appendChild(card);
+  });
+}
+
+/* ---- OVERVIEW (pré-treino) ---- */
+function openOverviewNext(){ openOverview(nextWorkoutIndex()); }
+function openOverview(idx){
+  hideNav();
+  state.workoutIndex = idx;
+  const w = CLIENT.workouts[idx];
+  const wk = currentWeek();
+  const prog = weekProgression(wk);
+
+  document.getElementById("ovTitle").textContent = "Treino " + w.id;
+  document.getElementById("ovName").textContent = w.name;
+  document.getElementById("ovWeek").textContent = `Semana ${wk} de ${CLIENT.cycleWeeks} · meta ${prog.sets}×${prog.reps}`;
+  document.getElementById("ovExCount").textContent = w.exercises.length;
+  const totalSets = w.exercises.length * prog.sets;
+  document.getElementById("ovSetCount").textContent = totalSets;
+  document.getElementById("ovTime").textContent = "~" + Math.round(totalSets*1.4);
+
+  const listEl = document.getElementById("ovExList"); listEl.innerHTML="";
+  w.exercises.forEach((ex,i)=>{
+    const item=document.createElement("div"); item.className="ex-list-item";
+    item.innerHTML=`
+      <div class="ex-li-num">${i+1}</div>
+      <div class="ex-thumb">${mediaThumb(ex)}</div>
+      <div class="ex-li-info">
+        <div class="eli-name">${ex.nome}</div>
+        <div class="eli-sets">${prog.sets} × ${prog.reps}</div>
+      </div>`;
+    listEl.appendChild(item);
+  });
+  showScreen("overview");
+}
+function mediaThumb(ex){
+  if(ex.mediaType==="img" && ex.media)
+    return `<img src="${ex.media}" alt="" onerror="this.parentNode.innerHTML='<span class=ph>🏋️</span>'">`;
+  return `<span class="ph">🏋️</span>`;
+}
+
+/* ---- INICIAR TREINO ---- */
+function startWorkout(){
+  hideNav();
+  const w = CLIENT.workouts[state.workoutIndex];
+  const wk = currentWeek();
+  const prog = weekProgression(wk);
+  const store = loadStore();
+
+  state.currentExercise = 0;
+  state.startTime = Date.now();
+  // cria séries conforme a progressão da semana; carga pré-preenchida com a última usada
+  state.sessionData = w.exercises.map((ex)=>{
+    const key = cargaKey(w.id, ex.nome);
+    const lastCarga = (store.lastCarga && store.lastCarga[key]) || "";
+    return {
+      sets: Array.from({length:prog.sets}, ()=>({done:false, carga:lastCarga, reps:""}))
+    };
+  });
+  document.getElementById("execWoName").textContent = w.name;
+  buildExecProgress();
+  renderExercise();
+  showScreen("exec");
+}
+function cargaKey(wid, nome){ return wid+"::"+nome; }
+
+function buildExecProgress(){
+  const w = CLIENT.workouts[state.workoutIndex];
+  const wrap=document.getElementById("execProgress"); wrap.innerHTML="";
+  w.exercises.forEach(()=>{ const s=document.createElement("div"); s.className="exec-pseg"; wrap.appendChild(s); });
+  updateExecProgress();
+}
+function updateExecProgress(){
+  document.querySelectorAll("#execProgress .exec-pseg").forEach((s,i)=>{
+    s.classList.remove("done","active");
+    if(state.sessionData[i].sets.every(x=>x.done)) s.classList.add("done");
+    else if(i===state.currentExercise) s.classList.add("active");
+  });
+}
+
+/* ---- RENDER EXERCÍCIO ---- */
+
+// ── Free Exercise DB (domínio público) ──────────────────────────────────────
+const FREE_EXERCISE_DB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
+var FREE_EXERCISES_CACHE = null;
+
+async function loadFreeExerciseDB(){
+  if(FREE_EXERCISES_CACHE) return FREE_EXERCISES_CACHE;
+  try{
+    const r = await fetch(FREE_EXERCISE_DB_URL);
+    if(!r.ok) return [];
+    FREE_EXERCISES_CACHE = await r.json();
+    return FREE_EXERCISES_CACHE;
+  }catch(e){ return []; }
+}
+
+async function searchExerciseDB(nome){
+  const db = await loadFreeExerciseDB();
+  if(!db.length) return null;
+  const q = nome.toLowerCase().replace(/[áàã]/g,'a').replace(/[éê]/g,'e').replace(/[í]/g,'i').replace(/[óô]/g,'o').replace(/[ú]/g,'u');
+  // Busca por nome similar
+  const match = db.find(function(ex){
+    const en = (ex.name||'').toLowerCase();
+    return en.includes(q.split(' ')[0]) || q.includes(en.split(' ')[0]);
+  });
+  if(match && match.images && match.images.length){
+    return 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises/' + match.images[0];
+  }
+  return null;
+}
+
+// Enriquecer exercício com imagem do banco online
+async function enrichExerciseMedia(ex){
+  if(ex.media) return; // já tem mídia
+  const imgUrl = await searchExerciseDB(ex.nome);
+  if(imgUrl){
+    ex.media = imgUrl;
+    ex.mediaType = 'img';
+  }
+}
+
+function renderExercise(){
+  const w = CLIENT.workouts[state.workoutIndex];
+  const wk = currentWeek();
+  const prog = weekProgression(wk);
+  const i = state.currentExercise;
+  const ex = w.exercises[i];
+  // Buscar imagem online se não tiver
+  if(!ex.media){ enrichExerciseMedia(ex).then(function(){ if(ex.media) renderExercise(); }); }
+  const sd = state.sessionData[i];
+
+  document.getElementById("execCounter2").textContent = `${i+1}/${w.exercises.length}`;
+
+  // media
+  let media="";
+  if(ex.mediaType==="yt" && ex.media){
+    media=`<iframe src="https://www.youtube.com/embed/${ex.media}?rel=0&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  } else if(ex.mediaType==="img" && ex.media){
+    media=`<img src="${ex.media}" alt="${ex.nome}" onerror="this.parentNode.innerHTML='<div class=media-ph><span class=ph-ico>🏋️</span>Vídeo de execução indisponível.<br>Peça orientação ao instrutor da academia ou consulte o Giovani.</div>'">
+           <span class="media-badge">Execução</span>`;
+  } else {
+    media=`<div class="media-ph"><span class="ph-ico">🏋️</span>Vídeo em breve.<br>Consulte o Giovani sobre a execução.</div>`;
+  }
+
+  // recomendação de carga (vem da progressão da semana)
+  let cargaRec="";
+  if(prog.cargaRec==="subir")
+    cargaRec=`<div class="carga-rec subir"><span class="cr-ico">↗</span> Semana de progressão: tente <b>subir a carga</b> em relação ao ciclo anterior, mantendo a execução limpa.</div>`;
+  else if(prog.cargaRec==="descer")
+    cargaRec=`<div class="carga-rec descer"><span class="cr-ico">↘</span> Semana de deload: <b>reduza a carga</b> e foque na técnica e recuperação.</div>`;
+
+  // séries
+  let setsHtml="";
+  sd.sets.forEach((set,si)=>{
+    setsHtml+=`
+      <div class="set-row ${set.done?'done':''}" id="setRow${si}">
+        <button class="set-check" onclick="toggleSet(${si})">✓</button>
+        <span class="set-num">Série ${si+1}</span>
+        <div class="set-inputs">
+          <div class="set-field"><input type="number" inputmode="decimal" placeholder="${prog.reps}" value="${set.reps}" onchange="updateSetField(${si},'reps',this.value)"><label>reps</label></div>
+          <div class="set-field"><input type="number" inputmode="decimal" placeholder="kg" value="${set.carga}" onchange="updateSetField(${si},'carga',this.value)"><label>carga</label></div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById("execBody").innerHTML=`
+    <div class="exec-counter">Exercício ${i+1} de ${w.exercises.length} · Semana ${wk}</div>
+    <div class="exec-name">${ex.nome}</div>
+    <div class="exec-media">${media}</div>
+    ${ex.note?`<div class="coach-note"><div class="cn-lbl">Orientação do Giovani</div><div class="cn-txt">${ex.note}</div></div>`:''}
+    ${cargaRec}
+    <div class="sets-head"><span class="sh-title">Séries</span><span class="sh-target">Meta: ${prog.sets} × ${prog.reps} · descanso ${ex.rest}s</span></div>
+    ${setsHtml}`;
+
+  document.getElementById("prevBtn").style.visibility = i===0?"hidden":"visible";
+  document.getElementById("nextBtn").textContent = i===w.exercises.length-1?"Finalizar treino":"Próximo";
+  document.getElementById("execBody").scrollTop=0;
+  updateExecProgress();
+}
+
+function toggleSet(si){
+  const sd = state.sessionData[state.currentExercise];
+  const w = CLIENT.workouts[state.workoutIndex];
+  const ex = w.exercises[state.currentExercise];
+  sd.sets[si].done = !sd.sets[si].done;
+  document.getElementById("setRow"+si).classList.toggle("done", sd.sets[si].done);
+  updateExecProgress();
+  if(sd.sets[si].done){
+    const remaining = sd.sets.filter(s=>!s.done).length;
+    if(remaining>0) startRest(ex.rest, `Série ${si+2} de ${sd.sets.length}`);
+  }
+}
+function updateSetField(si,field,val){ state.sessionData[state.currentExercise].sets[si][field]=val; }
+
+/* ---- DESCANSO ---- */
+function startRest(seconds,label){
+  clearInterval(state.restInterval);
+  state.restTotal=seconds; state.restRemaining=seconds;
+  document.getElementById("restNext").textContent=label||"Próxima série";
+  document.getElementById("restBar").classList.add("show");
+  updateRestUI();
+  state.restInterval=setInterval(()=>{ state.restRemaining--; updateRestUI(); if(state.restRemaining<=0){clearInterval(state.restInterval); endRest();} },1000);
+}
+function updateRestUI(){
+  document.getElementById("restNum").textContent=Math.max(0,state.restRemaining);
+  const frac=state.restTotal>0?state.restRemaining/state.restTotal:0;
+  document.getElementById("restRing").style.strokeDashoffset=150.8*(1-frac);
+}
+function adjustRest(d){ state.restRemaining=Math.max(5,state.restRemaining+d); state.restTotal=Math.max(state.restTotal,state.restRemaining); updateRestUI(); }
+function skipRest(){ clearInterval(state.restInterval); endRest(); }
+function endRest(){ document.getElementById("restBar").classList.remove("show"); if(navigator.vibrate) navigator.vibrate([120,60,120]); }
+
+/* ---- NAVEGAÇÃO ENTRE EXERCÍCIOS ---- */
+function nextExercise(){
+  const w = CLIENT.workouts[state.workoutIndex];
+  const sd = state.sessionData[state.currentExercise];
+  const hasPending = sd.sets.some(s=>!s.done);
+  const isLast = state.currentExercise===w.exercises.length-1;
+  if(hasPending && !isLast){ openModal('modalSkipEx'); return; }
+  if(isLast){ checkAndFinish(); return; }
+  skipRest(); state.currentExercise++; renderExercise();
+}
+function confirmSkipEx(){ closeModal('modalSkipEx'); skipRest(); state.currentExercise++; renderExercise(); }
+function prevExercise(){ skipRest(); if(state.currentExercise>0){ state.currentExercise--; renderExercise(); } }
+function confirmExit(){
+  if(confirm("Sair do treino? Seu progresso desta sessão não será salvo.")){
+    skipRest(); closeModal('modalSkipEx'); closeModal('modalIncomplete'); goTab('home');
+  }
+}
+function checkAndFinish(){
+  const w = CLIENT.workouts[state.workoutIndex];
+  const skipped = state.sessionData
+    .map((sd,i)=>({i, nome:w.exercises[i].nome, done:sd.sets.some(s=>s.done)}))
+    .filter(x=>!x.done);
+  if(skipped.length>0){
+    const nomes = skipped.map(x=>`• ${x.nome}`).join('<br>');
+    document.getElementById("modalIncompleteTitle").textContent =
+      skipped.length===1?"1 exercício sem séries":`${skipped.length} exercícios sem séries`;
+    document.getElementById("modalIncompleteBody").innerHTML =
+      `Os exercícios abaixo não tiveram nenhuma série concluída:<br><br>
+       <div style="text-align:left;color:var(--txt);font-size:13px;line-height:1.8">${nomes}</div><br>
+       Se puder, volte e complete. Cada um tem um papel no seu progresso.`;
+    openModal('modalIncomplete');
+  } else finishWorkout(false);
+}
+function finishIncomplete(){ closeModal('modalIncomplete'); finishWorkout(true); }
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ---- FINALIZAR TREINO ---- */
+function finishWorkout(incomplete){
+  skipRest();
+  const w = CLIENT.workouts[state.workoutIndex];
+  const wk = currentWeek();
+  const elapsedMin = Math.max(1, Math.round((Date.now()-state.startTime)/60000));
+  const setsDone = state.sessionData.reduce((a,sd)=>a+sd.sets.filter(s=>s.done).length,0);
+  const exDone = state.sessionData.filter(sd=>sd.sets.some(s=>s.done)).length;
+
+  const store = loadStore();
+  // salva última carga de cada exercício (maior carga registrada na sessão)
+  if(!store.lastCarga) store.lastCarga={};
+  state.sessionData.forEach((sd,i)=>{
+    const cargas = sd.sets.filter(s=>s.done && s.carga).map(s=>parseFloat(s.carga)||0);
+    if(cargas.length){
+      const key = cargaKey(w.id, w.exercises[i].nome);
+      store.lastCarga[key] = String(Math.max(...cargas));
+    }
+  });
+
+  const record = {
+    date:new Date().toISOString(), workoutId:w.id, workoutName:w.name,
+    cycle:CLIENT.cycleNumber, week:wk, minutes:elapsedMin, setsDone, exDone,
+    incomplete:!!incomplete,
+    detail: state.sessionData.map((sd,i)=>({
+      nome:w.exercises[i].nome,
+      sets:sd.sets.map(s=>({done:s.done, carga:s.carga, reps:s.reps}))
+    }))
+  };
+  store.history.unshift(record);
+  // O loop SEMPRE avança (completo ou incompleto) — modelo Fox: retoma de onde parou.
+  // Mas streak e contagem de "completos" só contam treino completo.
+  store.loopPos=(store.loopPos||0)+1;
+  if(!incomplete){ updateWeekStreak(store, wk); }
+  checkBadges(store);
+  saveStore(store);
+
+  // tela conclusão
+  document.getElementById("fsEx").textContent=exDone;
+  document.getElementById("fsSets").textContent=setsDone;
+  document.getElementById("fsTime").textContent=elapsedMin;
+  const ring=document.querySelector("#finish .finish-ring");
+  const status=document.getElementById("finishStatus");
+  const title=document.querySelector("#finish .finish-title");
+  const quote=document.getElementById("finishQuote");
+  if(incomplete){
+    ring.textContent="🥈"; ring.classList.add("silver");
+    status.textContent="⚠️ Treino incompleto"; status.classList.remove("complete"); status.classList.add("incomplete");
+    title.textContent="Treino encerrado";
+    quote.textContent='"Recomeçar não é fracasso. É o método."'; quote.style.color="var(--txt-dim)";
+  } else {
+    ring.textContent="🥇"; ring.classList.remove("silver");
+    status.textContent="✅ Treino completo"; status.classList.remove("incomplete"); status.classList.add("complete");
+    title.textContent="Treino concluído"; quote.style.color="";
+    quote.textContent='"'+CLIENT.quotes[Math.floor(Math.random()*CLIENT.quotes.length)]+'"';
+    fireConfetti();
+  }
+  hideNav();
+  showScreen("finish");
+}
+function updateWeekStreak(store, wk){
+  const key=CLIENT.cycleNumber+"-"+wk;
+  if(store.lastWeekTrained!==key){ store.weekStreak=(store.weekStreak||0)+1; store.lastWeekTrained=key; }
+}
+
+/* ---- BADGES (conquistas do ciclo) ----
+   "completos" = treinos finalizados sem ficar incompleto */
+const BADGES=[
+  {id:"first",      ico:"__FOX__", name:"Primeiro treino",        test:s=>completos(s)>=1},
+  {id:"loop",       ico:"🔁",      name:"1ª volta (A·B·C)",        test:s=>(s.loopPos||0)>=CLIENT.workouts.length},
+  {id:"five",       ico:"🔥",      name:"5 treinos",               test:s=>completos(s)>=5},
+  {id:"streak2",    ico:"📅",      name:"2 semanas seguidas",      test:s=>(s.weekStreak||0)>=2},
+  {id:"ten",        ico:"⚡",      name:"10 treinos",              test:s=>completos(s)>=10},
+  {id:"evoluiu",    ico:"📈",      name:"Subiu de carga",          test:s=>hasEvolution(s)},
+  {id:"streak4",    ico:"💎",      name:"4 semanas seguidas",      test:s=>(s.weekStreak||0)>=4},
+  {id:"loops3",     ico:"🌀",      name:"3 voltas completas",      test:s=>(s.loopPos||0)>=CLIENT.workouts.length*3},
+  {id:"cycle",      ico:"🏆",      name:"Ciclo completo",          test:s=>completos(s)>=20},
+];
+function completos(s){ return (s.history||[]).filter(h=>!h.incomplete).length; }
+function hasEvolution(s){
+  const byEx={};
+  [...(s.history||[])].reverse().forEach(h=>(h.detail||[]).forEach(d=>{
+    const mx=Math.max(0,...d.sets.filter(x=>x.done&&x.carga).map(x=>parseFloat(x.carga)||0));
+    if(mx>0){ if(!byEx[d.nome])byEx[d.nome]=[]; byEx[d.nome].push(mx); }
+  }));
+  return Object.values(byEx).some(a=>a.length>=2 && a[a.length-1]>a[0]);
+}
+function checkBadges(store){
+  if(!store.badges) store.badges=[];
+  BADGES.forEach(b=>{ if(b.test(store)&&!store.badges.includes(b.id)){ store.badges.push(b.id);
+    const t=b.ico==="__FOX__"?"🏅":b.ico; setTimeout(()=>toast(`${t} Conquista: ${b.name}`),800); } });
+}
+
+/* ---- COMPARTILHAR FEEDBACK ---- */
+function shareWorkout(){
+  const w=CLIENT.workouts[state.workoutIndex];
+  const wk=currentWeek();
+  const setsDone=state.sessionData.reduce((a,sd)=>a+sd.sets.filter(s=>s.done).length,0);
+  let msg=`*FOX PERFORMANCE · training*\n_Feedback de treino_\n\n`;
+  msg+=`Cliente: ${CLIENT.nome}\nTreino: ${w.name}\nCiclo ${CLIENT.cycleNumber} · Semana ${wk}\nSéries concluídas: ${setsDone}\n\n*Cargas:*\n`;
+  state.sessionData.forEach((sd,i)=>{
+    const c=sd.sets.filter(s=>s.done&&s.carga).map(s=>s.carga+"kg");
+    if(c.length) msg+=`• ${w.exercises[i].nome}: ${c.join(", ")}\n`;
+  });
+  msg+=`\nComo me senti: `;
+  window.open(`https://wa.me/${CLIENT.whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+
+/* ---- HISTÓRICO ---- */
+function buildHistory(){
+  const store=loadStore();
+  const evo=computeEvolution(store);
+  document.getElementById("evoBox").innerHTML = evo?`<div class="evo-card"><div class="evo-lbl">Sua evolução</div><div class="evo-txt">${evo}</div></div>`:"";
+  const listEl=document.getElementById("histList");
+  if(!store.history.length){
+    listEl.innerHTML=`<div class="empty-state"><div class="es-ico">${foxIcon(48)}</div><div class="es-txt">Seus treinos aparecerão aqui.<br>Comece o primeiro quando estiver pronto.</div></div>`;
+    return;
+  }
+  listEl.innerHTML="";
+  store.history.forEach(h=>{
+    const d=new Date(h.date);
+    const item=document.createElement("div"); item.className="hist-item"+(h.incomplete?" hist-incomplete":"");
+    item.innerHTML=`
+      <div class="hist-top"><span class="hist-date">Treino ${h.workoutId} · ${h.workoutName.replace(/^Treino [A-Z] — /,"")}</span>
+      <span class="hist-badge">${h.incomplete?"Incompleto":`Sem ${h.week}`}</span></div>
+      <div class="hist-meta"><span>📅 ${formatDate(d)}</span><span>${h.incomplete?"⚠️":"✓"} ${h.setsDone} séries</span><span>⏱ ${h.minutes} min</span></div>`;
+    listEl.appendChild(item);
+  });
+}
+
+/* ---- CONQUISTAS ---- */
+function buildAchievements(){
+  const store=loadStore();
+  const earned=(store.badges||[]).length;
+  const total=BADGES.length;
+  document.getElementById("achSummary").innerHTML=`
+    <div class="as-big">${earned}/${total}</div>
+    <div class="as-lbl">conquistas desbloqueadas</div>
+    <div class="as-bar"><div class="as-fill" style="width:${Math.round(earned/total*100)}%"></div></div>`;
+  const bg=document.getElementById("badgeGrid"); bg.innerHTML="";
+  BADGES.forEach(b=>{
+    const isEarned=(store.badges||[]).includes(b.id);
+    const ico=isEarned?(b.ico==="__FOX__"?foxIcon(30):b.ico):"🔒";
+    const el=document.createElement("div"); el.className="badge-item "+(isEarned?"earned":"locked");
+    el.innerHTML=`<div class="bi-ico">${ico}</div><div class="bi-name">${b.name}</div>`;
+    bg.appendChild(el);
+  });
+}
+function computeEvolution(store){
+  const byEx={};
+  [...store.history].reverse().forEach(h=>{
+    (h.detail||[]).forEach(d=>{
+      const mx=Math.max(0,...d.sets.filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
+      if(mx>0){ if(!byEx[d.nome])byEx[d.nome]=[]; byEx[d.nome].push(mx); }
+    });
+  });
+  for(const nome in byEx){ const a=byEx[nome];
+    if(a.length>=2 && a[a.length-1]>a[0]){ const diff=(a[a.length-1]-a[0]).toFixed(1).replace(".0","");
+      return `Você evoluiu <b>${diff}kg</b> em <b>${nome}</b> desde o início do ciclo. Pequenos passos, todo dia.`; }
+  }
+  return null;
+}
+
+/* ---- PERFIL ---- */
+function buildProfile(){
+  const wk=currentWeek();
+  document.getElementById("profileName").textContent=CLIENT.nome;
+  document.getElementById("profileCycle").textContent=`Ciclo ${CLIENT.cycleNumber} · Semana ${wk}`+(cycleEnded()?" · Encerrado":"");
+  document.getElementById("profileFootCycle").textContent=`Ciclo ${CLIENT.cycleNumber} · Dia ${Math.min(currentDayNumber(),totalDays())}/${totalDays()}`;
+}
+
+/* ---- RELATÓRIO PDF ---- */
+function buildReportHTML(){
+  const store=loadStore();
+  const wk=currentWeek();
+  const completed=store.history.filter(h=>!h.incomplete);
+  const incompletos=store.history.filter(h=>h.incomplete);
+  const start=getStartDate();
+  const dnum=Math.min(currentDayNumber(),totalDays());
+
+  // adesão por semana
+  const porSemana={};
+  store.history.forEach(h=>{ porSemana[h.week]=(porSemana[h.week]||0)+(h.incomplete?0:1); });
+  let semanaRows="";
+  for(let i=1;i<=CLIENT.cycleWeeks;i++){
+    const n=porSemana[i]||0;
+    semanaRows+=`<tr><td>Semana ${i}</td><td>${n} treino(s)</td><td>${i===wk?"◀ atual":i<wk?"✓":"—"}</td></tr>`;
+  }
+
+  // evolução de carga por exercício
+  const byEx={};
+  [...store.history].reverse().forEach(h=>{
+    (h.detail||[]).forEach(d=>{
+      const mx=Math.max(0,...d.sets.filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
+      if(mx>0){ if(!byEx[d.nome])byEx[d.nome]={ini:mx,fim:mx}; byEx[d.nome].fim=mx; }
+    });
+  });
+  let cargaRows="";
+  Object.keys(byEx).forEach(nome=>{
+    const e=byEx[nome]; const diff=e.fim-e.ini;
+    const sinal=diff>0?`+${diff.toFixed(1).replace(".0","")}kg`:diff<0?`${diff.toFixed(1).replace(".0","")}kg`:"manteve";
+    cargaRows+=`<tr><td>${nome}</td><td>${e.ini}kg</td><td>${e.fim}kg</td><td>${sinal}</td></tr>`;
+  });
+  if(!cargaRows) cargaRows=`<tr><td colspan="4" style="text-align:center;color:#888">Sem cargas registradas ainda</td></tr>`;
+
+  // sinais de atenção
+  let sinais=[];
+  if(incompletos.length>0) sinais.push(`${incompletos.length} treino(s) encerrado(s) incompletos`);
+  const exPulados={};
+  store.history.forEach(h=>(h.detail||[]).forEach(d=>{ if(!d.sets.some(s=>s.done)){ exPulados[d.nome]=(exPulados[d.nome]||0)+1; } }));
+  Object.keys(exPulados).forEach(n=>{ if(exPulados[n]>=2) sinais.push(`"${n}" pulado ${exPulados[n]}×`); });
+  Object.keys(byEx).forEach(n=>{ if(byEx[n].ini===byEx[n].fim) sinais.push(`Carga estagnada em "${n}"`); });
+  if(!sinais.length) sinais.push("Nenhum sinal de atenção. Adesão consistente.");
+
+  const freqMedia = wk>0 ? (completed.length/wk).toFixed(1) : "0";
+
+  return `
+  <div class="report">
+    <div class="r-header">
+      <div class="r-brand">FOX <span>PERFORMANCE</span> <i>training</i></div>
+      <div class="r-title">Relatório de Treino</div>
+    </div>
+    <table class="r-info">
+      <tr><td><b>Cliente</b></td><td>${CLIENT.nome}</td><td><b>Ciclo</b></td><td>${CLIENT.cycleNumber}</td></tr>
+      <tr><td><b>Semana atual</b></td><td>${wk} de ${CLIENT.cycleWeeks}</td><td><b>Dia</b></td><td>${dnum} de ${totalDays()}</td></tr>
+      <tr><td><b>Início</b></td><td>${formatDateFull(start)}</td><td><b>Gerado em</b></td><td>${formatDateFull(new Date())}</td></tr>
+    </table>
+
+    <div class="r-section">Resumo de adesão</div>
+    <div class="r-cards">
+      <div class="r-card"><div class="rc-n">${completed.length}</div><div class="rc-l">treinos completos</div></div>
+      <div class="r-card"><div class="rc-n">${incompletos.length}</div><div class="rc-l">incompletos</div></div>
+      <div class="r-card"><div class="rc-n">${freqMedia}</div><div class="rc-l">treinos/semana</div></div>
+    </div>
+    <table class="r-table">
+      <thead><tr><th>Período</th><th>Treinos completos</th><th>Status</th></tr></thead>
+      <tbody>${semanaRows}</tbody>
+    </table>
+
+    <div class="r-section">Evolução de carga por exercício</div>
+    <table class="r-table">
+      <thead><tr><th>Exercício</th><th>Início</th><th>Atual</th><th>Variação</th></tr></thead>
+      <tbody>${cargaRows}</tbody>
+    </table>
+
+    <div class="r-section">Sinais de atenção</div>
+    <ul class="r-list">${sinais.map(s=>`<li>${s}</li>`).join("")}</ul>
+
+    <div class="r-section">Anotações do Giovani <span style="font-weight:400;color:#888">(preencher na devolutiva)</span></div>
+    <div class="r-notes"></div>
+
+    <div class="r-foot">Fox Performance · training — documento gerado pelo cliente para acompanhamento da consultoria.</div>
+  </div>`;
+}
+
+function reportStyles(){
+  return `
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{background:#fff;color:#1a1a1a;padding:0}
+    .report{max-width:780px;margin:0 auto;padding:34px 38px}
+    .r-header{border-bottom:3px solid #FF8C42;padding-bottom:16px;margin-bottom:22px}
+    .r-brand{font-size:22px;font-weight:800;letter-spacing:2px;color:#0e0e0e}
+    .r-brand span{color:#4A9EBF;font-size:13px;letter-spacing:4px}
+    .r-brand i{font-size:12px;color:#999;font-weight:400}
+    .r-title{font-size:15px;color:#666;margin-top:6px;letter-spacing:.5px}
+    .r-info{width:100%;border-collapse:collapse;margin-bottom:26px;font-size:13px}
+    .r-info td{padding:7px 10px;border:1px solid #e4e4e4}
+    .r-info td:nth-child(odd){background:#f7f7f7;width:120px}
+    .r-section{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#FF8C42;margin:26px 0 12px;border-bottom:1px solid #eee;padding-bottom:6px}
+    .r-cards{display:flex;gap:12px;margin-bottom:18px}
+    .r-card{flex:1;background:#faf7f2;border:1px solid #ecdcc4;border-radius:10px;padding:16px;text-align:center}
+    .rc-n{font-size:26px;font-weight:800;color:#FF8C42}
+    .rc-l{font-size:11px;color:#777;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+    .r-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
+    .r-table th{background:#0e0e0e;color:#fff;padding:9px 11px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+    .r-table td{padding:8px 11px;border:1px solid #e8e8e8}
+    .r-table tbody tr:nth-child(even){background:#f9f9f9}
+    .r-list{margin:0 0 10px 20px;font-size:13px;line-height:1.9}
+    .r-notes{border:1px dashed #ccc;border-radius:8px;height:120px;background:#fcfcfc}
+    .r-foot{margin-top:34px;padding-top:14px;border-top:1px solid #eee;font-size:10px;color:#aaa;text-align:center}
+    @media print{.report{padding:20px}}
+  </style>`;
+}
+
+function generateReport(){
+  const win=window.open("","_blank");
+  if(!win){ toast("Permita pop-ups para gerar o relatório."); return; }
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Fox Training — Relatório Fox Training — ${CLIENT.nome}</title>${reportStyles()}</head><body>${buildReportHTML()}
+    <div style="text-align:center;padding:20px"><button onclick="window.print()" style="background:#FF8C42;color:#0a0a0a;border:none;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">📄 Salvar como PDF</button></div>
+    
+
+
+</body></html>`);
+  win.document.close();
+  return true;
+}
+
+/* ---- RESET DE CICLO ---- */
+let resetReportDone=false;
+function openResetFlow(){
+  resetReportDone=false;
+  document.getElementById("resetStep1").classList.remove("done");
+  document.getElementById("resetStep2").classList.remove("done");
+  document.getElementById("resetConfirmBtn").style.opacity=".4";
+  document.getElementById("resetConfirmBtn").style.pointerEvents="none";
+  openModal("modalReset");
+}
+function resetGenerateReport(){
+  parent.postMessage({type:"fox-open-module",module:"drive"},"*");
+  resetReportDone=true;
+  document.getElementById("resetStep1").classList.add("done");
+  document.getElementById("resetConfirmBtn").style.opacity="1";
+  document.getElementById("resetConfirmBtn").style.pointerEvents="all";
+  toast("Acesse Minha Área para gerar o relatório completo.");
+}
+function confirmReset(){
+  document.getElementById("resetStep2").classList.add("done");
+  if(!confirm("Tem certeza? Todo o progresso será apagado e as 8 semanas recomeçam do zero. Esta ação não pode ser desfeita.")) return;
+  // zera tudo e redefine data de início para hoje
+  const today=new Date();
+  const iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  const fresh={ history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:iso };
+  saveStore(fresh);
+  closeModal("modalReset");
+  toast("Ciclo reiniciado. Bom recomeço!");
+  goTab("home");
+}
+
+/* ---- UTILS ---- */
+function isSameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function formatDate(d){const dias=["dom","seg","ter","qua","qui","sex","sáb"];return `${dias[d.getDay()]} ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;}
+function formatDateFull(d){return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2800);}
+function fireConfetti(){
+  const colors=["#FF8C42","#d4a868","#f0f0f0","#4A9EBF"];
+  for(let i=0;i<40;i++){const c=document.createElement("div");c.className="confetti";c.style.left=Math.random()*100+"%";c.style.background=colors[Math.floor(Math.random()*colors.length)];c.style.animationDelay=Math.random()*0.3+"s";document.body.appendChild(c);
+    const dur=2+Math.random()*1.5;c.animate([{transform:"translateY(0) rotate(0deg)",opacity:1},{transform:`translateY(100vh) rotate(${Math.random()*720}deg)`,opacity:0}],{duration:dur*1000,easing:"cubic-bezier(.4,.1,.6,1)"});setTimeout(()=>c.remove(),dur*1000);}
+}
+
+/* ---- START ---- */
+init();
+
+function getTrainingData(){var store=loadStore();return{clientName:CLIENT.nome,cycleNumber:CLIENT.cycleNumber,startDate:CLIENT.startDate,cycleWeeks:CLIENT.cycleWeeks,currentWeek:currentWeek(),currentDay:Math.min(currentDayNumber(),totalDays()),totalDays:totalDays(),history:store.history,badges:store.badges,weekStreak:store.weekStreak,loopPos:store.loopPos,lastCarga:store.lastCarga};}
+window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-training-data"){parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*");}if(e.data&&e.data.type==="fox-set-client-name"&&e.data.nome){
+  CLIENT.nome=e.data.nome;
+  var wn=document.getElementById("welcomeName");
+  if(wn) wn.textContent="Ola, "+e.data.nome;
+  var pn=document.getElementById("profileName");
+  if(pn) pn.textContent=e.data.nome;
+  document.querySelectorAll(".greeting-name,.client-name").forEach(function(el){el.textContent=e.data.nome;});
+}});
+</script>
+</body>
+</html>
