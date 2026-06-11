@@ -2044,14 +2044,12 @@ function debounceModalSearch(v){
       res=r.map(foodCard).join('');
     } else {
       const mres=document.getElementById('modal-results');
-      if(mres) mres.innerHTML='<div style="text-align:center;padding:20px;color:var(--gray)">🔍 Buscando...</div>';
+      if(mres) mres.innerHTML='<div style="text-align:center;padding:20px;color:var(--gray)">Buscando...</div>';
       const offR=await searchOpenFoodFacts(v);
       if(offR.length){
         res=offR.map(foodCard).join('');
       } else {
-        const q=v;
-        const safeQ=q.replace(/['"/]/g,'');
-        res='<div class="no-results">Sem resultados para <strong>'+q+'</strong></div><button class="btn" style="margin-top:8px" onclick="openInlineRegister(&quot;'+safeQ+'&quot;)">+ Cadastrar</button>';
+        res='<div class="no-results">Sem resultados para <strong>'+v+'</strong></div>';
       }
     }
     document.getElementById('modal-results').innerHTML=res;

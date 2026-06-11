@@ -1052,41 +1052,52 @@ function updateExecProgress(){
 
 /* ---- RENDER EXERCÍCIO ---- */
 
-// ── Free Exercise DB (domínio público) ──────────────────────────────────────
-const FREE_EXERCISE_DB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
-var FREE_EXERCISES_CACHE = null;
-
-async function loadFreeExerciseDB(){
-  if(FREE_EXERCISES_CACHE) return FREE_EXERCISES_CACHE;
-  try{
-    const r = await fetch(FREE_EXERCISE_DB_URL);
-    if(!r.ok) return [];
-    FREE_EXERCISES_CACHE = await r.json();
-    return FREE_EXERCISES_CACHE;
-  }catch(e){ return []; }
 }
 
-async function searchExerciseDB(nome){
-  const db = await loadFreeExerciseDB();
-  if(!db.length) return null;
-  const q = nome.toLowerCase().replace(/[áàã]/g,'a').replace(/[éê]/g,'e').replace(/[í]/g,'i').replace(/[óô]/g,'o').replace(/[ú]/g,'u');
-  // Busca por nome similar
-  const match = db.find(function(ex){
-    const en = (ex.name||'').toLowerCase();
-    return en.includes(q.split(' ')[0]) || q.includes(en.split(' ')[0]);
-  });
-  if(match && match.images && match.images.length){
-    return 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises/' + match.images[0];
-  }
+
+// ── ExerciseDB via RapidAPI ──────────────────────────────────────────────────
+const EXERCISE_MAP = {"agachamento livre": "barbell squat", "supino reto com halteres": "dumbbell bench press", "remada curvada com halteres": "bent over dumbbell row", "desenvolvimento de ombros sentado": "seated dumbbell shoulder press", "rosca direta com halteres": "dumbbell bicep curl", "prancha abdominal": "plank", "leg press": "leg press", "puxada na frente": "lat pulldown", "supino inclinado com halteres": "incline dumbbell bench press", "elevação lateral": "dumbbell lateral raise", "tríceps na polia": "tricep pushdown", "abdominal supra no solo": "crunch", "agachamento sumô com halter": "sumo squat", "afundo alternado": "dumbbell lunge", "cadeira extensora": "leg extension", "panturrilha em pé": "standing calf raise", "prancha lateral": "side plank", "caminhada": "walk"};
+const RAPIDAPI_KEY = "f0dca3c9d5msh5fcaf8cc9e301b9p11f5b9jsnfd31d846ae16";
+const EXERCISE_GIF_CACHE = {};
+
+function normalizeName(s){
+  return s.toLowerCase()
+    .replace(/[áàãâä]/g,'a').replace(/[éêë]/g,'e')
+    .replace(/[íîï]/g,'i').replace(/[óôõö]/g,'o')
+    .replace(/[úûü]/g,'u').replace(/[ç]/g,'c')
+    .replace(/[^\w\s]/g,'').trim();
+}
+
+async function fetchExerciseGif(nomePT){
+  const key = normalizeName(nomePT);
+  if(EXERCISE_GIF_CACHE[key]) return EXERCISE_GIF_CACHE[key];
+
+  // Buscar mapeamento direto
+  const searchTerm = EXERCISE_MAP[key] || key.split(' ')[0];
+
+  try{
+    const url = 'https://exercisedb.p.rapidapi.com/exercises/name/' + encodeURIComponent(searchTerm) + '?limit=1&offset=0';
+    const res = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+      }
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(data && data.length && data[0].gifUrl){
+      EXERCISE_GIF_CACHE[key] = data[0].gifUrl;
+      return data[0].gifUrl;
+    }
+  }catch(e){ console.log('ExerciseDB:', e.message); }
   return null;
 }
 
-// Enriquecer exercício com imagem do banco online
-async function enrichExerciseMedia(ex){
-  if(ex.media) return; // já tem mídia
-  const imgUrl = await searchExerciseDB(ex.nome);
-  if(imgUrl){
-    ex.media = imgUrl;
+async function loadExerciseMedia(ex){
+  if(ex.media) return;
+  const gif = await fetchExerciseGif(ex.nome);
+  if(gif){
+    ex.media = gif;
     ex.mediaType = 'img';
   }
 }
@@ -1097,8 +1108,12 @@ function renderExercise(){
   const prog = weekProgression(wk);
   const i = state.currentExercise;
   const ex = w.exercises[i];
-  // Buscar imagem online se não tiver
-  if(!ex.media){ enrichExerciseMedia(ex).then(function(){ if(ex.media) renderExercise(); }); }
+  // Carregar GIF se não tiver — re-renderiza quando chegar
+  if(!ex.media){
+    loadExerciseMedia(ex).then(function(){
+      if(ex.media) renderExercise();
+    });
+  }
   const sd = state.sessionData[i];
 
   document.getElementById("execCounter2").textContent = `${i+1}/${w.exercises.length}`;
