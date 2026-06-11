@@ -472,7 +472,7 @@ body{padding-top:44px!important}
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn ghost" onclick="prevSlide(1)">← Voltar</button>
+        <button class="btn ghost" onclick="prevSlide(1)" style="visibility:hidden">← Voltar</button>
         <button class="btn primary" onclick="nextSlide(1)">Continuar →</button>
       </div>
     </div>
@@ -1709,11 +1709,19 @@ function initApp(){
     function trySupaProfile(){
       if(window.FOX_PROFILE && window.FOX_PROFILE.nome){
         const p = window.FOX_PROFILE;
+        // Perfil mínimo com estrutura correta
+        const tmb = Math.round(10*70 + 6.25*170 - 5*25 + 5); // Harris-Benedict homem padrão
+        const tdee = Math.round(tmb * 1.55);
+        const target = tdee;
+        const prot = Math.round(70 * 2);
+        const fat = Math.round(target * 0.25 / 9);
+        const carb = Math.round((target - prot*4 - fat*9) / 4);
         profile = {
           name: p.nome,
           age: 25, weight: 70, height: 170,
-          activity: 'mod', goal: 'maint',
-          kcal: 2000, prot: 150, carb: 225, fat: 67
+          sex: 'm', activity: 'mod', goal: 'maint',
+          goals: {kcal: target, prot, carb, fat, tmb, tdee},
+          tmb, tdee
         };
         try{ saveProfile(profile); }catch(e){}
         startApp();
