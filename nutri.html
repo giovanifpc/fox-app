@@ -1696,20 +1696,48 @@ function safeRemove(key){
 function initApp(){
   setupKeyboardHandling();
   const splash = document.getElementById('splash');
-  // Esconde splash
   splash.classList.add('hide');
   setTimeout(()=>{ splash.classList.add('gone'); }, 450);
-  // Tenta ler perfil
   setTimeout(()=>{
     let s = null;
     try { s = safeGet('fp_profile'); } catch(e){}
     if(s){
-      try { profile = JSON.parse(s); startApp(); }
-      catch(e){ document.getElementById('setup').classList.add('active'); }
-    } else {
-      document.getElementById('setup').classList.add('active');
+      try { profile = JSON.parse(s); startApp(); return; }
+      catch(e){}
     }
-  }, 300);
+    // Sem perfil local — tentar usar dados do Supabase
+    function trySupaProfile(){
+      if(window.FOX_PROFILE && window.FOX_PROFILE.nome){
+        const p = window.FOX_PROFILE;
+        profile = {
+          name: p.nome,
+          age: 25, weight: 70, height: 170,
+          activity: 'mod', goal: 'maint',
+          kcal: 2000, prot: 150, carb: 225, fat: 67
+        };
+        try{ saveProfile(profile); }catch(e){}
+        startApp();
+      } else {
+        // Supabase ainda carregando — aguardar evento
+        document.addEventListener('fox-profile-ready', function(e){
+          const p = e.detail;
+          profile = {
+            name: p.nome,
+            age: 25, weight: 70, height: 170,
+            activity: 'mod', goal: 'maint',
+            kcal: 2000, prot: 150, carb: 225, fat: 67
+          };
+          try{ saveProfile(profile); }catch(e){}
+          startApp();
+        }, {once: true});
+        // Timeout de segurança — se em 3s ainda não veio, abre setup
+        setTimeout(function(){
+          if(!profile) document.getElementById('setup').classList.add('active');
+        }, 3000);
+      }
+    }
+    trySupaProfile();
+  }, 500);
 }
 
 // Dispara no DOMContentLoaded OU imediatamente se já carregou (fallback iOS)
