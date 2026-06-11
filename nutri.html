@@ -2050,9 +2050,8 @@ function debounceModalSearch(v){
         res=offR.map(foodCard).join('');
       } else {
         const q=v;
-        res='<div class="no-results">Sem resultados para <strong>'+q+'</strong></div>'
-           +'<button class="btn" style="margin-top:8px;background:rgba(79,195,247,.1);border:1px solid var(--accent2);color:var(--accent);" onclick="openInlineRegister(''+q.replace(/'/g,'')+'')">'
-           +'+ Cadastrar "'+q+'"</button>';
+        const safeQ=q.replace(/['"/]/g,'');
+        res='<div class="no-results">Sem resultados para <strong>'+q+'</strong></div><button class="btn" style="margin-top:8px" onclick="openInlineRegister(&quot;'+safeQ+'&quot;)">+ Cadastrar</button>';
       }
     }
     document.getElementById('modal-results').innerHTML=res;
