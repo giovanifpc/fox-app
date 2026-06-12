@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
-<title>Fox NutriTracker — Fox Performance — NutriTracker</title>
+<title>Fox Performance — NutriTracker</title>
 
 <!-- PWA Manifest inline -->
 <script>
@@ -361,45 +361,30 @@ select option{background:var(--surface);}
 .backup-card-sub{font-size:.78rem;color:var(--gray);margin-bottom:14px;line-height:1.5;}
 .backup-btns{display:flex;gap:8px;}
 .backup-btns .btn{flex:1;padding:11px 10px;font-size:.82rem;}
-
-/* Card de ajuda */
-.help-card{background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:14px 16px;margin:12px 16px 0;display:flex;align-items:center;gap:12px}
-.help-card-text{flex:1;font-size:.8rem;color:var(--lgray);line-height:1.4}
-.help-card-text strong{color:var(--accent2);display:block;margin-bottom:2px;font-size:.82rem}
-.help-card-btns{display:flex;flex-direction:column;gap:6px}
-.hc-btn{border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:600;cursor:pointer;letter-spacing:.5px;white-space:nowrap}
-.hc-btn.primary{background:rgba(79,195,247,.15);color:var(--accent2);border:1px solid rgba(79,195,247,.3)}
-.hc-btn.dismiss{background:transparent;color:var(--gray);border:1px solid var(--border)}
 </style>
 <!-- Supabase Auth Guard -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-(function(){
-  var sdk = document.createElement('script');
-  sdk.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  sdk.onload = function(){
-    var supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
-    supa.auth.getSession().then(function(res){
-      var session = res.data && res.data.session;
-      if(!session){ window.location.replace('https://giovanifpc.github.io/fox-app/login.html'); return; }
-      window.FOX_SESSION = session;
-      window.FOX_EMAIL = session.user.email;
-      window.FOX_SUPA = supa;
-      // Buscar perfil
-      supa.from('clients')
-        .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
-        .eq('email', session.user.email)
-        .single()
-        .then(function(r){
-          if(r.data){
-            window.FOX_PROFILE = r.data;
-            window.CLIENT_NAME_DYNAMIC = r.data.nome;
-            // Disparar evento para o módulo usar
-            document.dispatchEvent(new CustomEvent('fox-profile-ready', {detail: r.data}));
-          }
-        });
-    });
-  };
-  document.head.appendChild(sdk);
+(async function(){
+  const supa = window.supabase.createClient('https://jxwodkpssivmcnbrsukm.supabase.co','sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K');
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session){
+    window.location.replace('https://giovanifpc.github.io/fox-app/login.html');
+    return;
+  }
+  window.FOX_SESSION = session;
+  window.FOX_EMAIL = session.user.email;
+  window.FOX_SUPA = supa;
+
+  const {data: profile} = await supa.from('clients')
+    .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
+    .eq('email', session.user.email)
+    .single();
+
+  if(profile){
+    window.FOX_PROFILE = profile;
+    window.CLIENT_NAME_DYNAMIC = profile.nome;
+  }
 })();
 </script>
 </head>
@@ -439,7 +424,14 @@ body{padding-top:44px!important}
   <div class="setup-body">
 
     <!-- SLIDE 0: Nome -->
-    <div class="setup-slide" id="slide-0" style="display:none"></div>
+    <div class="setup-slide active" id="slide-0">
+      <h3>Olá! Como você se chama?</h3>
+      <div class="input-group">
+        <label>Seu nome completo</label>
+        <input id="s-name" type="text" placeholder="Ex: João Silva">
+      </div>
+      <button class="btn primary" onclick="nextSlide(0)">Continuar →</button>
+    </div>
 
     <!-- SLIDE 1: Dados físicos -->
     <div class="setup-slide" id="slide-1">
@@ -472,7 +464,7 @@ body{padding-top:44px!important}
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn ghost" onclick="prevSlide(1)" style="visibility:hidden">← Voltar</button>
+        <button class="btn ghost" onclick="prevSlide(1)">← Voltar</button>
         <button class="btn primary" onclick="nextSlide(1)">Continuar →</button>
       </div>
     </div>
@@ -665,18 +657,6 @@ body{padding-top:44px!important}
     </div>
     <span id="top-greeting"></span>
   </div>
-
-<!-- Card de ajuda -->
-<div id="nutri-help-card" class="help-card" style="display:none">
-  <div class="help-card-text">
-    <strong>Novo por aqui?</strong>
-    Registre suas refeições, monitore macros e acompanhe sua hidratação diária.
-  </div>
-  <div class="help-card-btns">
-    <button class="hc-btn primary" onclick="showNutriTutorial()">Como usar</button>
-    <button class="hc-btn dismiss" onclick="dismissNutriHelp()">Já sei</button>
-  </div>
-</div>
 
   <!-- HOJE -->
   <div class="page active" id="page-hoje">
@@ -1696,56 +1676,20 @@ function safeRemove(key){
 function initApp(){
   setupKeyboardHandling();
   const splash = document.getElementById('splash');
+  // Esconde splash
   splash.classList.add('hide');
   setTimeout(()=>{ splash.classList.add('gone'); }, 450);
+  // Tenta ler perfil
   setTimeout(()=>{
     let s = null;
     try { s = safeGet('fp_profile'); } catch(e){}
     if(s){
-      try { profile = JSON.parse(s); startApp(); return; }
-      catch(e){}
+      try { profile = JSON.parse(s); startApp(); }
+      catch(e){ document.getElementById('setup').classList.add('active'); }
+    } else {
+      document.getElementById('setup').classList.add('active');
     }
-    // Sem perfil local — tentar usar dados do Supabase
-    function trySupaProfile(){
-      if(window.FOX_PROFILE && window.FOX_PROFILE.nome){
-        const p = window.FOX_PROFILE;
-        // Perfil mínimo com estrutura correta
-        const tmb = Math.round(10*70 + 6.25*170 - 5*25 + 5); // Harris-Benedict homem padrão
-        const tdee = Math.round(tmb * 1.55);
-        const target = tdee;
-        const prot = Math.round(70 * 2);
-        const fat = Math.round(target * 0.25 / 9);
-        const carb = Math.round((target - prot*4 - fat*9) / 4);
-        profile = {
-          name: p.nome,
-          age: 25, weight: 70, height: 170,
-          sex: 'm', activity: 'mod', goal: 'maint',
-          goals: {kcal: target, prot, carb, fat, tmb, tdee},
-          tmb, tdee
-        };
-        try{ saveProfile(profile); }catch(e){}
-        startApp();
-      } else {
-        // Supabase ainda carregando — aguardar evento
-        document.addEventListener('fox-profile-ready', function(e){
-          const p = e.detail;
-          profile = {
-            name: p.nome,
-            age: 25, weight: 70, height: 170,
-            activity: 'mod', goal: 'maint',
-            kcal: 2000, prot: 150, carb: 225, fat: 67
-          };
-          try{ saveProfile(profile); }catch(e){}
-          startApp();
-        }, {once: true});
-        // Timeout de segurança — se em 3s ainda não veio, abre setup
-        setTimeout(function(){
-          if(!profile) document.getElementById('setup').classList.add('active');
-        }, 3000);
-      }
-    }
-    trySupaProfile();
-  }, 500);
+  }, 300);
 }
 
 // Dispara no DOMContentLoaded OU imediatamente se já carregou (fallback iOS)
@@ -1925,7 +1869,6 @@ function startApp(){
   try{ history.pushState({app:true}, '', window.location.href); }catch(e){}
   document.getElementById('app').classList.add('active');
   document.getElementById('top-greeting').textContent=profile.name.split(' ')[0];
-  showNutriHelp();
   renderToday();
   renderProfile();
   renderHistory();
@@ -2034,64 +1977,18 @@ function renderModalDefaults(){
   document.getElementById('modal-results').innerHTML='<div style="font-size:.73rem;color:var(--gray);margin-bottom:8px;">Sugestões</div>'+all.slice(0,10).map(foodCard).join('');
   scrollResultsTop();
 }
-
-// ── Open Food Facts — busca online ──────────────────────────────────────────
-async function searchOpenFoodFacts(q){
-  try{
-    const url='https://br.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&action=process&json=1&page_size=10&fields=product_name,nutriments,serving_size';
-    const r=await fetch(url,{headers:{'User-Agent':'FoxPerformance/1.0'}});
-    if(!r.ok) return [];
-    const d=await r.json();
-    if(!d.products) return [];
-    return d.products.filter(function(p){return p.product_name&&p.nutriments;}).map(function(p){return{
-      id:'off_'+Math.random().toString(36).slice(2),
-      name:p.product_name,portion:100,unit:'g',
-      kcal:Math.round(p.nutriments['energy-kcal_100g']||0),
-      prot:Math.round((p.nutriments.proteins_100g||0)*10)/10,
-      carb:Math.round((p.nutriments.carbohydrates_100g||0)*10)/10,
-      fat:Math.round((p.nutriments.fat_100g||0)*10)/10,
-      cat:'off',source:'Open Food Facts'
-    };});
-  }catch(e){return [];}
-}
-
-function showNutriHelp(){
-  if(!localStorage.getItem('nutri_help_dismissed')){
-    var c=document.getElementById('nutri-help-card');
-    if(c) c.style.display='flex';
-  }
-}
-function dismissNutriHelp(){
-  localStorage.setItem('nutri_help_dismissed','1');
-  var c=document.getElementById('nutri-help-card');
-  if(c) c.style.display='none';
-}
-function showNutriTutorial(){
-  dismissNutriHelp();
-  showToast('Toque em + para adicionar refeições. Use a busca para encontrar alimentos. Registre sua água diariamente.');
-}
-function debounceModalSearch(v){
-  clearTimeout(modalSearchTimeout);
-  modalSearchTimeout=setTimeout(async()=>{
-    if(!v||v.length<2){renderModalDefaults();return;}
-    const r=searchFoods(v);
-    let res;
-    if(r.length){
-      res=r.map(foodCard).join('');
-    } else {
-      const mres=document.getElementById('modal-results');
-      if(mres) mres.innerHTML='<div style="text-align:center;padding:20px;color:var(--gray)">Buscando...</div>';
-      const offR=await searchOpenFoodFacts(v);
-      if(offR.length){
-        res=offR.map(foodCard).join('');
+function debounceModalSearch(v){ clearTimeout(modalSearchTimeout); modalSearchTimeout=setTimeout(()=>{ if(!v||v.length<2){renderModalDefaults();return;} const r=searchFoods(v); let res;
+      if(r.length){
+        res = r.map(foodCard).join('');
       } else {
-        res='<div class="no-results">Sem resultados para <strong>'+v+'</strong></div>';
+        const q = v;
+        res = `<div class="no-results">Nenhum resultado para "<strong style="color:var(--lgray)">${q}</strong>"</div>
+               <button class="btn" style="margin-top:8px;background:rgba(79,195,247,.1);border:1px solid var(--accent2);color:var(--accent);" onclick="openInlineRegister('${q.replace(/'/g,'')}')">
+                 + Cadastrar "${q}"
+               </button>`;
       }
-    }
-    document.getElementById('modal-results').innerHTML=res;
-    scrollResultsTop();
-  },380);
-}
+      document.getElementById('modal-results').innerHTML=res;
+      scrollResultsTop(); },380); }
 function normalize(s){
   if(!s) return '';
   return s.toLowerCase()
@@ -2393,7 +2290,7 @@ function clearAllData(){
   profile=null; anamData={sex:'',activity:'',goal:''}; computedGoals=null;
   document.getElementById('app').classList.remove('active');
   document.getElementById('setup').classList.add('active');
-  currentSlide=1; goSlide(1);
+  currentSlide=0; goSlide(0);
 }
 
 function resetProgress(){
@@ -2410,7 +2307,7 @@ function recalcTMB(){
   document.getElementById('app').classList.remove('active');
   document.getElementById('setup').classList.add('active');
   anamData={sex:'',activity:'',goal:''}; computedGoals=null;
-  currentSlide=1; goSlide(1);
+  currentSlide=0; goSlide(0);
   if(savedName) document.getElementById('s-name').value=savedName;
 }
 
@@ -2882,20 +2779,34 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 document.getElementById('toast').style.cssText+='position:fixed;bottom:95px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent2);color:#fff;padding:10px 20px;border-radius:30px;font-size:.82rem;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none;';
 
 function getNutriData(){var profile=JSON.parse(localStorage.getItem("fp_profile")||"null");var days=getAllDayKeys().sort();var dayData={};days.forEach(function(k){var d=localStorage.getItem("fp_day_"+k);if(d)dayData[k]=JSON.parse(d);});return{profile:profile,days:dayData,dayKeys:days};}
-window.addEventListener("message",function(e){
-  if(e.data&&e.data.type==="fox-get-nutri-data"){parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}
-  if(e.data&&e.data.type==="fox-set-client-name"&&e.data.nome){
-    var pr=loadProfile();
-    if(pr){pr.name=e.data.nome;saveProfile(pr);}
-    var tg=document.getElementById('top-greeting');
-    if(tg)tg.textContent=e.data.nome.split(' ')[0];
-    var sn=document.getElementById('s-name');
-    if(sn)sn.value=e.data.nome;
-  }
-});
+window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-nutri-data"){parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}});
 </script>
 
 
 
+
+<script>
+// Pular tela de nome se já temos o nome do Supabase
+(function checkAutoSkip(){
+  function trySkip(){
+    var nome = window.CLIENT_NAME_DYNAMIC;
+    var setupEl = document.getElementById('setup');
+    var slide0 = document.getElementById('slide-0');
+    if(nome && setupEl && setupEl.classList.contains('active') && slide0 && slide0.classList.contains('active')){
+      var input = document.getElementById('s-name');
+      if(input) input.value = nome;
+      if(typeof goSlide === 'function') goSlide(1);
+      return true;
+    }
+    return false;
+  }
+  // Tentar a cada 200ms por até 5s (aguarda Supabase responder)
+  var attempts = 0;
+  var interval = setInterval(function(){
+    attempts++;
+    if(trySkip() || attempts > 25) clearInterval(interval);
+  }, 200);
+})();
+</script>
 </body>
 </html>
