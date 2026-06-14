@@ -196,10 +196,11 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .exec-footer .btn{flex:1}
 
 /* FINISH */
-#finish{justify-content:center;align-items:center;text-align:center;padding:40px 28px}
+#finish{justify-content:center;align-items:center;text-align:center;padding:40px 28px;overflow:hidden;height:100dvh;min-height:unset}
 .finish-ring{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:16px;animation:popRing .6s cubic-bezier(.2,1.4,.4,1);box-shadow:0 10px 40px -8px rgba(255,140,66,.6)}
 .finish-ring.silver{background:linear-gradient(135deg,#c8ccd2,#8b9099);box-shadow:0 10px 40px -8px rgba(160,168,180,.5)}
 @keyframes popRing{0%{transform:scale(0)}100%{transform:scale(1)}}
+.finish-ring{will-change:transform}
 .finish-status{font-size:15px;font-weight:800;margin-bottom:24px;display:flex;align-items:center;gap:7px}
 .finish-status.complete{color:var(--gold-soft)}
 .finish-status.incomplete{color:#aab0ba}
@@ -689,9 +690,9 @@ const CLIENT = {
     {
       id:"A", name:"Treino A — Corpo Inteiro",
       exercises:[
-        {nome:"Agachamento livre",exercise_id:177, rest:60, media:"", mediaType:"img",
+        {nome:"Agachamento livre",exercise_id:143, rest:60, media:"", mediaType:"img",
          note:"Desça como se fosse sentar numa cadeira. Joelhos na direção dos pés, peito aberto."},
-        {nome:"Supino reto com halteres",exercise_id:101, rest:75, media:"", mediaType:"img",
+        {nome:"Supino reto com halteres",exercise_id:562, rest:75, media:"", mediaType:"img",
          note:"Desça os halteres até a linha do peito, controlando 3 segundos. Não trave os cotovelos no topo."},
         {nome:"Remada curvada com halteres",exercise_id:215, rest:75, media:"", mediaType:"img",
          note:"Coluna neutra, puxe os cotovelos para trás levando os halteres à cintura. Aperte as escápulas."},
@@ -699,7 +700,7 @@ const CLIENT = {
          note:"Empurre os halteres para cima sem travar os cotovelos. Não arqueie a lombar."},
         {nome:"Rosca direta com halteres",exercise_id:186, rest:45, media:"", mediaType:"img",
          note:"Cotovelos colados ao corpo. Suba controlando, desça devagar. Nada de balançar o tronco."},
-        {nome:"Prancha abdominal",exercise_id:734, rest:45, media:"", mediaType:"img",
+        {nome:"Prancha abdominal",exercise_id:1138, rest:45, media:"", mediaType:"img",
          note:"Corpo reto da cabeça aos calcanhares. Contraia abdômen e glúteo. O quadril não cai."}
       ]
     },
@@ -714,7 +715,7 @@ const CLIENT = {
          note:"Banco a 30-45°. Trabalha a parte superior do peito. Execução controlada."},
         {nome:"Elevação lateral",exercise_id:622, rest:45, media:"", mediaType:"img",
          note:"Suba os halteres até a linha dos ombros, cotovelos levemente flexionados. Sem impulso."},
-        {nome:"Tríceps na polia",exercise_id:408, rest:45, media:"", mediaType:"img",
+        {nome:"Tríceps na polia",exercise_id:411, rest:45, media:"", mediaType:"img",
          note:"Cotovelos fixos ao lado do corpo. Estenda totalmente embaixo, controle a subida."},
         {nome:"Abdominal supra no solo",exercise_id:1475, rest:45, media:"", mediaType:"img",
          note:"Suba contraindo o abdômen, sem puxar o pescoço. Desça devagar."}
