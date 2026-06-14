@@ -378,6 +378,14 @@ body{padding-top:44px!important}
   <div class="content">
     <div id="cycleEndedBanner"></div>
 
+    <div class="section-label">Próximo treino</div>
+    <div class="next-workout" id="nextWorkout" onclick="openOverviewNext()">
+      <div class="nw-tag" id="nwTag">Treino A</div>
+      <div class="nw-name" id="nwName">—</div>
+      <div class="nw-meta" id="nwMeta">—</div>
+      <div class="nw-go">▶</div>
+    </div>
+
     <div class="cycle-progress">
       <div class="cp-head">
         <span class="cp-title" id="cycleTitle">Ciclo 1</span>
@@ -385,14 +393,6 @@ body{padding-top:44px!important}
       </div>
       <div class="cp-days" id="cycleDays">Dia 1 de 56</div>
       <div class="cycle-bar" id="cycleBar"></div>
-    </div>
-
-    <div class="section-label">Próximo treino</div>
-    <div class="next-workout" id="nextWorkout" onclick="openOverviewNext()">
-      <div class="nw-tag" id="nwTag">Treino A</div>
-      <div class="nw-name" id="nwName">—</div>
-      <div class="nw-meta" id="nwMeta">—</div>
-      <div class="nw-go">▶</div>
     </div>
 
     <div class="stat-row">
@@ -689,49 +689,49 @@ const CLIENT = {
     {
       id:"A", name:"Treino A — Corpo Inteiro",
       exercises:[
-        {nome:"Agachamento livre", rest:60, media:"", mediaType:"img",
+        {nome:"Agachamento livre",exercise_id:28, rest:60, media:"", mediaType:"img",
          note:"Desça como se fosse sentar numa cadeira. Joelhos na direção dos pés, peito aberto."},
-        {nome:"Supino reto com halteres", rest:75, media:"", mediaType:"img",
+        {nome:"Supino reto com halteres",exercise_id:50, rest:75, media:"", mediaType:"img",
          note:"Desça os halteres até a linha do peito, controlando 3 segundos. Não trave os cotovelos no topo."},
-        {nome:"Remada curvada com halteres", rest:75, media:"", mediaType:"img",
+        {nome:"Remada curvada com halteres",exercise_id:215, rest:75, media:"", mediaType:"img",
          note:"Coluna neutra, puxe os cotovelos para trás levando os halteres à cintura. Aperte as escápulas."},
-        {nome:"Desenvolvimento de ombros sentado", rest:60, media:"", mediaType:"img",
+        {nome:"Desenvolvimento de ombros sentado",exercise_id:13, rest:60, media:"", mediaType:"img",
          note:"Empurre os halteres para cima sem travar os cotovelos. Não arqueie a lombar."},
-        {nome:"Rosca direta com halteres", rest:45, media:"", mediaType:"img",
+        {nome:"Rosca direta com halteres",exercise_id:43, rest:45, media:"", mediaType:"img",
          note:"Cotovelos colados ao corpo. Suba controlando, desça devagar. Nada de balançar o tronco."},
-        {nome:"Prancha abdominal", rest:45, media:"", mediaType:"img",
+        {nome:"Prancha abdominal",exercise_id:734, rest:45, media:"", mediaType:"img",
          note:"Corpo reto da cabeça aos calcanhares. Contraia abdômen e glúteo. O quadril não cai."}
       ]
     },
     {
       id:"B", name:"Treino B — Corpo Inteiro",
       exercises:[
-        {nome:"Leg press", rest:75, media:"", mediaType:"img",
+        {nome:"Leg press",exercise_id:158, rest:75, media:"", mediaType:"img",
          note:"Pés na largura do quadril. Desça até 90° no joelho, empurre pelo calcanhar."},
-        {nome:"Puxada na frente (pulldown)", rest:75, media:"", mediaType:"img",
+        {nome:"Puxada na frente (pulldown)",exercise_id:213, rest:75, media:"", mediaType:"img",
          note:"Puxe a barra até a altura do queixo, levando os cotovelos para baixo. Controle a volta."},
-        {nome:"Supino inclinado com halteres", rest:75, media:"", mediaType:"img",
+        {nome:"Supino inclinado com halteres",exercise_id:116, rest:75, media:"", mediaType:"img",
          note:"Banco a 30-45°. Trabalha a parte superior do peito. Execução controlada."},
-        {nome:"Elevação lateral", rest:45, media:"", mediaType:"img",
+        {nome:"Elevação lateral",exercise_id:533, rest:45, media:"", mediaType:"img",
          note:"Suba os halteres até a linha dos ombros, cotovelos levemente flexionados. Sem impulso."},
-        {nome:"Tríceps na polia", rest:45, media:"", mediaType:"img",
+        {nome:"Tríceps na polia",exercise_id:57, rest:45, media:"", mediaType:"img",
          note:"Cotovelos fixos ao lado do corpo. Estenda totalmente embaixo, controle a subida."},
-        {nome:"Abdominal supra no solo", rest:45, media:"", mediaType:"img",
+        {nome:"Abdominal supra no solo",exercise_id:67, rest:45, media:"", mediaType:"img",
          note:"Suba contraindo o abdômen, sem puxar o pescoço. Desça devagar."}
       ]
     },
     {
       id:"C", name:"Treino C — Pernas e Core",
       exercises:[
-        {nome:"Agachamento sumô com halter", rest:75, media:"", mediaType:"img",
+        {nome:"Agachamento sumô com halter",exercise_id:28, rest:75, media:"", mediaType:"img",
          note:"Pés mais abertos que os ombros, pontas para fora. Foco em glúteo e interno de coxa."},
-        {nome:"Afundo alternado", rest:60, media:"", mediaType:"img",
+        {nome:"Afundo alternado",exercise_id:37, rest:60, media:"", mediaType:"img",
          note:"Passo à frente, desça o joelho de trás em direção ao chão. Joelho da frente alinhado ao pé."},
-        {nome:"Cadeira extensora", rest:60, media:"", mediaType:"img",
+        {nome:"Cadeira extensora",exercise_id:528, rest:60, media:"", mediaType:"img",
          note:"Estenda controlando, segure 1 segundo no topo. Não jogue a perna."},
-        {nome:"Panturrilha em pé", rest:40, media:"", mediaType:"img",
+        {nome:"Panturrilha em pé",exercise_id:244, rest:40, media:"", mediaType:"img",
          note:"Suba na ponta dos pés o máximo possível, segure 1 segundo, desça alongando."},
-        {nome:"Prancha lateral", rest:40, media:"", mediaType:"img",
+        {nome:"Prancha lateral",exercise_id:1282, rest:40, media:"", mediaType:"img",
          note:"Apoie no antebraço, corpo reto e alinhado. Contraia o oblíquo. Quadril não cai."}
       ]
     }
@@ -1053,51 +1053,60 @@ function updateExecProgress(){
 /* ---- RENDER EXERCÍCIO ---- */
 
 
-// ── ExerciseDB via RapidAPI ──────────────────────────────────────────────────
-const EXERCISE_MAP = {"agachamento livre": "barbell squat", "supino reto com halteres": "dumbbell bench press", "remada curvada com halteres": "bent over dumbbell row", "desenvolvimento de ombros sentado": "seated dumbbell shoulder press", "rosca direta com halteres": "dumbbell bicep curl", "prancha abdominal": "plank", "leg press": "leg press", "puxada na frente": "lat pulldown", "supino inclinado com halteres": "incline dumbbell bench press", "elevação lateral": "dumbbell lateral raise", "tríceps na polia": "tricep pushdown", "abdominal supra no solo": "crunch", "agachamento sumô com halter": "sumo squat", "afundo alternado": "dumbbell lunge", "cadeira extensora": "leg extension", "panturrilha em pé": "standing calf raise", "prancha lateral": "side plank", "caminhada": "walk"};
-const RAPIDAPI_KEY = "f0dca3c9d5msh5fcaf8cc9e301b9p11f5b9jsnfd31d846ae16";
-const EXERCISE_GIF_CACHE = {};
 
-function normalizeName(s){
-  return s.toLowerCase()
-    .replace(/[áàãâä]/g,'a').replace(/[éêë]/g,'e')
-    .replace(/[íîï]/g,'i').replace(/[óôõö]/g,'o')
-    .replace(/[úûü]/g,'u').replace(/[ç]/g,'c')
-    .replace(/[^\w\s]/g,'').trim();
+// ── Sistema de GIFs via exercises.json ──────────────────────────────────────
+const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/data/exercises.json';
+let EXERCISES_DB = null;
+
+async function loadExercisesDB(){
+  if(EXERCISES_DB) return EXERCISES_DB;
+  try{
+    const r = await fetch(EXERCISES_JSON_URL);
+    if(!r.ok) return null;
+    EXERCISES_DB = await r.json();
+    return EXERCISES_DB;
+  }catch(e){ return null; }
 }
 
-async function fetchExerciseGif(nomePT){
-  const key = normalizeName(nomePT);
-  if(EXERCISE_GIF_CACHE[key]) return EXERCISE_GIF_CACHE[key];
+// Busca por exercise_id (primário) ou nome (fallback)
+async function findExerciseGif(ex){
+  const db = await loadExercisesDB();
+  if(!db) return null;
 
-  // Buscar mapeamento direto
-  const searchTerm = EXERCISE_MAP[key] || key.split(' ')[0];
+  // Busca por exercise_id
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    return db[String(ex.exercise_id)].gif_url;
+  }
 
-  try{
-    const url = 'https://exercisedb.p.rapidapi.com/exercises/name/' + encodeURIComponent(searchTerm) + '?limit=1&offset=0';
-    const res = await fetch(url, {
-      headers: {
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-      }
-    });
-    if(!res.ok) return null;
-    const data = await res.json();
-    if(data && data.length && data[0].gifUrl){
-      EXERCISE_GIF_CACHE[key] = data[0].gifUrl;
-      return data[0].gifUrl;
+  // Fallback: busca por nome normalizado
+  const nome = (ex.nome||'').toLowerCase()
+    .replace(/[áàãâ]/g,'a').replace(/[éê]/g,'e')
+    .replace(/[íî]/g,'i').replace(/[óôõ]/g,'o')
+    .replace(/[úû]/g,'u').replace(/[ç]/g,'c');
+
+  for(const key of Object.keys(db)){
+    const dbNome = (db[key].name||'').toLowerCase()
+      .replace(/[áàãâ]/g,'a').replace(/[éê]/g,'e')
+      .replace(/[íî]/g,'i').replace(/[óôõ]/g,'o')
+      .replace(/[úû]/g,'u').replace(/[ç]/g,'c');
+    if(dbNome === nome || dbNome.includes(nome) || nome.includes(dbNome)){
+      return db[key].gif_url;
     }
-  }catch(e){ console.log('ExerciseDB:', e.message); }
+  }
   return null;
 }
 
 async function loadExerciseMedia(ex){
   if(ex.media) return;
-  const gif = await fetchExerciseGif(ex.nome);
+  const gif = await findExerciseGif(ex);
   if(gif){
     ex.media = gif;
     ex.mediaType = 'img';
   }
+}
+
+// Pré-carregar o DB ao iniciar o app
+loadExercisesDB();
 }
 
 function renderExercise(){
