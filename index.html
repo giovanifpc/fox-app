@@ -251,7 +251,8 @@ const CLIENT_NAME = "Rafael"; // fallback — será substituído pelo dado do Su
 // ── Salvar Training no Supabase ──────────────────────────────────────────────
 async function foxSaveTraining(data){
   try{
-    var cl = window.supabase.createClient("https://jxwodkpssivmcnbrsukm.supabase.co","sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K");
+    if(!window.FOX_SESSION) return;
+    var cl = window.FOX_SUPA || window.supabase.createClient("https://jxwodkpssivmcnbrsukm.supabase.co","sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K");
     var today = new Date().toISOString().split("T")[0];
     await cl.from("training_history").upsert({
       client_email: window.FOX_USER_EMAIL,
@@ -266,7 +267,8 @@ async function foxSaveTraining(data){
 // ── Salvar Nutri no Supabase ─────────────────────────────────────────────────
 async function foxSaveNutri(data){
   try{
-    var cl = window.supabase.createClient("https://jxwodkpssivmcnbrsukm.supabase.co","sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K");
+    if(!window.FOX_SESSION) return;
+    var cl = window.FOX_SUPA || window.supabase.createClient("https://jxwodkpssivmcnbrsukm.supabase.co","sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K");
     var today = new Date().toISOString().split("T")[0];
     var day = data.days ? data.days[today] : null;
     if(!day) return;
