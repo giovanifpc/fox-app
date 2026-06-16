@@ -621,9 +621,34 @@ function foxGoalsWithLiveData(){
   return goals;
 }
 
+function foxRefreshTrainingAchievements(){
+  foxSyncLocalProgress();
+  var data = window.FOX_TRAINING_DATA || {};
+  var badges = Array.isArray(data.badges) ? data.badges : [];
+  var alias = {volta1:'loop', load:'evoluiu', volta3:'loops3'};
+  var box = document.getElementById('dash-achievements');
+  if(!box) return;
+  var items = box.querySelectorAll('[data-ach]');
+  for(var i=0;i<items.length;i++){
+    var item = items[i];
+    var id = item.getAttribute('data-ach');
+    var realId = alias[id] || id;
+    var earned = badges.indexOf(realId) >= 0 || badges.indexOf(id) >= 0;
+    item.style.background = earned ? 'linear-gradient(145deg,#fff8e7,#fff)' : '#f8f8f8';
+    item.style.borderColor = earned ? 'rgba(255,140,66,.55)' : '#eee';
+    item.style.boxShadow = earned ? '0 0 14px rgba(255,140,66,.18)' : 'none';
+    var icon = item.querySelector('div');
+    if(icon){
+      icon.style.filter = earned ? 'none' : 'grayscale(1)';
+      icon.style.opacity = earned ? '1' : '.3';
+    }
+  }
+}
+
 function foxRefreshDashboardProgress(){
   foxSyncLocalProgress();
   if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length) applyWeeklyGoalsToDashboard(foxGoalsWithLiveData());
+  foxRefreshTrainingAchievements();
 }
 </script>
 </head>
