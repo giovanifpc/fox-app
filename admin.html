@@ -91,6 +91,9 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
       <label for="clientSearch">Buscar</label>
       <input id="clientSearch" type="search" placeholder="Nome ou email" autocomplete="off">
     </div>
+    <div class="actions" style="margin:0 0 12px">
+      <button class="btn secondary" type="button" id="newClientBtn">Novo cliente</button>
+    </div>
     <div class="clients" id="clientList">
       <div class="state">Carregando clientes...</div>
     </div>
@@ -150,6 +153,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 
       <div class="actions">
         <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
+        <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
       </div>
@@ -175,6 +179,7 @@ const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 let clients = [];
 let selectedClient = null;
 let currentGoal = null;
+let creatingClient = false;
 
 function $(id){ return document.getElementById(id); }
 function asNum(id, fallback){
@@ -252,6 +257,7 @@ function renderClients(){
 }
 
 async function selectClient(email){
+  creatingClient = false;
   selectedClient = clients.find(c => c.email === email);
   currentGoal = null;
   renderClients();
@@ -262,6 +268,11 @@ async function selectClient(email){
 function fillClientForm(){
   $('emptyForm').classList.add('hidden');
   $('goalForm').classList.remove('hidden');
+  $('nome').disabled = false;
+  $('email').disabled = !creatingClient;
+  $('saveClientBtn').classList.toggle('hidden', !creatingClient);
+  $('publishBtn').disabled = creatingClient;
+  $('reloadGoalBtn').disabled = creatingClient;
   $('nome').value = selectedClient.nome || '';
   $('email').value = selectedClient.email || '';
   $('folderId').value = selectedClient.folder_id || '';
@@ -272,6 +283,23 @@ function fillClientForm(){
   $('dataFim').value = addDaysISO(todayISO(), 6);
   $('foco').value = '';
   renderMetas(META_DEFS);
+}
+
+function startNewClient(){
+  creatingClient = true;
+  selectedClient = {
+    nome:'',
+    email:'',
+    ciclo_atual:1,
+    semana_atual:1,
+    total_semanas:8,
+    folder_id:'',
+    numero_whatsapp:''
+  };
+  currentGoal = null;
+  renderClients();
+  fillClientForm();
+  $('nome').focus();
 }
 
 function renderMetas(metas){
@@ -382,8 +410,49 @@ async function publishGoals(e){
   }
 }
 
+async function saveClient(){
+  if(!creatingClient) return;
+  const nome = $('nome').value.trim();
+  const email = $('email').value.trim().toLowerCase();
+  if(!nome || !email || email.indexOf('@') < 0){
+    toast('Informe nome e email validos.');
+    return;
+  }
+  const payload = {
+    nome: nome,
+    email: email,
+    ciclo_atual: asNum('ciclo', 1),
+    semana_atual: asNum('semana', 1),
+    total_semanas: asNum('totalSemanas', 8),
+    folder_id: $('folderId').value.trim() || null
+  };
+  const btn = $('saveClientBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  try{
+    const {data, error} = await supa.from('clients')
+      .upsert(payload, {onConflict:'email'})
+      .select('email,nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp')
+      .single();
+    if(error) throw error;
+    clients = clients.filter(c => c.email !== data.email).concat([data]).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||'')));
+    creatingClient = false;
+    selectedClient = data;
+    fillClientForm();
+    renderClients();
+    toast('Cliente salvo. Agora publique as metas semanais.');
+  }catch(err){
+    toast('Erro ao salvar cliente: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Salvar cadastro';
+  }
+}
+
 $('clientSearch').addEventListener('input', renderClients);
 $('goalForm').addEventListener('submit', publishGoals);
+$('newClientBtn').addEventListener('click', startNewClient);
+$('saveClientBtn').addEventListener('click', saveClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
 $('logoutBtn').addEventListener('click', async()=>{
   await supa.auth.signOut();
