@@ -49,6 +49,11 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .metas{display:grid;grid-template-columns:1fr;gap:9px;margin:4px 0 14px}
 .meta{display:grid;grid-template-columns:1.1fr .55fr .55fr .8fr;gap:8px;align-items:end;background:#101116;border:1px solid var(--line);border-radius:12px;padding:10px}
 .meta label{font-size:10px;margin-bottom:5px}
+.block-title{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--amber);font-weight:900;margin:18px 0 10px}
+.protocol-box{background:#101116;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.protocol-box textarea{min-height:210px;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px;white-space:pre}
+.protocol-hint{font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 10px}
+.file-input{padding:9px;background:#101116}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .btn{border:none;border-radius:11px;padding:12px 15px;font-weight:800;color:#fff;cursor:pointer}
 .btn.primary{background:linear-gradient(135deg,var(--purple),#5364b8)}
@@ -116,6 +121,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <label for="folderId">Pasta Drive</label>
           <input id="folderId" type="text" placeholder="folder_id do Drive">
         </div>
+        <div class="field">
+          <label for="whatsapp">WhatsApp</label>
+          <input id="whatsapp" type="tel" placeholder="5511999999999">
+        </div>
       </div>
 
       <div class="row">
@@ -157,6 +166,37 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
       </div>
+
+      <div class="block-title">Treino do ciclo</div>
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Cole um protocolo em JSON ou importe um arquivo .json. O Training do cliente sempre usa o ultimo treino publicado; se nada estiver publicado, usa o treino padrao do app.
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="protocolTitle">Titulo do treino</label>
+            <input id="protocolTitle" type="text" placeholder="Ex.: Ciclo 2 - Hipertrofia base">
+          </div>
+          <div class="field">
+            <label for="protocolVersion">Versao</label>
+            <input id="protocolVersion" type="number" min="1" step="1" value="1">
+          </div>
+          <div class="field">
+            <label for="protocolFile">Importar JSON</label>
+            <input id="protocolFile" class="file-input" type="file" accept="application/json,.json">
+          </div>
+        </div>
+        <div class="field">
+          <label for="protocolJson">JSON do protocolo</label>
+          <textarea id="protocolJson" spellcheck="false" placeholder='{"nome":"Atleta","cycleNumber":1,"startDate":"2026-06-16","cycleWeeks":8,"progressao":[...],"workouts":[...]}'></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="publishProtocolBtn">Publicar treino</button>
+          <button class="btn secondary" type="button" id="loadProtocolBtn">Carregar publicado</button>
+          <button class="btn secondary" type="button" id="sampleProtocolBtn">Modelo JSON</button>
+          <button class="btn secondary" type="button" id="notifyTrainingBtn">Avisar no WhatsApp</button>
+        </div>
+      </div>
     </form>
   </section>
 </main>
@@ -179,6 +219,7 @@ const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 let clients = [];
 let selectedClient = null;
 let currentGoal = null;
+let currentProtocol = null;
 let creatingClient = false;
 
 function $(id){ return document.getElementById(id); }
@@ -263,6 +304,7 @@ async function selectClient(email){
   renderClients();
   fillClientForm();
   await loadGoal();
+  await loadProtocol();
 }
 
 function fillClientForm(){
@@ -276,6 +318,7 @@ function fillClientForm(){
   $('nome').value = selectedClient.nome || '';
   $('email').value = selectedClient.email || '';
   $('folderId').value = selectedClient.folder_id || '';
+  $('whatsapp').value = selectedClient.numero_whatsapp || '';
   $('ciclo').value = selectedClient.ciclo_atual || 1;
   $('semana').value = selectedClient.semana_atual || 1;
   $('totalSemanas').value = selectedClient.total_semanas || 8;
@@ -336,6 +379,157 @@ function readMetas(){
   });
 }
 
+function sampleProtocol(){
+  const nome = $('nome').value.trim() || 'Atleta';
+  const ciclo = asNum('ciclo', 1);
+  const total = asNum('totalSemanas', 8);
+  return {
+    nome: nome,
+    cycleNumber: ciclo,
+    startDate: $('dataInicio').value || todayISO(),
+    cycleWeeks: total,
+    progressao: [
+      {semana:1, sets:3, reps:'12', cargaRec:''},
+      {semana:2, sets:3, reps:'12', cargaRec:''},
+      {semana:3, sets:3, reps:'10', cargaRec:'subir'},
+      {semana:4, sets:3, reps:'10', cargaRec:''},
+      {semana:5, sets:4, reps:'8', cargaRec:'subir'},
+      {semana:6, sets:4, reps:'8', cargaRec:''},
+      {semana:7, sets:4, reps:'6-8', cargaRec:'subir'},
+      {semana:8, sets:3, reps:'12', cargaRec:'descer'}
+    ],
+    workouts: [
+      {
+        id:'A',
+        name:'Treino A - Corpo inteiro',
+        exercises:[
+          {nome:'Agachamento livre', exercise_id:143, rest:60, media:'', mediaType:'img', note:'Controle a descida e mantenha coluna neutra.'}
+        ]
+      }
+    ],
+    quotes:[
+      'Treino concluido. Habito reforcado.',
+      'Mais um passo guardado.'
+    ]
+  };
+}
+
+function validateProtocol(p){
+  if(!p || typeof p !== 'object') throw new Error('JSON invalido.');
+  if(!Array.isArray(p.workouts) || !p.workouts.length) throw new Error('Inclua workouts com pelo menos um treino.');
+  if(!Array.isArray(p.progressao) || !p.progressao.length) throw new Error('Inclua progressao com semanas, series e reps.');
+  p.workouts.forEach((w, wi)=>{
+    if(!w.id || !w.name) throw new Error('Cada treino precisa de id e name.');
+    if(!Array.isArray(w.exercises) || !w.exercises.length) throw new Error('Treino '+(w.id || wi+1)+' precisa de exercises.');
+    w.exercises.forEach((ex, ei)=>{
+      if(!ex.nome) throw new Error('Exercicio '+(ei+1)+' do treino '+w.id+' precisa de nome.');
+      if(!ex.rest) ex.rest = 60;
+      if(!ex.mediaType) ex.mediaType = 'img';
+      if(ex.media === undefined) ex.media = '';
+      if(ex.note === undefined) ex.note = '';
+    });
+  });
+  return p;
+}
+
+function readProtocolJson(){
+  const raw = $('protocolJson').value.trim();
+  if(!raw) throw new Error('Cole ou importe um JSON de treino.');
+  return validateProtocol(JSON.parse(raw));
+}
+
+async function loadProtocol(){
+  if(!selectedClient || creatingClient) return;
+  currentProtocol = null;
+  $('protocolTitle').value = '';
+  $('protocolVersion').value = 1;
+  $('protocolJson').value = '';
+  try{
+    const {data, error} = await supa.from('training_protocols')
+      .select('titulo,versao,protocol_json,ciclo,status,publicado_em')
+      .eq('client_email', selectedClient.email)
+      .eq('status', 'publicado')
+      .order('publicado_em', {ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(error) throw error;
+    if(!data) return;
+    currentProtocol = data;
+    $('protocolTitle').value = data.titulo || '';
+    $('protocolVersion').value = data.versao || 1;
+    $('protocolJson').value = JSON.stringify(data.protocol_json || {}, null, 2);
+  }catch(err){
+    toast('Treino dinamico ainda nao disponivel: ' + (err.message || err));
+  }
+}
+
+async function publishProtocol(){
+  if(!selectedClient || creatingClient) return;
+  const btn = $('publishProtocolBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publicando...';
+  try{
+    const protocol = readProtocolJson();
+    protocol.nome = protocol.nome || selectedClient.nome || 'Atleta';
+    protocol.cycleNumber = Number(protocol.cycleNumber || asNum('ciclo', 1));
+    protocol.cycleWeeks = Number(protocol.cycleWeeks || asNum('totalSemanas', 8));
+    protocol.startDate = protocol.startDate || $('dataInicio').value || todayISO();
+
+    const payload = {
+      client_email: selectedClient.email,
+      ciclo: asNum('ciclo', 1),
+      versao: asNum('protocolVersion', 1),
+      titulo: $('protocolTitle').value.trim() || ('Ciclo ' + asNum('ciclo', 1)),
+      status: 'publicado',
+      protocol_json: protocol,
+      data_inicio: protocol.startDate,
+      data_fim: addDaysISO(protocol.startDate, (Number(protocol.cycleWeeks || 8) * 7) - 1),
+      publicado_em: new Date().toISOString()
+    };
+
+    const profileUpdate = {
+      ciclo_atual: payload.ciclo,
+      total_semanas: protocol.cycleWeeks,
+      folder_id: $('folderId').value.trim() || null,
+      numero_whatsapp: $('whatsapp').value.trim() || null
+    };
+    const profileRes = await supa.from('clients')
+      .update(profileUpdate)
+      .eq('email', selectedClient.email);
+    if(profileRes.error) throw profileRes.error;
+
+    const archiveRes = await supa.from('training_protocols')
+      .update({status:'arquivado'})
+      .eq('client_email', selectedClient.email)
+      .eq('ciclo', payload.ciclo)
+      .eq('status', 'publicado');
+    if(archiveRes.error) throw archiveRes.error;
+
+    const {error} = await supa.from('training_protocols').insert(payload);
+    if(error) throw error;
+    currentProtocol = payload;
+    selectedClient = Object.assign({}, selectedClient, profileUpdate);
+    clients = clients.map(c => c.email === selectedClient.email ? selectedClient : c);
+    renderClients();
+    toast('Treino publicado. O cliente vera no Training ao abrir o app.');
+  }catch(err){
+    toast('Erro ao publicar treino: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Publicar treino';
+  }
+}
+
+function notifyTraining(){
+  if(!selectedClient) return;
+  const phone = String($('whatsapp').value || selectedClient.numero_whatsapp || '').replace(/\D/g,'');
+  if(!phone){ toast('Cadastre o WhatsApp do cliente para usar este botao.'); return; }
+  const nome = selectedClient.nome || 'cliente';
+  const title = $('protocolTitle').value.trim() || 'novo ciclo de treino';
+  const msg = 'Oi, '+nome+'! Acabei de publicar seu '+title+' no app. Abre o Training antes do proximo treino e me chama se tiver qualquer duvida.';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
+}
+
 async function loadGoal(){
   const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
   const semana = asNum('semana', selectedClient.semana_atual || 1);
@@ -376,7 +570,8 @@ async function publishGoals(e){
       ciclo_atual: ciclo,
       semana_atual: semana,
       total_semanas: total,
-      folder_id: $('folderId').value.trim() || null
+      folder_id: $('folderId').value.trim() || null,
+      numero_whatsapp: $('whatsapp').value.trim() || null
     };
     const profileRes = await supa.from('clients')
       .update(profileUpdate)
@@ -424,7 +619,8 @@ async function saveClient(){
     ciclo_atual: asNum('ciclo', 1),
     semana_atual: asNum('semana', 1),
     total_semanas: asNum('totalSemanas', 8),
-    folder_id: $('folderId').value.trim() || null
+    folder_id: $('folderId').value.trim() || null,
+    numero_whatsapp: $('whatsapp').value.trim() || null
   };
   const btn = $('saveClientBtn');
   btn.disabled = true;
@@ -454,6 +650,29 @@ $('goalForm').addEventListener('submit', publishGoals);
 $('newClientBtn').addEventListener('click', startNewClient);
 $('saveClientBtn').addEventListener('click', saveClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
+$('loadProtocolBtn').addEventListener('click', loadProtocol);
+$('publishProtocolBtn').addEventListener('click', publishProtocol);
+$('sampleProtocolBtn').addEventListener('click', ()=>{
+  $('protocolJson').value = JSON.stringify(sampleProtocol(), null, 2);
+  if(!$('protocolTitle').value) $('protocolTitle').value = 'Ciclo ' + asNum('ciclo', 1);
+});
+$('notifyTrainingBtn').addEventListener('click', notifyTraining);
+$('protocolFile').addEventListener('change', function(){
+  const file = this.files && this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const parsed = validateProtocol(JSON.parse(String(reader.result || '')));
+      $('protocolJson').value = JSON.stringify(parsed, null, 2);
+      if(!$('protocolTitle').value) $('protocolTitle').value = file.name.replace(/\.json$/i,'');
+      toast('JSON importado e validado.');
+    }catch(err){
+      toast('JSON invalido: ' + (err.message || err));
+    }
+  };
+  reader.readAsText(file);
+});
 $('logoutBtn').addEventListener('click', async()=>{
   await supa.auth.signOut();
   window.location.href = 'login.html';
