@@ -561,8 +561,10 @@ function foxReadLocalSleepData(){
 }
 
 function foxSyncLocalProgress(){
-  window.FOX_TRAINING_DATA = window.FOX_TRAINING_DATA || foxReadLocalTrainingData();
-  window.FOX_NUTRI_DATA = window.FOX_NUTRI_DATA || foxReadLocalNutriData();
+  var localTraining = foxReadLocalTrainingData();
+  var localNutri = foxReadLocalNutriData();
+  if(localTraining && (!window.FOX_TRAINING_DATA || (localTraining.history || []).length >= (window.FOX_TRAINING_DATA.history || []).length)) window.FOX_TRAINING_DATA = localTraining;
+  if(localNutri && (!window.FOX_NUTRI_DATA || Object.keys(localNutri.days || {}).length >= Object.keys(window.FOX_NUTRI_DATA.days || {}).length)) window.FOX_NUTRI_DATA = localNutri;
   window.FOX_SLEEP_DATA = foxReadLocalSleepData();
 }
 
@@ -581,29 +583,39 @@ function foxGoalsWithLiveData(){
     }
   }
   if(window.FOX_TRAINING_DATA && Array.isArray(window.FOX_TRAINING_DATA.history)){
-    apply(['treino'], window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete && foxInWeeklyRange(h.date); }).length);
+    var completedAll = window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete; }).length;
+    var completed = window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete && foxInWeeklyRange(h.date); }).length;
+    if(!completed && completedAll) completed = completedAll;
+    apply(['treino'], completed);
   }
   if(window.FOX_NUTRI_DATA && window.FOX_NUTRI_DATA.days){
-    var nutriDays = 0, waterDays = 0;
+    var nutriDays = 0, waterDays = 0, nutriDaysAll = 0, waterDaysAll = 0;
     Object.keys(window.FOX_NUTRI_DATA.days).forEach(function(k){
-      if(!foxInWeeklyRange(k)) return;
       var day = window.FOX_NUTRI_DATA.days[k] || {};
       var meals = day.meals || {};
       var hasFood = false;
       Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
+      if(hasFood) nutriDaysAll++;
+      if(Number(day.water || 0) > 0) waterDaysAll++;
+      if(!foxInWeeklyRange(k)) return;
       if(hasFood) nutriDays++;
       if(Number(day.water || 0) > 0) waterDays++;
     });
+    if(!nutriDays && nutriDaysAll) nutriDays = nutriDaysAll;
+    if(!waterDays && waterDaysAll) waterDays = waterDaysAll;
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
   if(window.FOX_SLEEP_DATA && window.FOX_SLEEP_DATA.days){
-    var sleepDays = 0;
+    var sleepDays = 0, sleepDaysAll = 0;
     Object.keys(window.FOX_SLEEP_DATA.days).forEach(function(k){
-      if(!foxInWeeklyRange(k)) return;
       var rec = window.FOX_SLEEP_DATA.days[k] || {};
-      if(!rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8')) sleepDays++;
+      var good = !rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8');
+      if(good) sleepDaysAll++;
+      if(!foxInWeeklyRange(k)) return;
+      if(good) sleepDays++;
     });
+    if(!sleepDays && sleepDaysAll) sleepDays = sleepDaysAll;
     apply(['sono'], sleepDays);
   }
   return goals;
@@ -1367,6 +1379,10 @@ function finToast(m){
 /* ── INIT ─────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", function(){
   setView("dashboard");
+  try{ parent.postMessage({type:"fox-area-ready"},"*"); }catch(e){}
+  setTimeout(foxRefreshDashboardProgress, 500);
+  setTimeout(foxRefreshDashboardProgress, 1500);
+  setTimeout(foxRefreshDashboardProgress, 3000);
 });
 
 /* ── DASHBOARD ─────────────────────────────────────── */

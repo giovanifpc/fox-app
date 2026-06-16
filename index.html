@@ -476,8 +476,10 @@ function readLocalSleepData(){
 }
 
 function syncLocalProgress(){
-  latestTrainingData = latestTrainingData || readLocalTrainingData();
-  latestNutriData = latestNutriData || readLocalNutriData();
+  var localTraining = readLocalTrainingData();
+  var localNutri = readLocalNutriData();
+  if(localTraining && (!latestTrainingData || (localTraining.history || []).length >= (latestTrainingData.history || []).length)) latestTrainingData = localTraining;
+  if(localNutri && (!latestNutriData || Object.keys(localNutri.days || {}).length >= Object.keys(latestNutriData.days || {}).length)) latestNutriData = localNutri;
   latestSleepData = readLocalSleepData();
 }
 
@@ -503,34 +505,44 @@ function cloneGoalsWithLiveData(){
   }
 
   if(latestTrainingData && Array.isArray(latestTrainingData.history)){
-    var completed = latestTrainingData.history.filter(function(h){
-      return !h.incomplete && inCurrentGoalRange(h.date);
-    }).length;
+    var completedAll = latestTrainingData.history.filter(function(h){ return !h.incomplete; }).length;
+    var completed = latestTrainingData.history.filter(function(h){ return !h.incomplete && inCurrentGoalRange(h.date); }).length;
+    if(!completed && completedAll) completed = completedAll;
     apply(['treino'], completed);
   }
 
   if(latestNutriData && latestNutriData.days){
     var nutriDays = 0;
     var waterDays = 0;
+    var nutriDaysAll = 0;
+    var waterDaysAll = 0;
     Object.keys(latestNutriData.days).forEach(function(k){
-      if(!inCurrentGoalRange(k)) return;
       var day = latestNutriData.days[k] || {};
       var meals = day.meals || {};
       var hasFood = false;
       Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
+      if(hasFood) nutriDaysAll++;
+      if(Number(day.water || 0) > 0) waterDaysAll++;
+      if(!inCurrentGoalRange(k)) return;
       if(hasFood) nutriDays++;
       if(Number(day.water || 0) > 0) waterDays++;
     });
+    if(!nutriDays && nutriDaysAll) nutriDays = nutriDaysAll;
+    if(!waterDays && waterDaysAll) waterDays = waterDaysAll;
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
   if(latestSleepData && latestSleepData.days){
     var sleepDays = 0;
+    var sleepDaysAll = 0;
     Object.keys(latestSleepData.days).forEach(function(k){
-      if(!inCurrentGoalRange(k)) return;
       var rec = latestSleepData.days[k] || {};
-      if(!rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8')) sleepDays++;
+      var good = !rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8');
+      if(good) sleepDaysAll++;
+      if(!inCurrentGoalRange(k)) return;
+      if(good) sleepDays++;
     });
+    if(!sleepDays && sleepDaysAll) sleepDays = sleepDaysAll;
     apply(['sono'], sleepDays);
   }
   return goals;
@@ -685,6 +697,11 @@ async function foxSaveNutri(data){
 window.addEventListener('message', function(e){
   if(!e.data) return;
   if(e.data === 'fox-back') backToHub();
+  if(e.data.type === 'fox-area-ready'){
+    requestModuleData();
+    setTimeout(sendCachedDataToDrive, 250);
+    setTimeout(sendCachedDataToDrive, 900);
+  }
   if(e.data.type === 'fox-request-report-data'){
     reportDataRequested = true;
     if(reportRequestTimer) clearTimeout(reportRequestTimer);
