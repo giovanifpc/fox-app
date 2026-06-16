@@ -160,7 +160,7 @@ body::after{opacity:.08;background-size:100% 5px}
 .focus-icon{left:20px;top:18px;font-size:22px;color:#8a9ce5}.focus-label{font-size:.96rem;letter-spacing:1.6px;color:#9a8ee7}.focus-text{font-size:.92rem;line-height:1.42;color:#e2e4ea}
 .nutri-primary{border-radius:18px;padding:18px 18px;margin-bottom:14px;border-color:rgba(79,195,247,.42);background:linear-gradient(140deg,rgba(79,195,247,.12),rgba(17,20,26,.88));box-shadow:0 0 22px rgba(79,195,247,.045)}
 .action-head{gap:14px;margin-bottom:15px}.big-icon{width:58px;height:58px;font-size:0;border-color:rgba(79,195,247,.34);background:rgba(79,195,247,.045)}
-.icon-mark{font-family:var(--font-head);font-size:1.25rem;font-weight:800;letter-spacing:1px;color:currentColor}.big-icon .icon-mark{color:#4FC3F7}
+.icon-mark{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:currentColor}.icon-mark svg,.bottom-tab .ico svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.big-icon .icon-mark{color:#4FC3F7}
 .action-kicker{font-size:.94rem;letter-spacing:1.5px;color:#4FC3F7}.action-title{font-size:1.66rem;letter-spacing:.7px;line-height:1.02}.action-desc{font-size:.91rem;line-height:1.3;color:#abb3bf;margin-top:6px}.cta-btn{border-radius:12px;font-size:1.02rem;padding:13px 14px;letter-spacing:1.4px;background:linear-gradient(135deg,#2faee4,#176ca2);box-shadow:none}
 .action-row{gap:13px;margin-bottom:14px}.small-action{min-height:150px;border-radius:16px;padding:15px 15px;background:linear-gradient(145deg,rgba(255,255,255,.032),rgba(255,255,255,.012));box-shadow:none}.small-action.training{border-color:rgba(255,140,66,.24)}.small-action.drive{border-color:rgba(123,143,212,.24)}
 .small-icon{width:48px;height:48px;margin-bottom:10px;font-size:0;background:rgba(255,255,255,.018)}.small-kicker{font-size:.84rem;letter-spacing:1.3px}.small-title{font-size:1.28rem;line-height:1.05;letter-spacing:.4px}.small-desc{font-size:.82rem;line-height:1.28;color:#9ea6b2;margin-top:8px}.small-arrow{font-size:24px;right:14px;bottom:13px}
@@ -214,7 +214,7 @@ body::after{opacity:.08;background-size:100% 5px}
 
   <section class="nutri-primary" onclick="openModule('nutri')">
     <div class="action-head">
-      <div class="big-icon"><span class="icon-mark">N</span></div>
+      <div class="big-icon"><span class="icon-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v7M11 3v7M7 10h4M9 3v18M16 4v17M16 4c3 2 4 5 3 8-.5 1.5-1.6 2.4-3 2.8"/></svg></span></div>
       <div>
         <div class="action-kicker">NutriTracker</div>
         <div class="action-title">Registrar alimentação</div>
@@ -226,14 +226,14 @@ body::after{opacity:.08;background-size:100% 5px}
 
   <div class="action-row">
     <section class="small-action training" onclick="openModule('training')">
-      <div class="small-icon"><span class="icon-mark">T</span></div>
+      <div class="small-icon"><span class="icon-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg></span></div>
       <div class="small-kicker">Training</div>
       <div class="small-title">Ver treino<br>de hoje</div>
       <div class="small-desc">Consulte seu treino e registre sua performance.</div>
       <div class="small-arrow">›</div>
     </section>
     <section class="small-action drive" onclick="openModule('drive')">
-      <div class="small-icon"><span class="icon-mark">A</span></div>
+      <div class="small-icon"><span class="icon-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5M6 5v14"/></svg></span></div>
       <div class="small-kicker">Minha área</div>
       <div class="small-title">Acessar<br>minha área</div>
       <div class="small-desc">Veja relatórios, evolução, fotos e documentos.</div>
@@ -254,9 +254,9 @@ body::after{opacity:.08;background-size:100% 5px}
 
 <nav class="bottom-tabs" aria-label="Navegação principal">
   <button class="bottom-tab active" type="button"><span class="ico">⌂</span><span>Início</span></button>
-  <button class="bottom-tab" type="button" onclick="openModule('training')"><span class="ico">T</span><span>Training</span></button>
-  <button class="bottom-tab nutri-tab" type="button" onclick="openModule('nutri')"><span class="ico">N</span><span>Nutri</span></button>
-  <button class="bottom-tab" type="button" onclick="openModule('drive')"><span class="ico">A</span><span>Minha Área</span></button>
+  <button class="bottom-tab" type="button" onclick="openModule('training')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg></span><span>Training</span></button>
+  <button class="bottom-tab nutri-tab" type="button" onclick="openModule('nutri')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M7 3v7M11 3v7M7 10h4M9 3v18M16 4v17M16 4c3 2 4 5 3 8-.5 1.5-1.6 2.4-3 2.8"/></svg></span><span>Nutri</span></button>
+  <button class="bottom-tab" type="button" onclick="openModule('drive')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5M6 5v14"/></svg></span><span>Minha Área</span></button>
 </nav>
 
 <div class="sleep-overlay" id="sleepOverlay" aria-modal="true" role="dialog" aria-label="Check-in diário de sono">
