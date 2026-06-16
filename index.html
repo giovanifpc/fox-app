@@ -306,6 +306,7 @@ var currentGoals = [];
 var currentGoalRange = null;
 var latestTrainingData = null;
 var latestNutriData = null;
+var latestSleepData = null;
 var reportDataRequested = false;
 var reportRequestTimer = null;
 
@@ -385,6 +386,7 @@ async function loadWeeklyGoals(){
       currentGoalRange = {inicio:r.data.data_inicio || null, fim:r.data.data_fim || null};
       if(r.data.foco_semana) setText('focusText', r.data.foco_semana);
       updateSummaryFromGoals(currentGoals);
+      refreshSummaryWithLiveData();
     }else{
       setText('focusText', 'Abra sua Minha Área para ver o foco atualizado da semana.');
     }
@@ -393,19 +395,21 @@ async function loadWeeklyGoals(){
   }
 }
 
-function goalByName(names){
-  for(var i=0;i<currentGoals.length;i++){
-    var n = String(currentGoals[i].nome || '').toLowerCase();
-    for(var j=0;j<names.length;j++) if(n.indexOf(names[j]) >= 0) return currentGoals[i];
+function goalByName(names, source){
+  var list = source || currentGoals;
+  for(var i=0;i<list.length;i++){
+    var n = String(list[i].nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    for(var j=0;j<names.length;j++) if(n.indexOf(names[j]) >= 0) return list[i];
   }
   return null;
 }
 
 function updateSummaryFromGoals(goals){
-  var treino = goalByName(['treino']);
-  var agua = goalByName(['hidrata']);
-  var nutri = goalByName(['nutri']);
-  var sono = goalByName(['sono']);
+  goals = Array.isArray(goals) ? goals : currentGoals;
+  var treino = goalByName(['treino'], goals);
+  var agua = goalByName(['hidrata'], goals);
+  var nutri = goalByName(['nutri'], goals);
+  var sono = goalByName(['sono'], goals);
   var totalMeta = 0, totalReal = 0;
   for(var i=0;i<goals.length;i++){
     totalMeta += Number(goals[i].meta_valor || 0);
@@ -421,6 +425,62 @@ function updateSummaryFromGoals(goals){
 }
 function pct(g){ return Number(g.meta_valor || 0) > 0 ? Math.round((Number(g.realizado || 0) / Number(g.meta_valor || 1)) * 100) : 0; }
 
+function readLocalTrainingData(){
+  try{
+    var best = null;
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('foxTraining_') !== 0) continue;
+      var store = JSON.parse(localStorage.getItem(key) || '{}');
+      if(!Array.isArray(store.history)) continue;
+      if(!best || store.history.length > ((best.history || []).length)){
+        best = {
+          clientName: key.replace('foxTraining_', ''),
+          history: store.history,
+          badges: store.badges || [],
+          weekStreak: store.weekStreak || 0,
+          loopPos: store.loopPos || 0,
+          lastCarga: store.lastCarga || {}
+        };
+      }
+    }
+    return best;
+  }catch(e){ return null; }
+}
+
+function readLocalNutriData(){
+  try{
+    var days = {};
+    var keys = [];
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('fp_day_') !== 0) continue;
+      var dayKey = key.replace('fp_day_', '');
+      keys.push(dayKey);
+      days[dayKey] = JSON.parse(localStorage.getItem(key) || '{}');
+    }
+    return {days:days, dayKeys:keys.sort()};
+  }catch(e){ return null; }
+}
+
+function readLocalSleepData(){
+  try{
+    var days = {};
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('foxSleep_') !== 0) continue;
+      days[key.replace('foxSleep_', '')] = JSON.parse(localStorage.getItem(key) || '{}');
+    }
+    return {days:days};
+  }catch(e){ return null; }
+}
+
+function syncLocalProgress(){
+  latestTrainingData = latestTrainingData || readLocalTrainingData();
+  latestNutriData = latestNutriData || readLocalNutriData();
+  latestSleepData = readLocalSleepData();
+}
+
 function inCurrentGoalRange(dateLike){
   if(!currentGoalRange || !currentGoalRange.inicio || !currentGoalRange.fim) return true;
   var key = String(dateLike || '').slice(0,10);
@@ -428,6 +488,7 @@ function inCurrentGoalRange(dateLike){
 }
 
 function cloneGoalsWithLiveData(){
+  syncLocalProgress();
   var goals = currentGoals.map(function(g){ return Object.assign({}, g); });
   function apply(names, value){
     for(var i=0;i<goals.length;i++){
@@ -463,10 +524,20 @@ function cloneGoalsWithLiveData(){
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
+  if(latestSleepData && latestSleepData.days){
+    var sleepDays = 0;
+    Object.keys(latestSleepData.days).forEach(function(k){
+      if(!inCurrentGoalRange(k)) return;
+      var rec = latestSleepData.days[k] || {};
+      if(!rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8')) sleepDays++;
+    });
+    apply(['sono'], sleepDays);
+  }
   return goals;
 }
 
 function refreshSummaryWithLiveData(){
+  syncLocalProgress();
   if(!currentGoals.length) return;
   updateSummaryFromGoals(cloneGoalsWithLiveData());
 }
@@ -520,14 +591,28 @@ async function saveSleepCheckin(){
   if(!(sleepQuality && sleepDuration)) return;
   var payload = {date:todayKey(), quality:sleepQuality, duration:sleepDuration, savedAt:new Date().toISOString()};
   try{ localStorage.setItem('foxSleep_' + todayKey(), JSON.stringify(payload)); }catch(e){}
+  latestSleepData = readLocalSleepData();
   document.getElementById('sleepOverlay').classList.remove('show');
   setText('statSono', sleepDuration === 'menos6' ? '-6h' : (sleepDuration === 'mais8' ? '+8h' : '6-8h'));
   setWidth('barSono', sleepDuration === 'menos6' ? 35 : (sleepDuration === '6a8' ? 75 : 100));
+  refreshSummaryWithLiveData();
+  sendCachedDataToDrive();
 
   // Registro remoto de sono será ativado quando a tabela sleep_logs estiver criada no Supabase.
 }
 
+function ensureModuleFrameLoaded(id){
+  var f = document.getElementById(id);
+  if(f && !f.getAttribute('src')){
+    var src = f.getAttribute('data-src');
+    if(src) f.setAttribute('src', src);
+  }
+  return f;
+}
+
 function requestModuleData(){
+  ensureModuleFrameLoaded('frame-training');
+  ensureModuleFrameLoaded('frame-nutri');
   setTimeout(function(){
     var tF = document.getElementById('frame-training');
     var nF = document.getElementById('frame-nutri');
@@ -537,10 +622,12 @@ function requestModuleData(){
 }
 
 function sendCachedDataToDrive(){
+  syncLocalProgress();
   var dF = document.getElementById('frame-drive');
   if(!dF || !dF.contentWindow || !dF.getAttribute('src')) return;
   if(latestTrainingData) dF.contentWindow.postMessage({type:'fox-training-data', data:latestTrainingData}, '*');
   if(latestNutriData) dF.contentWindow.postMessage({type:'fox-nutri-data', data:latestNutriData}, '*');
+  if(latestSleepData) dF.contentWindow.postMessage({type:'fox-sleep-data', data:latestSleepData}, '*');
 }
 
 function openModule(which){

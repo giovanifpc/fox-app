@@ -506,7 +506,56 @@ function foxInWeeklyRange(dateLike){
   return key >= window.FOX_WEEKLY_RANGE.inicio && key <= window.FOX_WEEKLY_RANGE.fim;
 }
 
+function foxReadLocalTrainingData(){
+  try{
+    var best = null;
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('foxTraining_') !== 0) continue;
+      var store = JSON.parse(localStorage.getItem(key) || '{}');
+      if(!Array.isArray(store.history)) continue;
+      if(!best || store.history.length > ((best.history || []).length)){
+        best = {history:store.history,badges:store.badges||[],weekStreak:store.weekStreak||0,loopPos:store.loopPos||0,lastCarga:store.lastCarga||{}};
+      }
+    }
+    return best;
+  }catch(e){ return null; }
+}
+
+function foxReadLocalNutriData(){
+  try{
+    var days = {}, keys = [];
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('fp_day_') !== 0) continue;
+      var dayKey = key.replace('fp_day_', '');
+      keys.push(dayKey);
+      days[dayKey] = JSON.parse(localStorage.getItem(key) || '{}');
+    }
+    return {days:days, dayKeys:keys.sort()};
+  }catch(e){ return null; }
+}
+
+function foxReadLocalSleepData(){
+  try{
+    var days = {};
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(!key || key.indexOf('foxSleep_') !== 0) continue;
+      days[key.replace('foxSleep_', '')] = JSON.parse(localStorage.getItem(key) || '{}');
+    }
+    return {days:days};
+  }catch(e){ return null; }
+}
+
+function foxSyncLocalProgress(){
+  window.FOX_TRAINING_DATA = window.FOX_TRAINING_DATA || foxReadLocalTrainingData();
+  window.FOX_NUTRI_DATA = window.FOX_NUTRI_DATA || foxReadLocalNutriData();
+  window.FOX_SLEEP_DATA = foxReadLocalSleepData();
+}
+
 function foxGoalsWithLiveData(){
+  foxSyncLocalProgress();
   var goals = (window.FOX_WEEKLY_GOALS || []).map(function(g){ return Object.assign({}, g); });
   function apply(names, value){
     for(var i=0;i<goals.length;i++){
@@ -536,10 +585,20 @@ function foxGoalsWithLiveData(){
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
+  if(window.FOX_SLEEP_DATA && window.FOX_SLEEP_DATA.days){
+    var sleepDays = 0;
+    Object.keys(window.FOX_SLEEP_DATA.days).forEach(function(k){
+      if(!foxInWeeklyRange(k)) return;
+      var rec = window.FOX_SLEEP_DATA.days[k] || {};
+      if(!rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8')) sleepDays++;
+    });
+    apply(['sono'], sleepDays);
+  }
   return goals;
 }
 
 function foxRefreshDashboardProgress(){
+  foxSyncLocalProgress();
   if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length) applyWeeklyGoalsToDashboard(foxGoalsWithLiveData());
 }
 </script>
@@ -1047,6 +1106,7 @@ window.addEventListener("message",function(e){
   if(!e.data) return;
   if(e.data.type==="fox-training-data"){ trainingData=e.data.data; window.FOX_TRAINING_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
   if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; window.FOX_NUTRI_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
+  if(e.data.type==="fox-sleep-data"){ window.FOX_SLEEP_DATA=e.data.data; foxRefreshDashboardProgress(); }
 });
 
 function tryBuildReport(){
