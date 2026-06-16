@@ -131,7 +131,7 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .wo-meta-item .wm-lbl{font-size:11px;color:var(--txt-dim);margin-top:2px}
 .ex-list-item{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px;margin-bottom:9px}
 .ex-thumb{width:52px;height:52px;border-radius:10px;background:var(--bg-elev);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.ex-thumb img{width:100%;height:100%;object-fit:cover}
+.ex-thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
 .ex-thumb .ph{font-size:22px}
 .ex-li-info{flex:1;min-width:0}
 .ex-li-info .eli-name{font-size:14px;font-weight:700}
@@ -309,7 +309,7 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
       window.FOX_SUPA = supa;
       // Buscar perfil
       supa.from('clients')
-        .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id')
+        .select('nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp')
         .eq('email', session.user.email)
         .single()
         .then(function(r){
@@ -320,6 +320,21 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
             document.dispatchEvent(new CustomEvent('fox-profile-ready', {detail: r.data}));
           }
         });
+
+      supa.from('training_protocols')
+        .select('titulo,versao,protocol_json,ciclo,status,publicado_em')
+        .eq('client_email', session.user.email)
+        .eq('status', 'publicado')
+        .order('publicado_em', {ascending:false})
+        .limit(1)
+        .maybeSingle()
+        .then(function(r){
+          if(r && r.data && r.data.protocol_json){
+            window.FOX_TRAINING_PROTOCOL = r.data;
+            document.dispatchEvent(new CustomEvent('fox-training-protocol-ready', {detail: r.data}));
+          }
+        })
+        .catch(function(){});
     });
   };
   document.head.appendChild(sdk);
@@ -888,12 +903,74 @@ document.addEventListener('fox-profile-ready', function(e){
   if(p && p.nome){
     CLIENT.nome = p.nome;
     CLIENT.cycleNumber = p.ciclo_atual || CLIENT.cycleNumber;
+    CLIENT.cycleWeeks = p.total_semanas || CLIENT.cycleWeeks;
+    if(p.numero_whatsapp) CLIENT.whatsappNumber = String(p.numero_whatsapp).replace(/\D/g,'');
     var wn = document.getElementById('welcomeName');
     if(wn) wn.textContent = 'Olá, ' + p.nome;
     var pn = document.getElementById('profileName');
     if(pn) pn.textContent = p.nome;
+    refreshTrainingShell();
   }
 });
+
+function refreshTrainingShell(){
+  var wn = document.getElementById('welcomeName');
+  if(wn) wn.textContent = 'Ol\u00e1, ' + CLIENT.nome;
+  var wc = document.getElementById('welcomeCycle');
+  if(wc) wc.textContent = 'Ciclo ' + CLIENT.cycleNumber + ' - ' + CLIENT.cycleWeeks + ' semanas';
+  var pn = document.getElementById('profileName');
+  if(pn) pn.textContent = CLIENT.nome;
+  var pc = document.getElementById('profileCycle');
+  if(pc) pc.textContent = 'Ciclo ' + CLIENT.cycleNumber + ' - Semana ' + currentWeek();
+  var linkNutri = document.getElementById('linkNutri');
+  if(linkNutri) linkNutri.href = CLIENT.nutriUrl;
+  var linkWpp = document.getElementById('linkWpp');
+  if(linkWpp){
+    linkWpp.href = 'https://wa.me/' + CLIENT.whatsappNumber + '?text=' +
+      encodeURIComponent('Ol\u00e1 Giovani! Sou ' + CLIENT.nome + ', quero falar sobre meu treino.');
+  }
+  if(state && state.workoutIndex >= CLIENT.workouts.length) state.workoutIndex = 0;
+  var active = document.querySelector('.screen.active');
+  if(active && active.id === 'home') buildHome();
+  if(active && active.id === 'profile') buildProfile();
+}
+
+function validateDynamicProtocol(p){
+  return p && typeof p === 'object' &&
+    Array.isArray(p.workouts) && p.workouts.length &&
+    Array.isArray(p.progressao) && p.progressao.length;
+}
+
+function applyTrainingProtocol(row){
+  var protocol = row && row.protocol_json ? row.protocol_json : row;
+  if(!validateDynamicProtocol(protocol)) return;
+
+  CLIENT.nome = protocol.nome || CLIENT.nome;
+  CLIENT.cycleNumber = Number(protocol.cycleNumber || (row && row.ciclo) || CLIENT.cycleNumber);
+  CLIENT.startDate = protocol.startDate || CLIENT.startDate;
+  CLIENT.cycleWeeks = Number(protocol.cycleWeeks || CLIENT.cycleWeeks);
+  CLIENT.progressao = protocol.progressao;
+  CLIENT.workouts = protocol.workouts;
+  if(Array.isArray(protocol.quotes) && protocol.quotes.length) CLIENT.quotes = protocol.quotes;
+  if(protocol.nutriUrl) CLIENT.nutriUrl = protocol.nutriUrl;
+  if(protocol.whatsappNumber) CLIENT.whatsappNumber = String(protocol.whatsappNumber).replace(/\D/g,'');
+  window.FOX_ACTIVE_TRAINING_PROTOCOL = row || protocol;
+  refreshTrainingShell();
+}
+
+document.addEventListener('fox-training-protocol-ready', function(e){
+  applyTrainingProtocol(e.detail);
+});
+
+if(window.FOX_TRAINING_PROTOCOL) applyTrainingProtocol(window.FOX_TRAINING_PROTOCOL);
+
+if(window.FOX_PROFILE && window.FOX_PROFILE.nome){
+  CLIENT.nome = window.FOX_PROFILE.nome;
+  CLIENT.cycleNumber = window.FOX_PROFILE.ciclo_atual || CLIENT.cycleNumber;
+  CLIENT.cycleWeeks = window.FOX_PROFILE.total_semanas || CLIENT.cycleWeeks;
+  if(window.FOX_PROFILE.numero_whatsapp) CLIENT.whatsappNumber = String(window.FOX_PROFILE.numero_whatsapp).replace(/\D/g,'');
+  refreshTrainingShell();
+}
 
 function init(){
   // logos
@@ -1005,12 +1082,18 @@ function openOverview(idx){
         <div class="eli-sets">${prog.sets} × ${prog.reps}</div>
       </div>`;
     listEl.appendChild(item);
+    if(!ex.media){
+      const thumb = item.querySelector(".ex-thumb");
+      loadExerciseMedia(ex).then(function(){
+        if(ex.media && thumb) thumb.innerHTML = mediaThumb(ex);
+      });
+    }
   });
   showScreen("overview");
 }
 function mediaThumb(ex){
   if(ex.mediaType==="img" && ex.media)
-    return `<img src="${ex.media}" alt="" onerror="this.parentNode.innerHTML='<span class=ph>🏋️</span>'">`;
+    return `<img src="${ex.media}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<span class=ph>🏋️</span>'">`;
   return `<span class="ph">🏋️</span>`;
 }
 
@@ -1266,6 +1349,8 @@ function finishWorkout(incomplete){
   const record = {
     date:new Date().toISOString(), workoutId:w.id, workoutName:w.name,
     cycle:CLIENT.cycleNumber, week:wk, minutes:elapsedMin, setsDone, exDone,
+    protocolTitle: window.FOX_ACTIVE_TRAINING_PROTOCOL && window.FOX_ACTIVE_TRAINING_PROTOCOL.titulo ? window.FOX_ACTIVE_TRAINING_PROTOCOL.titulo : null,
+    protocolVersion: window.FOX_ACTIVE_TRAINING_PROTOCOL && window.FOX_ACTIVE_TRAINING_PROTOCOL.versao ? window.FOX_ACTIVE_TRAINING_PROTOCOL.versao : null,
     incomplete:!!incomplete,
     detail: state.sessionData.map((sd,i)=>({
       nome:w.exercises[i].nome,
@@ -1595,7 +1680,7 @@ function fireConfetti(){
 /* ---- START ---- */
 init();
 
-function getTrainingData(){var store=loadStore();return{clientName:CLIENT.nome,cycleNumber:CLIENT.cycleNumber,startDate:CLIENT.startDate,cycleWeeks:CLIENT.cycleWeeks,currentWeek:currentWeek(),currentDay:Math.min(currentDayNumber(),totalDays()),totalDays:totalDays(),history:store.history,badges:store.badges,weekStreak:store.weekStreak,loopPos:store.loopPos,lastCarga:store.lastCarga};}
+function getTrainingData(){var store=loadStore();var proto=window.FOX_ACTIVE_TRAINING_PROTOCOL||null;return{clientName:CLIENT.nome,cycleNumber:CLIENT.cycleNumber,startDate:CLIENT.startDate,cycleWeeks:CLIENT.cycleWeeks,currentWeek:currentWeek(),currentDay:Math.min(currentDayNumber(),totalDays()),totalDays:totalDays(),protocolTitle:proto&&proto.titulo?proto.titulo:null,protocolVersion:proto&&proto.versao?proto.versao:null,history:store.history,badges:store.badges,weekStreak:store.weekStreak,loopPos:store.loopPos,lastCarga:store.lastCarga};}
 window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-training-data"){parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*");}if(e.data&&e.data.type==="fox-set-client-name"&&e.data.nome){
   CLIENT.nome=e.data.nome;
   var wn=document.getElementById("welcomeName");
