@@ -1505,7 +1505,7 @@ function dateKeyToDisplay(k){
   return days[dt.getDay()]+', '+d+' de '+months[dt.getMonth()];
 }
 function getDayData(k){ const r=safeGet('fp_day_'+k); if(!r) return{meals:Object.fromEntries(MEALS.map(m=>[m,[]])),water:0}; return JSON.parse(r); }
-function saveDayData(k,d){ safeSet('fp_day_'+k,JSON.stringify(d)); }
+function saveDayData(k,d){ safeSet('fp_day_'+k,JSON.stringify(d)); foxNotifyNutriData(); }
 function getCustomFoods(){ return JSON.parse(safeGet('fp_custom')||'[]'); }
 function saveCustomFoods(a){ safeSet('fp_custom',JSON.stringify(a)); }
 function getAllDayKeys(){ const k=[]; for(let i=0;i<localStorage.length;i++){const ki=localStorage.key(i);if(ki.startsWith('fp_day_'))k.push(ki.replace('fp_day_',''));} return k; }
@@ -2749,6 +2749,7 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 document.getElementById('toast').style.cssText+='position:fixed;bottom:95px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent2);color:#fff;padding:10px 20px;border-radius:30px;font-size:.82rem;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none;';
 
 function getNutriData(){var profile=JSON.parse(localStorage.getItem("fp_profile")||"null");var days=getAllDayKeys().sort();var dayData={};days.forEach(function(k){var d=localStorage.getItem("fp_day_"+k);if(d)dayData[k]=JSON.parse(d);});return{profile:profile,days:dayData,dayKeys:days};}
+function foxNotifyNutriData(){try{parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}catch(e){}}
 window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-nutri-data"){parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}});
 </script>
 

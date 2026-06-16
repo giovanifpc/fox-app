@@ -403,6 +403,7 @@ async function loadWeeklyGoals(supa, email, ciclo, semana){
 
     // Atualizar range da semana
     if(data.data_inicio && data.data_fim){
+      window.FOX_WEEKLY_RANGE = {inicio:data.data_inicio, fim:data.data_fim};
       var rangeEl = document.getElementById('dash-week-range');
       if(rangeEl){
         var ini = new Date(data.data_inicio);
@@ -417,6 +418,7 @@ async function loadWeeklyGoals(supa, email, ciclo, semana){
     // metas = [{nome, meta_valor, unidade, realizado}]
     if(data.metas && data.metas.length){
       updateRingsFromGoals(data.metas);
+      foxRefreshDashboardProgress();
     }
   }catch(e){ console.log('goals:', e.message); }
 }
@@ -496,6 +498,49 @@ function applyWeeklyGoalsToDashboard(metas){
 
 function updateRingsFromGoals(metas){
   applyWeeklyGoalsToDashboard(metas);
+}
+
+function foxInWeeklyRange(dateLike){
+  if(!window.FOX_WEEKLY_RANGE || !window.FOX_WEEKLY_RANGE.inicio || !window.FOX_WEEKLY_RANGE.fim) return true;
+  var key = String(dateLike || '').slice(0,10);
+  return key >= window.FOX_WEEKLY_RANGE.inicio && key <= window.FOX_WEEKLY_RANGE.fim;
+}
+
+function foxGoalsWithLiveData(){
+  var goals = (window.FOX_WEEKLY_GOALS || []).map(function(g){ return Object.assign({}, g); });
+  function apply(names, value){
+    for(var i=0;i<goals.length;i++){
+      var n = String(goals[i].nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      for(var j=0;j<names.length;j++){
+        if(n.indexOf(names[j]) >= 0){
+          goals[i].realizado = Math.max(Number(goals[i].realizado || 0), value);
+          return;
+        }
+      }
+    }
+  }
+  if(window.FOX_TRAINING_DATA && Array.isArray(window.FOX_TRAINING_DATA.history)){
+    apply(['treino'], window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete && foxInWeeklyRange(h.date); }).length);
+  }
+  if(window.FOX_NUTRI_DATA && window.FOX_NUTRI_DATA.days){
+    var nutriDays = 0, waterDays = 0;
+    Object.keys(window.FOX_NUTRI_DATA.days).forEach(function(k){
+      if(!foxInWeeklyRange(k)) return;
+      var day = window.FOX_NUTRI_DATA.days[k] || {};
+      var meals = day.meals || {};
+      var hasFood = false;
+      Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
+      if(hasFood) nutriDays++;
+      if(Number(day.water || 0) > 0) waterDays++;
+    });
+    apply(['nutri'], nutriDays);
+    apply(['hidrat'], waterDays);
+  }
+  return goals;
+}
+
+function foxRefreshDashboardProgress(){
+  if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length) applyWeeklyGoalsToDashboard(foxGoalsWithLiveData());
 }
 </script>
 </head>
@@ -973,6 +1018,7 @@ function drawChart(arr, fieldId){
 
 /* ── RELATÓRIO ────────────────────────────────────────────────────────────── */
 let pendingRel = null;
+let reportCollecting = false;
 
 function initRelatorio(){
   updateRelStatus();
@@ -989,24 +1035,26 @@ function updateRelStatus(){
 function gerarRelatorio(){
   document.getElementById("relLoading").classList.add("show");
   document.getElementById("btnGerarRel").disabled = true;
+  reportCollecting = true;
   trainingData = null; nutriData = null;
   // Request data from both iframes via hub
   parent.postMessage({type:"fox-request-report-data"},"*");
   // Timeout fallback: generate with whatever is available after 4s
-  setTimeout(()=>{ buildReport(); }, 4000);
+  setTimeout(()=>{ if(reportCollecting) buildReport(); }, 4000);
 }
 
 window.addEventListener("message",function(e){
   if(!e.data) return;
-  if(e.data.type==="fox-training-data"){ trainingData=e.data.data; tryBuildReport(); }
-  if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; tryBuildReport(); }
+  if(e.data.type==="fox-training-data"){ trainingData=e.data.data; window.FOX_TRAINING_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
+  if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; window.FOX_NUTRI_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
 });
 
 function tryBuildReport(){
-  if(trainingData && nutriData) buildReport();
+  if(reportCollecting && trainingData && nutriData) buildReport();
 }
 
 function buildReport(){
+  reportCollecting = false;
   document.getElementById("relLoading").classList.remove("show");
   document.getElementById("btnGerarRel").disabled = false;
   updateRelStatus();

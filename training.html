@@ -331,7 +331,9 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 #fhb:active{opacity:.7}
 #fhb .a{color:#FF8C42;font-size:22px;font-weight:700;line-height:1}
 #fhb .t{color:#f0f0f0;font-size:13px;font-weight:600}
-body{padding-top:44px!important}
+body{padding-top:44px!important;min-height:100svh!important}
+.screen{min-height:calc(100svh - 44px)!important}
+#welcome,#finish{height:calc(100svh - 44px)!important;min-height:calc(100svh - 44px)!important}
 </style>
 <div id="fhb" onclick="parent.postMessage('fox-back','*')"><span class="a">&#8249;</span><span class="t">Fox Performance</span></div>
 
@@ -1277,6 +1279,7 @@ function finishWorkout(incomplete){
   if(!incomplete){ updateWeekStreak(store, wk); }
   checkBadges(store);
   saveStore(store);
+  try{ parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*"); }catch(e){}
 
   // tela conclusão
   document.getElementById("fsEx").textContent=exDone;
@@ -1542,6 +1545,8 @@ function generateReport(){
 /* ---- RESET DE CICLO ---- */
 let resetReportDone=false;
 function openResetFlow(){
+  closeModal("modalSkipEx");
+  closeModal("modalIncomplete");
   resetReportDone=false;
   document.getElementById("resetStep1").classList.remove("done");
   document.getElementById("resetStep2").classList.remove("done");
@@ -1558,6 +1563,7 @@ function resetGenerateReport(){
   toast("Acesse Minha Área para gerar o relatório completo.");
 }
 function confirmReset(){
+  try{ if(window.event){ window.event.preventDefault(); window.event.stopPropagation(); } }catch(e){}
   document.getElementById("resetStep2").classList.add("done");
   if(!confirm("Tem certeza? Todo o progresso será apagado e as 8 semanas recomeçam do zero. Esta ação não pode ser desfeita.")) return;
   // zera tudo e redefine data de início para hoje
@@ -1565,7 +1571,12 @@ function confirmReset(){
   const iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
   const fresh={ history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:iso };
   saveStore(fresh);
+  resetReportDone=false;
+  document.getElementById("resetConfirmBtn").style.opacity=".4";
+  document.getElementById("resetConfirmBtn").style.pointerEvents="none";
   closeModal("modalReset");
+  closeModal("modalSkipEx");
+  closeModal("modalIncomplete");
   toast("Ciclo reiniciado. Bom recomeço!");
   goTab("home");
 }

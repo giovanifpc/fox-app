@@ -303,6 +303,11 @@ var sleepQuality = null;
 var sleepDuration = null;
 var currentProfile = null;
 var currentGoals = [];
+var currentGoalRange = null;
+var latestTrainingData = null;
+var latestNutriData = null;
+var reportDataRequested = false;
+var reportRequestTimer = null;
 
 var supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 window.FOX_SUPA = supa;
@@ -377,6 +382,7 @@ async function loadWeeklyGoals(){
     var r = await supa.from('weekly_goals').select('metas,foco_semana,data_inicio,data_fim').eq('client_email', window.FOX_USER_EMAIL).eq('ciclo', currentProfile.ciclo_atual || 1).eq('semana', currentProfile.semana_atual || 1).eq('publicado', true).single();
     if(r.data){
       currentGoals = Array.isArray(r.data.metas) ? r.data.metas : [];
+      currentGoalRange = {inicio:r.data.data_inicio || null, fim:r.data.data_fim || null};
       if(r.data.foco_semana) setText('focusText', r.data.foco_semana);
       updateSummaryFromGoals(currentGoals);
     }else{
@@ -414,6 +420,56 @@ function updateSummaryFromGoals(goals){
   updateSleepSummary();
 }
 function pct(g){ return Number(g.meta_valor || 0) > 0 ? Math.round((Number(g.realizado || 0) / Number(g.meta_valor || 1)) * 100) : 0; }
+
+function inCurrentGoalRange(dateLike){
+  if(!currentGoalRange || !currentGoalRange.inicio || !currentGoalRange.fim) return true;
+  var key = String(dateLike || '').slice(0,10);
+  return key >= currentGoalRange.inicio && key <= currentGoalRange.fim;
+}
+
+function cloneGoalsWithLiveData(){
+  var goals = currentGoals.map(function(g){ return Object.assign({}, g); });
+  function apply(names, value){
+    for(var i=0;i<goals.length;i++){
+      var n = String(goals[i].nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      for(var j=0;j<names.length;j++){
+        if(n.indexOf(names[j]) >= 0){
+          goals[i].realizado = Math.max(Number(goals[i].realizado || 0), value);
+          return;
+        }
+      }
+    }
+  }
+
+  if(latestTrainingData && Array.isArray(latestTrainingData.history)){
+    var completed = latestTrainingData.history.filter(function(h){
+      return !h.incomplete && inCurrentGoalRange(h.date);
+    }).length;
+    apply(['treino'], completed);
+  }
+
+  if(latestNutriData && latestNutriData.days){
+    var nutriDays = 0;
+    var waterDays = 0;
+    Object.keys(latestNutriData.days).forEach(function(k){
+      if(!inCurrentGoalRange(k)) return;
+      var day = latestNutriData.days[k] || {};
+      var meals = day.meals || {};
+      var hasFood = false;
+      Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
+      if(hasFood) nutriDays++;
+      if(Number(day.water || 0) > 0) waterDays++;
+    });
+    apply(['nutri'], nutriDays);
+    apply(['hidrat'], waterDays);
+  }
+  return goals;
+}
+
+function refreshSummaryWithLiveData(){
+  if(!currentGoals.length) return;
+  updateSummaryFromGoals(cloneGoalsWithLiveData());
+}
 
 function updateSleepSummary(){
   var y = new Date();
@@ -480,6 +536,13 @@ function requestModuleData(){
   }, 1200);
 }
 
+function sendCachedDataToDrive(){
+  var dF = document.getElementById('frame-drive');
+  if(!dF || !dF.contentWindow || !dF.getAttribute('src')) return;
+  if(latestTrainingData) dF.contentWindow.postMessage({type:'fox-training-data', data:latestTrainingData}, '*');
+  if(latestNutriData) dF.contentWindow.postMessage({type:'fox-nutri-data', data:latestNutriData}, '*');
+}
+
 function openModule(which){
   var frames = document.querySelectorAll('.module-frame');
   for(var i=0;i<frames.length;i++) frames[i].classList.remove('active');
@@ -491,6 +554,11 @@ function openModule(which){
     }
     f.classList.add('active');
     document.body.classList.add('in-module');
+  }
+  if(which === 'drive'){
+    requestModuleData();
+    setTimeout(sendCachedDataToDrive, 700);
+    setTimeout(sendCachedDataToDrive, 1600);
   }
   try{ history.pushState({m:which}, '', location.href); }catch(e){}
 }
@@ -540,6 +608,10 @@ window.addEventListener('message', function(e){
     if(nF && nF.contentWindow) nF.contentWindow.postMessage({type:'fox-get-nutri-data'}, '*');
   }
   if(e.data.type === 'fox-training-data'){
+    latestTrainingData = e.data.data;
+    refreshSummaryWithLiveData();
+    var dFA = document.getElementById('frame-drive');
+    if(dFA && dFA.contentWindow && dFA.getAttribute('src')) dFA.contentWindow.postMessage(e.data, '*');
     if(reportDataRequested){
       var dF1 = document.getElementById('frame-drive');
       if(dF1 && dF1.contentWindow) dF1.contentWindow.postMessage(e.data, '*');
@@ -547,6 +619,10 @@ window.addEventListener('message', function(e){
     foxSaveTraining(e.data.data);
   }
   if(e.data.type === 'fox-nutri-data'){
+    latestNutriData = e.data.data;
+    refreshSummaryWithLiveData();
+    var dFB = document.getElementById('frame-drive');
+    if(dFB && dFB.contentWindow && dFB.getAttribute('src')) dFB.contentWindow.postMessage(e.data, '*');
     if(reportDataRequested){
       var dF2 = document.getElementById('frame-drive');
       if(dF2 && dF2.contentWindow) dF2.contentWindow.postMessage(e.data, '*');
@@ -556,6 +632,11 @@ window.addEventListener('message', function(e){
   if(e.data.type === 'fox-open-module' && e.data.module) openModule(e.data.module);
 });
 window.addEventListener('popstate', function(){ if(document.body.classList.contains('in-module')) backToHub(); });
+var driveFrame = document.getElementById('frame-drive');
+if(driveFrame) driveFrame.addEventListener('load', function(){
+  setTimeout(sendCachedDataToDrive, 300);
+  setTimeout(requestModuleData, 600);
+});
 window.addEventListener('load', boot);
 </script>
 </body>
