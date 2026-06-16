@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
 <title>Fox Performance</title>
 <style>
@@ -29,7 +29,7 @@
   --font-body:'Barlow',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{min-height:100dvh;background:var(--bg);color:var(--white);font-family:var(--font-body);overflow-x:hidden;overscroll-behavior:none}
+html,body{min-height:100dvh;background:var(--bg);color:var(--white);font-family:var(--font-body);overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 body{max-width:520px;margin:0 auto;position:relative}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 12% 6%,rgba(123,143,212,.16),transparent 34%),radial-gradient(circle at 88% 32%,rgba(79,195,247,.10),transparent 38%),radial-gradient(circle at 24% 86%,rgba(255,140,66,.10),transparent 42%)}
 body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.18;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:100% 4px;mix-blend-mode:screen}
@@ -40,12 +40,12 @@ button{font-family:var(--font-body)}
 #splash.hide{opacity:0;pointer-events:none}
 #splash.gone{display:none}
 .splash-logo{width:116px;height:116px;object-fit:contain;filter:drop-shadow(0 0 34px rgba(123,143,212,.26));animation:splashLogo .9s cubic-bezier(.2,.8,.2,1)}
-.splash-brand{font-family:var(--font-head);font-size:2.8rem;font-weight:800;letter-spacing:4px;line-height:.9}
+.splash-brand{font-family:var(--font-head);font-size:2.8rem;font-weight:800;letter-spacing:4px;line-height:.9;text-align:center;display:flex;flex-direction:column;align-items:center}
 .splash-brand span{display:block;font-size:.82rem;font-weight:600;color:var(--cyan);letter-spacing:7px;margin-top:4px}
 @keyframes splashLogo{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:none}}
 
 /* HOME */
-#entry{position:relative;z-index:1;min-height:100dvh;padding:24px 22px calc(90px + env(safe-area-inset-bottom));opacity:0;transition:opacity .55s ease}
+#entry{position:relative;z-index:1;min-height:100dvh;padding:24px 22px calc(90px + env(safe-area-inset-bottom));opacity:0;transition:opacity .55s ease;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 #entry.show{opacity:1}
 body.in-module #entry{display:none}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
@@ -281,7 +281,6 @@ async function boot(){
 
   await loadProfile(session.user.email);
   await loadWeeklyGoals();
-  requestModuleData();
   initBanner();
 
   setTimeout(function(){
@@ -426,11 +425,7 @@ async function saveSleepCheckin(){
   setText('statSono', sleepDuration === 'menos6' ? '-6h' : (sleepDuration === 'mais8' ? '+8h' : '6-8h'));
   setWidth('barSono', sleepDuration === 'menos6' ? 35 : (sleepDuration === '6a8' ? 75 : 100));
 
-  if(window.FOX_USER_EMAIL){
-    try{
-      await supa.from('sleep_logs').upsert({client_email:window.FOX_USER_EMAIL,date:payload.date,quality:payload.quality,duration:payload.duration,raw:payload},{onConflict:'client_email,date'});
-    }catch(e){ console.log('sleep_logs indisponível:', e.message); }
-  }
+  // Registro remoto de sono será ativado quando a tabela sleep_logs estiver criada no Supabase.
 }
 
 function requestModuleData(){
@@ -474,35 +469,38 @@ function dismissBanner(){
 }
 
 async function foxSaveTraining(data){
-  if(!data || !window.FOX_USER_EMAIL) return;
-  try{
-    await supa.from('training_history').upsert({client_email:window.FOX_USER_EMAIL,date:todayKey(),data:data},{onConflict:'client_email,date'});
-  }catch(e){ console.log('save training:', e.message); }
+  // Desativado nesta fase: evita POST automático no Supabase enquanto o schema definitivo não está fechado.
+  return;
 }
 async function foxSaveNutri(data){
-  if(!data || !window.FOX_USER_EMAIL) return;
-  try{
-    await supa.from('nutri_history').upsert({client_email:window.FOX_USER_EMAIL,date:todayKey(),data:data},{onConflict:'client_email,date'});
-  }catch(e){ console.log('save nutri:', e.message); }
+  // Desativado nesta fase: evita POST automático no Supabase enquanto o schema definitivo não está fechado.
+  return;
 }
 
 window.addEventListener('message', function(e){
   if(!e.data) return;
   if(e.data === 'fox-back') backToHub();
   if(e.data.type === 'fox-request-report-data'){
+    reportDataRequested = true;
+    if(reportRequestTimer) clearTimeout(reportRequestTimer);
+    reportRequestTimer = setTimeout(function(){ reportDataRequested = false; }, 8000);
     var tF = document.getElementById('frame-training');
     var nF = document.getElementById('frame-nutri');
     if(tF && tF.contentWindow) tF.contentWindow.postMessage({type:'fox-get-training-data'}, '*');
     if(nF && nF.contentWindow) nF.contentWindow.postMessage({type:'fox-get-nutri-data'}, '*');
   }
   if(e.data.type === 'fox-training-data'){
-    var dF1 = document.getElementById('frame-drive');
-    if(dF1 && dF1.contentWindow) dF1.contentWindow.postMessage(e.data, '*');
+    if(reportDataRequested){
+      var dF1 = document.getElementById('frame-drive');
+      if(dF1 && dF1.contentWindow) dF1.contentWindow.postMessage(e.data, '*');
+    }
     foxSaveTraining(e.data.data);
   }
   if(e.data.type === 'fox-nutri-data'){
-    var dF2 = document.getElementById('frame-drive');
-    if(dF2 && dF2.contentWindow) dF2.contentWindow.postMessage(e.data, '*');
+    if(reportDataRequested){
+      var dF2 = document.getElementById('frame-drive');
+      if(dF2 && dF2.contentWindow) dF2.contentWindow.postMessage(e.data, '*');
+    }
     foxSaveNutri(e.data.data);
   }
   if(e.data.type === 'fox-open-module' && e.data.module) openModule(e.data.module);

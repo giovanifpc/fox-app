@@ -70,7 +70,7 @@ body{background:var(--bg);color:var(--white);font-family:var(--font-body);min-he
 #splash.gone{display:none;}
 
 /* SETUP / ANAMNESE */
-#setup{display:none;flex-direction:column;min-height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#setup{display:none;position:fixed;inset:0;z-index:800;flex-direction:column;min-height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);}
 #setup.active{display:flex;}
 
 .setup-hero{background:linear-gradient(180deg,#0d2a38 0%,var(--bg) 100%);padding:36px 20px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
@@ -141,7 +141,7 @@ select option{background:var(--surface);}
 .btn-row .btn{flex:1;}
 
 /* APP */
-#app{display:none;flex-direction:column;min-height:100dvh;}
+#app{display:none;flex-direction:column;min-height:100dvh;background:var(--bg);}
 #app.active{display:flex;}
 
 .top-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
@@ -1639,7 +1639,7 @@ function safeSet(key,val){
   catch(e){ return false; }
 }
 function safeRemove(key){
-  try{ safeRemove(key); }catch(e){}
+  try{ localStorage.removeItem(key); }catch(e){}
 }
 
 function initApp(){
@@ -2185,6 +2185,7 @@ function toggleDay(k){ document.getElementById('dd-'+k).classList.toggle('open')
 function renderReportDays(){
   const keys=getAllDayKeys().sort().reverse();
   const list=document.getElementById('report-day-list');
+  if(!list) return;
   if(!keys.length){ list.innerHTML='<div class="empty"><div class="empty-icon"></div><p>Nenhum dia registrado ainda.</p></div>'; return; }
   list.innerHTML=keys.map(k=>{
     const data=getDayData(k);
@@ -2195,7 +2196,7 @@ function renderReportDays(){
 }
 function toggleReportDay(k){ const c=document.getElementById('chk-'+k); c.classList.toggle('checked'); c.innerHTML=c.classList.contains('checked')?'OK':''; updateSelCount(); }
 function toggleSelectAll(){ allSelected=!allSelected; getAllDayKeys().forEach(k=>{ const c=document.getElementById('chk-'+k); if(!c) return; if(allSelected){c.classList.add('checked');c.innerHTML='OK';}else{c.classList.remove('checked');c.innerHTML='';} }); updateSelCount(); }
-function updateSelCount(){ const n=document.querySelectorAll('.hi-check.checked').length; document.getElementById('sel-count').textContent=n+' dia'+(n!==1?'s':'')+' selecionado'+(n!==1?'s':''); }
+function updateSelCount(){ const n=document.querySelectorAll('.hi-check.checked').length; const el=document.getElementById('sel-count'); if(el) el.textContent=n+' dia'+(n!==1?'s':'')+' selecionado'+(n!==1?'s':''); }
 function getSelectedDays(){ return getAllDayKeys().sort().filter(k=>{ const c=document.getElementById('chk-'+k); return c&&c.classList.contains('checked'); }); }
 
 // -- PERFIL --
