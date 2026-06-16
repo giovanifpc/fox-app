@@ -455,6 +455,48 @@ function updateRingsFromGoals(metas){
     if(valEl) valEl.textContent = (m.realizado||0);
   });
 }
+
+// Compatibilidade com o dashboard atual: a tela usa IDs dash-ring1..4.
+// Mantem os dados publicados em memoria caso cheguem antes do HTML terminar de montar.
+function applyWeeklyGoalsToDashboard(metas){
+  window.FOX_WEEKLY_GOALS = Array.isArray(metas) ? metas : [];
+  const ringMap = {
+    'Treinos':      {ring:'dash-ring1', leg:'dash-leg1', bar:'bar1', pct:'barpct1', c:364.4, label:'Treinos'},
+    'HidrataÃ§Ã£o':   {ring:'dash-ring2', leg:'dash-leg2', bar:'bar2', pct:'barpct2', c:289, label:'HidrataÃ§Ã£o'},
+    'DiÃ¡rio Nutri': {ring:'dash-ring3', leg:'dash-leg3', bar:'bar3', pct:'barpct3', c:213.6, label:'Nutri'},
+    'Sono 7h+':     {ring:'dash-ring4', leg:'dash-leg4', bar:'bar4', pct:'barpct4', c:138.2, label:'Sono'}
+  };
+
+  function cfgByGoalName(nome){
+    const n = String(nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(n.indexOf('treino') >= 0) return {ring:'dash-ring1', leg:'dash-leg1', bar:'bar1', pct:'barpct1', c:364.4, label:'Treinos'};
+    if(n.indexOf('hidrat') >= 0) return {ring:'dash-ring2', leg:'dash-leg2', bar:'bar2', pct:'barpct2', c:289, label:'Hidratacao'};
+    if(n.indexOf('nutri') >= 0) return {ring:'dash-ring3', leg:'dash-leg3', bar:'bar3', pct:'barpct3', c:213.6, label:'Nutri'};
+    if(n.indexOf('sono') >= 0) return {ring:'dash-ring4', leg:'dash-leg4', bar:'bar4', pct:'barpct4', c:138.2, label:'Sono'};
+    return null;
+  }
+
+  window.FOX_WEEKLY_GOALS.forEach(function(m){
+    const cfg = ringMap[m.nome] || cfgByGoalName(m.nome);
+    if(!cfg) return;
+    const meta = Number(m.meta_valor || 0);
+    const feito = Number(m.realizado || 0);
+    const ratio = meta > 0 ? Math.max(0, Math.min(1, feito / meta)) : 0;
+    const pctText = Math.round(ratio * 100) + '%';
+    const ring = document.getElementById(cfg.ring);
+    if(ring) ring.style.strokeDashoffset = cfg.c * (1 - ratio);
+    const leg = document.getElementById(cfg.leg);
+    if(leg) leg.textContent = cfg.label + ' ' + feito + '/' + meta;
+    const bar = document.getElementById(cfg.bar);
+    if(bar) bar.style.width = pctText;
+    const pct = document.getElementById(cfg.pct);
+    if(pct) pct.textContent = pctText;
+  });
+}
+
+function updateRingsFromGoals(metas){
+  applyWeeklyGoalsToDashboard(metas);
+}
 </script>
 </head>
 <body>
@@ -1215,6 +1257,10 @@ function initDashboard(){
   loadLatestDevolutiva();
 }
 function animateRings(){
+  if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length){
+    applyWeeklyGoalsToDashboard(window.FOX_WEEKLY_GOALS);
+    return;
+  }
   const C = 188.5;
   // TODO: substituir valores estáticos por dados do Supabase
   const rings = [

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>Fox Performance - Admin</title>
+<style>
+:root{
+  --bg:#0a0a0a;
+  --surface:#121318;
+  --card:#171922;
+  --line:#292c36;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --faint:#656b78;
+  --purple:#7B8FD4;
+  --cyan:#4FC3F7;
+  --amber:#FF8C42;
+  --green:#52B788;
+  --danger:#e05555;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{max-width:920px;margin:0 auto;padding:22px 18px 40px}
+button,input,select,textarea{font-family:var(--font)}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.mark{width:44px;height:44px;border:1px solid rgba(123,143,212,.45);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--purple);font-weight:900;letter-spacing:1px;background:rgba(123,143,212,.08)}
+h1{font-size:22px;line-height:1.1;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.pill{border:1px solid var(--line);border-radius:999px;padding:8px 11px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.025);white-space:nowrap}
+.grid{display:grid;grid-template-columns:minmax(250px,.75fr) minmax(0,1.25fr);gap:14px}
+.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:15px}
+.panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin-bottom:12px}
+.clients{display:flex;flex-direction:column;gap:8px;max-height:600px;overflow:auto;padding-right:3px}
+.client-btn{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#101116;color:var(--text);padding:11px;cursor:pointer}
+.client-btn.active{border-color:var(--purple);box-shadow:0 0 0 1px rgba(123,143,212,.35)}
+.client-name{font-weight:800;font-size:14px}
+.client-email{font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.row.two{grid-template-columns:repeat(2,1fr)}
+.field{margin-bottom:12px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:800;margin-bottom:6px}
+input,textarea,select{width:100%;background:#101116;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;font-size:14px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--purple)}
+textarea{min-height:96px;resize:vertical;line-height:1.45}
+.metas{display:grid;grid-template-columns:1fr;gap:9px;margin:4px 0 14px}
+.meta{display:grid;grid-template-columns:1.1fr .55fr .55fr .8fr;gap:8px;align-items:end;background:#101116;border:1px solid var(--line);border-radius:12px;padding:10px}
+.meta label{font-size:10px;margin-bottom:5px}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.btn{border:none;border-radius:11px;padding:12px 15px;font-weight:800;color:#fff;cursor:pointer}
+.btn.primary{background:linear-gradient(135deg,var(--purple),#5364b8)}
+.btn.secondary{background:#101116;border:1px solid var(--line);color:var(--text)}
+.btn.danger{background:rgba(224,85,85,.12);border:1px solid rgba(224,85,85,.45);color:#ff8b8b}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.state{border:1px solid var(--line);background:#101116;border-radius:12px;padding:13px;color:var(--muted);font-size:13px;line-height:1.45}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(18px);opacity:0;transition:.25s;background:#171922;border:1px solid var(--purple);border-radius:12px;color:#fff;padding:12px 16px;font-size:13px;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){
+  body{padding:18px 14px 34px}
+  .top{flex-direction:column}
+  .grid{grid-template-columns:1fr}
+  .row,.row.two,.meta{grid-template-columns:1fr}
+  .pill{white-space:normal}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="mark">FX</div>
+    <div>
+      <h1>Painel Admin</h1>
+      <div class="sub">Publicacao de metas semanais para o app do cliente.</div>
+    </div>
+  </div>
+  <div class="pill" id="adminEmail">Validando acesso...</div>
+</header>
+
+<div id="blocked" class="state hidden">
+  Acesso restrito ao Giovani. Entre com o email autorizado e abra esta pagina novamente.
+</div>
+
+<main id="app" class="grid hidden">
+  <section class="panel">
+    <h2>Clientes</h2>
+    <div class="field">
+      <label for="clientSearch">Buscar</label>
+      <input id="clientSearch" type="search" placeholder="Nome ou email" autocomplete="off">
+    </div>
+    <div class="clients" id="clientList">
+      <div class="state">Carregando clientes...</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Metas da semana</h2>
+    <div id="emptyForm" class="state">Selecione um cliente para editar as metas.</div>
+    <form id="goalForm" class="hidden">
+      <div class="row">
+        <div class="field">
+          <label for="nome">Cliente</label>
+          <input id="nome" type="text" disabled>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" disabled>
+        </div>
+        <div class="field">
+          <label for="folderId">Pasta Drive</label>
+          <input id="folderId" type="text" placeholder="folder_id do Drive">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="ciclo">Ciclo</label>
+          <input id="ciclo" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="semana">Semana</label>
+          <input id="semana" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="totalSemanas">Total semanas</label>
+          <input id="totalSemanas" type="number" min="1" step="1" value="8">
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label for="dataInicio">Inicio da semana</label>
+          <input id="dataInicio" type="date">
+        </div>
+        <div class="field">
+          <label for="dataFim">Fim da semana</label>
+          <input id="dataFim" type="date">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="foco">Foco da semana</label>
+        <textarea id="foco" placeholder="Ex.: Priorizar sono, manter deficit calorico e concluir treino C."></textarea>
+      </div>
+
+      <div class="metas" id="metas"></div>
+
+      <div class="actions">
+        <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
+        <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
+        <button class="btn danger" type="button" id="logoutBtn">Sair</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://jxwodkpssivmcnbrsukm.supabase.co';
+const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
+const ADMIN_EMAIL = 'giovani.work@hotmail.com';
+const META_DEFS = [
+  {nome:'Treinos', unidade:'sessoes', meta_valor:3, realizado:0},
+  {nome:'Hidratação', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Diário Nutri', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Sono 7h+', unidade:'dias', meta_valor:7, realizado:0}
+];
+
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+let clients = [];
+let selectedClient = null;
+let currentGoal = null;
+
+function $(id){ return document.getElementById(id); }
+function asNum(id, fallback){
+  const n = Number($(id).value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function addDaysISO(iso, days){
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function norm(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+async function boot(){
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session){
+    $('adminEmail').textContent = 'Sem sessao';
+    $('blocked').classList.remove('hidden');
+    return;
+  }
+
+  const email = (session.user.email || '').toLowerCase();
+  $('adminEmail').textContent = email;
+  if(email !== ADMIN_EMAIL){
+    $('blocked').classList.remove('hidden');
+    return;
+  }
+
+  $('app').classList.remove('hidden');
+  await loadClients();
+}
+
+async function loadClients(){
+  $('clientList').innerHTML = '<div class="state">Carregando clientes...</div>';
+  const {data, error} = await supa.from('clients')
+    .select('email,nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp')
+    .order('nome', {ascending:true});
+  if(error){
+    $('clientList').innerHTML = '<div class="state">Nao foi possivel carregar clientes: '+error.message+'</div>';
+    return;
+  }
+  clients = data || [];
+  renderClients();
+}
+
+function renderClients(){
+  const q = norm($('clientSearch').value);
+  const filtered = clients.filter(c => !q || norm(c.nome).includes(q) || norm(c.email).includes(q));
+  if(!filtered.length){
+    $('clientList').innerHTML = '<div class="state">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  $('clientList').innerHTML = filtered.map(c => `
+    <button class="client-btn ${selectedClient && selectedClient.email === c.email ? 'active' : ''}" type="button" data-email="${c.email}">
+      <div class="client-name">${c.nome || 'Cliente'}</div>
+      <div class="client-email">${c.email}</div>
+    </button>
+  `).join('');
+  document.querySelectorAll('.client-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectClient(btn.dataset.email));
+  });
+}
+
+async function selectClient(email){
+  selectedClient = clients.find(c => c.email === email);
+  currentGoal = null;
+  renderClients();
+  fillClientForm();
+  await loadGoal();
+}
+
+function fillClientForm(){
+  $('emptyForm').classList.add('hidden');
+  $('goalForm').classList.remove('hidden');
+  $('nome').value = selectedClient.nome || '';
+  $('email').value = selectedClient.email || '';
+  $('folderId').value = selectedClient.folder_id || '';
+  $('ciclo').value = selectedClient.ciclo_atual || 1;
+  $('semana').value = selectedClient.semana_atual || 1;
+  $('totalSemanas').value = selectedClient.total_semanas || 8;
+  $('dataInicio').value = todayISO();
+  $('dataFim').value = addDaysISO(todayISO(), 6);
+  $('foco').value = '';
+  renderMetas(META_DEFS);
+}
+
+function renderMetas(metas){
+  $('metas').innerHTML = metas.map((m, i)=>`
+    <div class="meta" data-i="${i}">
+      <div class="field">
+        <label>Meta</label>
+        <input data-k="nome" value="${m.nome || ''}">
+      </div>
+      <div class="field">
+        <label>Objetivo</label>
+        <input data-k="meta_valor" type="number" min="0" step="1" value="${m.meta_valor || 0}">
+      </div>
+      <div class="field">
+        <label>Realizado</label>
+        <input data-k="realizado" type="number" min="0" step="1" value="${m.realizado || 0}">
+      </div>
+      <div class="field">
+        <label>Unidade</label>
+        <input data-k="unidade" value="${m.unidade || ''}">
+      </div>
+    </div>
+  `).join('');
+}
+
+function readMetas(){
+  return Array.from(document.querySelectorAll('.meta')).map(row=>{
+    const out = {};
+    row.querySelectorAll('input').forEach(inp=>{
+      const k = inp.dataset.k;
+      out[k] = (k === 'meta_valor' || k === 'realizado') ? Number(inp.value || 0) : inp.value.trim();
+    });
+    return out;
+  });
+}
+
+async function loadGoal(){
+  const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
+  const semana = asNum('semana', selectedClient.semana_atual || 1);
+  const {data, error} = await supa.from('weekly_goals')
+    .select('metas,foco_semana,data_inicio,data_fim,publicado')
+    .eq('client_email', selectedClient.email)
+    .eq('ciclo', ciclo)
+    .eq('semana', semana)
+    .maybeSingle();
+
+  if(error){
+    toast('Nao foi possivel carregar metas: ' + error.message);
+    return;
+  }
+  if(!data) return;
+  currentGoal = data;
+  if(Array.isArray(data.metas) && data.metas.length) renderMetas(data.metas);
+  $('foco').value = data.foco_semana || '';
+  if(data.data_inicio) $('dataInicio').value = data.data_inicio;
+  if(data.data_fim) $('dataFim').value = data.data_fim;
+}
+
+async function publishGoals(e){
+  e.preventDefault();
+  if(!selectedClient) return;
+
+  const btn = $('publishBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publicando...';
+
+  const ciclo = asNum('ciclo', 1);
+  const semana = asNum('semana', 1);
+  const total = asNum('totalSemanas', 8);
+  const metas = readMetas();
+
+  try{
+    const profileUpdate = {
+      ciclo_atual: ciclo,
+      semana_atual: semana,
+      total_semanas: total,
+      folder_id: $('folderId').value.trim() || null
+    };
+    const profileRes = await supa.from('clients')
+      .update(profileUpdate)
+      .eq('email', selectedClient.email);
+    if(profileRes.error) throw profileRes.error;
+
+    const payload = {
+      client_email: selectedClient.email,
+      ciclo: ciclo,
+      semana: semana,
+      metas: metas,
+      foco_semana: $('foco').value.trim(),
+      data_inicio: $('dataInicio').value || null,
+      data_fim: $('dataFim').value || null,
+      publicado: true
+    };
+    const goalRes = await supa.from('weekly_goals')
+      .upsert(payload, {onConflict:'client_email,ciclo,semana'});
+    if(goalRes.error) throw goalRes.error;
+
+    selectedClient = Object.assign({}, selectedClient, profileUpdate);
+    clients = clients.map(c => c.email === selectedClient.email ? selectedClient : c);
+    currentGoal = payload;
+    renderClients();
+    toast('Metas publicadas. O cliente ja pode ver no Dashboard.');
+  }catch(err){
+    toast('Erro ao publicar: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Publicar metas';
+  }
+}
+
+$('clientSearch').addEventListener('input', renderClients);
+$('goalForm').addEventListener('submit', publishGoals);
+$('reloadGoalBtn').addEventListener('click', loadGoal);
+$('logoutBtn').addEventListener('click', async()=>{
+  await supa.auth.signOut();
+  window.location.href = 'login.html';
+});
+$('ciclo').addEventListener('change', loadGoal);
+$('semana').addEventListener('change', loadGoal);
+
+boot();
+</script>
+</body>
+</html>
