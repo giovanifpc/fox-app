@@ -16,6 +16,9 @@ create table if not exists public.training_protocols (
 create index if not exists training_protocols_client_status_idx
   on public.training_protocols (client_email, status, publicado_em desc);
 
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.training_protocols to authenticated;
+
 alter table public.training_protocols enable row level security;
 
 drop policy if exists "training_protocols_select_own_or_admin" on public.training_protocols;
