@@ -1154,13 +1154,31 @@ async function loadExercisesDB(){
 }
 
 // Busca por exercise_id (primário) ou nome (fallback)
+function normalizeExerciseName(value){
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function exerciseNamesMatch(a,b){
+  const na = normalizeExerciseName(a);
+  const nb = normalizeExerciseName(b);
+  return !!na && !!nb && (na === nb || na.includes(nb) || nb.includes(na));
+}
+
 async function findExerciseGif(ex){
   const db = await loadExercisesDB();
   if(!db) return null;
 
   // Busca por exercise_id
   if(ex.exercise_id && db[String(ex.exercise_id)]){
-    return db[String(ex.exercise_id)].gif_url;
+    const item = db[String(ex.exercise_id)];
+    if(!ex.nome || exerciseNamesMatch(item.name, ex.nome)){
+      return item.gif_url;
+    }
   }
 
   // Fallback: busca por nome normalizado
