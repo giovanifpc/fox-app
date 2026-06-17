@@ -470,7 +470,7 @@ async function publishProtocol(){
   btn.textContent = 'Publicando...';
   try{
     const protocol = readProtocolJson();
-    protocol.nome = protocol.nome || selectedClient.nome || 'Atleta';
+    protocol.nome = selectedClient.nome || protocol.nome || 'Atleta';
     protocol.cycleNumber = Number(protocol.cycleNumber || asNum('ciclo', 1));
     protocol.cycleWeeks = Number(protocol.cycleWeeks || asNum('totalSemanas', 8));
     protocol.startDate = protocol.startDate || $('dataInicio').value || todayISO();

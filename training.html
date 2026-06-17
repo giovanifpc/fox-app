@@ -945,7 +945,6 @@ function applyTrainingProtocol(row){
   var protocol = row && row.protocol_json ? row.protocol_json : row;
   if(!validateDynamicProtocol(protocol)) return;
 
-  CLIENT.nome = protocol.nome || CLIENT.nome;
   CLIENT.cycleNumber = Number(protocol.cycleNumber || (row && row.ciclo) || CLIENT.cycleNumber);
   CLIENT.startDate = protocol.startDate || CLIENT.startDate;
   CLIENT.cycleWeeks = Number(protocol.cycleWeeks || CLIENT.cycleWeeks);
