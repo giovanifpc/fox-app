@@ -54,6 +54,19 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .protocol-box textarea{min-height:210px;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px;white-space:pre}
 .protocol-hint{font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 10px}
 .file-input{padding:9px;background:#101116}
+.media-audit{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.media-row{display:grid;grid-template-columns:74px 1fr;gap:10px;align-items:center;background:#0c0d12;border:1px solid var(--line);border-radius:12px;padding:9px}
+.media-row.ok{border-color:rgba(82,183,136,.42)}
+.media-row.warn{border-color:rgba(255,140,66,.55)}
+.media-row.miss{border-color:rgba(224,85,85,.48)}
+.media-thumb{width:74px;height:58px;border-radius:9px;background:#151720;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--faint);font-size:11px;text-align:center}
+.media-thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.media-title{font-size:13px;font-weight:850;line-height:1.25}
+.media-meta{font-size:11px;color:var(--muted);line-height:1.45;margin-top:3px}
+.media-status{font-size:11px;font-weight:900;margin-top:6px}
+.media-row.ok .media-status{color:var(--green)}
+.media-row.warn .media-status{color:var(--amber)}
+.media-row.miss .media-status{color:#ff8b8b}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .btn{border:none;border-radius:11px;padding:12px 15px;font-weight:800;color:#fff;cursor:pointer}
 .btn.primary{background:linear-gradient(135deg,var(--purple),#5364b8)}
@@ -194,8 +207,11 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <button class="btn primary" type="button" id="publishProtocolBtn">Publicar treino</button>
           <button class="btn secondary" type="button" id="loadProtocolBtn">Carregar publicado</button>
           <button class="btn secondary" type="button" id="sampleProtocolBtn">Modelo JSON</button>
+          <button class="btn secondary" type="button" id="auditMediaBtn">Validar GIFs</button>
+          <button class="btn secondary hidden" type="button" id="applyMediaBtn">Preencher GIFs</button>
           <button class="btn secondary" type="button" id="notifyTrainingBtn">Avisar no WhatsApp</button>
         </div>
+        <div id="mediaAudit" class="media-audit hidden"></div>
       </div>
     </form>
   </section>
@@ -208,6 +224,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 const SUPA_URL = 'https://jxwodkpssivmcnbrsukm.supabase.co';
 const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
 const ADMIN_EMAIL = 'giovani.work@hotmail.com';
+const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/data/exercises.json';
 const META_DEFS = [
   {nome:'Treinos', unidade:'sessoes', meta_valor:3, realizado:0},
   {nome:'Hidratação', unidade:'dias', meta_valor:7, realizado:0},
@@ -220,6 +237,8 @@ let clients = [];
 let selectedClient = null;
 let currentGoal = null;
 let currentProtocol = null;
+let exercisesDb = null;
+let lastMediaAudit = [];
 let creatingClient = false;
 
 function $(id){ return document.getElementById(id); }
@@ -245,6 +264,25 @@ function addDaysISO(iso, days){
 }
 function norm(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function normExercise(s){
+  return norm(s).replace(/[^a-z0-9]+/g,' ').trim();
+}
+function namesMatch(a,b){
+  const na = normExercise(a);
+  const nb = normExercise(b);
+  return !!na && !!nb && (na === nb || na.includes(nb) || nb.includes(na));
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadExercisesDb(){
+  if(exercisesDb) return exercisesDb;
+  const r = await fetch(EXERCISES_JSON_URL);
+  if(!r.ok) throw new Error('Nao foi possivel carregar exercises.json.');
+  exercisesDb = await r.json();
+  return exercisesDb;
 }
 
 async function boot(){
@@ -438,12 +476,140 @@ function readProtocolJson(){
   return validateProtocol(JSON.parse(raw));
 }
 
+function resetMediaAudit(){
+  lastMediaAudit = [];
+  $('mediaAudit').classList.add('hidden');
+  $('mediaAudit').innerHTML = '';
+  $('applyMediaBtn').classList.add('hidden');
+}
+
+function resolveExerciseMedia(db, ex){
+  if(ex.media){
+    return {status:'ok', method:'manual', item:null, url:ex.media, message:'GIF/manual ja preenchido no JSON.'};
+  }
+
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    const item = db[String(ex.exercise_id)];
+    if(namesMatch(item.name, ex.nome)){
+      return {status:'ok', method:'id', item, url:item.gif_url, message:'ID confirmado pelo nome do exercicio.'};
+    }
+
+    const byNameAfterMismatch = findExerciseByName(db, ex.nome);
+    if(byNameAfterMismatch){
+      return {
+        status:'warn',
+        method:'name',
+        item:byNameAfterMismatch,
+        url:byNameAfterMismatch.gif_url,
+        message:'ID aponta para "' + item.name + '", mas o nome encontrou "' + byNameAfterMismatch.name + '".'
+      };
+    }
+
+    return {status:'miss', method:'id_mismatch', item, url:null, message:'ID aponta para "' + item.name + '" e nao achei alternativa por nome.'};
+  }
+
+  const byName = findExerciseByName(db, ex.nome);
+  if(byName){
+    return {status:'warn', method:'name', item:byName, url:byName.gif_url, message:'Sem ID confiavel; encontrado por nome.'};
+  }
+
+  return {status:'miss', method:'none', item:null, url:null, message:'Sem GIF encontrado. Preencha media manualmente.'};
+}
+
+function findExerciseByName(db, nome){
+  const wanted = normExercise(nome);
+  if(!wanted) return null;
+  for(const key of Object.keys(db)){
+    const item = db[key];
+    const dbName = normExercise(item.name);
+    if(dbName === wanted || dbName.includes(wanted) || wanted.includes(dbName)) return item;
+  }
+  return null;
+}
+
+async function auditProtocolMedia(){
+  const box = $('mediaAudit');
+  const applyBtn = $('applyMediaBtn');
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="state">Validando GIFs...</div>';
+  applyBtn.classList.add('hidden');
+  lastMediaAudit = [];
+
+  try{
+    const protocol = readProtocolJson();
+    const db = await loadExercisesDb();
+    const rows = [];
+    protocol.workouts.forEach((w, wi)=>{
+      w.exercises.forEach((ex, ei)=>{
+        const resolved = resolveExerciseMedia(db, ex);
+        rows.push({workout:w, workoutIndex:wi, exercise:ex, exerciseIndex:ei, resolved});
+      });
+    });
+    lastMediaAudit = rows;
+    renderMediaAudit(rows);
+    if(rows.some(r => r.resolved.url && !r.exercise.media)){
+      applyBtn.classList.remove('hidden');
+    }
+  }catch(err){
+    box.innerHTML = '<div class="state">Nao foi possivel validar: '+escapeHtml(err.message || err)+'</div>';
+  }
+}
+
+function renderMediaAudit(rows){
+  const box = $('mediaAudit');
+  if(!rows.length){
+    box.innerHTML = '<div class="state">Nenhum exercicio encontrado no protocolo.</div>';
+    return;
+  }
+  const ok = rows.filter(r=>r.resolved.status === 'ok').length;
+  const warn = rows.filter(r=>r.resolved.status === 'warn').length;
+  const miss = rows.filter(r=>r.resolved.status === 'miss').length;
+  const summary = '<div class="state">GIFs: '+ok+' ok, '+warn+' revisar, '+miss+' sem match.</div>';
+  box.innerHTML = summary + rows.map(r=>{
+    const res = r.resolved;
+    const cls = res.status;
+    const img = res.url ? '<img src="'+escapeHtml(res.url)+'" alt="">' : 'Sem GIF';
+    const found = res.item ? 'Encontrado: '+res.item.exercise_id+' - '+res.item.name : 'Encontrado: nenhum';
+    return '<div class="media-row '+cls+'">' +
+      '<div class="media-thumb">'+img+'</div>' +
+      '<div>' +
+        '<div class="media-title">'+escapeHtml(r.workout.id)+' · '+escapeHtml(r.exercise.nome)+'</div>' +
+        '<div class="media-meta">JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
+        '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function applyResolvedMedia(){
+  if(!lastMediaAudit.length){ toast('Valide os GIFs antes de preencher.'); return; }
+  try{
+    const protocol = readProtocolJson();
+    let applied = 0;
+    lastMediaAudit.forEach(row=>{
+      const ex = protocol.workouts[row.workoutIndex].exercises[row.exerciseIndex];
+      if(row.resolved.url && !ex.media){
+        ex.media = row.resolved.url;
+        ex.mediaType = 'img';
+        if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
+        applied++;
+      }
+    });
+    $('protocolJson').value = JSON.stringify(protocol, null, 2);
+    toast(applied ? applied + ' GIF(s) preenchido(s) no JSON.' : 'Nada novo para preencher.');
+    auditProtocolMedia();
+  }catch(err){
+    toast('Erro ao preencher GIFs: ' + (err.message || err));
+  }
+}
+
 async function loadProtocol(){
   if(!selectedClient || creatingClient) return;
   currentProtocol = null;
   $('protocolTitle').value = '';
   $('protocolVersion').value = 1;
   $('protocolJson').value = '';
+  resetMediaAudit();
   try{
     const {data, error} = await supa.from('training_protocols')
       .select('titulo,versao,protocol_json,ciclo,status,publicado_em')
@@ -458,6 +624,7 @@ async function loadProtocol(){
     $('protocolTitle').value = data.titulo || '';
     $('protocolVersion').value = data.versao || 1;
     $('protocolJson').value = JSON.stringify(data.protocol_json || {}, null, 2);
+    resetMediaAudit();
   }catch(err){
     toast('Treino dinamico ainda nao disponivel: ' + (err.message || err));
   }
@@ -655,8 +822,12 @@ $('publishProtocolBtn').addEventListener('click', publishProtocol);
 $('sampleProtocolBtn').addEventListener('click', ()=>{
   $('protocolJson').value = JSON.stringify(sampleProtocol(), null, 2);
   if(!$('protocolTitle').value) $('protocolTitle').value = 'Ciclo ' + asNum('ciclo', 1);
+  resetMediaAudit();
 });
+$('auditMediaBtn').addEventListener('click', auditProtocolMedia);
+$('applyMediaBtn').addEventListener('click', applyResolvedMedia);
 $('notifyTrainingBtn').addEventListener('click', notifyTraining);
+$('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
   const file = this.files && this.files[0];
   if(!file) return;
@@ -666,6 +837,7 @@ $('protocolFile').addEventListener('change', function(){
       const parsed = validateProtocol(JSON.parse(String(reader.result || '')));
       $('protocolJson').value = JSON.stringify(parsed, null, 2);
       if(!$('protocolTitle').value) $('protocolTitle').value = file.name.replace(/\.json$/i,'');
+      resetMediaAudit();
       toast('JSON importado e validado.');
     }catch(err){
       toast('JSON invalido: ' + (err.message || err));
