@@ -689,6 +689,33 @@ async function foxSaveTraining(data){
   // Desativado nesta fase: evita POST automático no Supabase enquanto o schema definitivo não está fechado.
   return;
 }
+async function foxSaveTrainingSession(record){
+  if(!record || !window.FOX_USER_EMAIL || !supa) return;
+  try{
+    var payload = {
+      client_email: String(window.FOX_USER_EMAIL).toLowerCase(),
+      session_uid: record.sessionUid || ('tr_' + Date.now()),
+      completed_at: record.date || new Date().toISOString(),
+      workout_id: record.workoutId || null,
+      workout_name: record.workoutName || null,
+      ciclo: record.cycle || null,
+      semana: record.week || null,
+      minutes: record.minutes || 0,
+      sets_done: record.setsDone || 0,
+      exercises_done: record.exDone || 0,
+      incomplete: !!record.incomplete,
+      protocol_title: record.protocolTitle || null,
+      protocol_version: record.protocolVersion || null,
+      detail: record.detail || [],
+      raw_data: record
+    };
+    var r = await supa.from('training_history')
+      .upsert(payload, {onConflict:'client_email,session_uid'});
+    if(r.error) throw r.error;
+  }catch(err){
+    console.warn('Nao foi possivel salvar treino no Supabase:', err && err.message ? err.message : err);
+  }
+}
 async function foxSaveNutri(data){
   // Desativado nesta fase: evita POST automático no Supabase enquanto o schema definitivo não está fechado.
   return;
@@ -721,6 +748,9 @@ window.addEventListener('message', function(e){
       if(dF1 && dF1.contentWindow) dF1.contentWindow.postMessage(e.data, '*');
     }
     foxSaveTraining(e.data.data);
+  }
+  if(e.data.type === 'fox-training-session'){
+    foxSaveTrainingSession(e.data.data);
   }
   if(e.data.type === 'fox-nutri-data'){
     latestNutriData = e.data.data;

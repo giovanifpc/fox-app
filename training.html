@@ -1344,6 +1344,11 @@ function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
 
 /* ---- FINALIZAR TREINO ---- */
+function makeSessionUid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'tr_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+}
+
 function finishWorkout(incomplete){
   skipRest();
   const w = CLIENT.workouts[state.workoutIndex];
@@ -1364,6 +1369,7 @@ function finishWorkout(incomplete){
   });
 
   const record = {
+    sessionUid:makeSessionUid(),
     date:new Date().toISOString(), workoutId:w.id, workoutName:w.name,
     cycle:CLIENT.cycleNumber, week:wk, minutes:elapsedMin, setsDone, exDone,
     protocolTitle: window.FOX_ACTIVE_TRAINING_PROTOCOL && window.FOX_ACTIVE_TRAINING_PROTOCOL.titulo ? window.FOX_ACTIVE_TRAINING_PROTOCOL.titulo : null,
@@ -1382,6 +1388,7 @@ function finishWorkout(incomplete){
   checkBadges(store);
   saveStore(store);
   try{ parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*"); }catch(e){}
+  try{ parent.postMessage({type:"fox-training-session",data:record},"*"); }catch(e){}
 
   // tela conclusão
   document.getElementById("fsEx").textContent=exDone;
