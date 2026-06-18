@@ -287,6 +287,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           Rascunhos consolidados pela automacao semanal. Revise os dados, adicione sua leitura e deixe pronto para a etapa de devolutiva/publicacao.
         </div>
         <div class="actions" style="margin-bottom:10px">
+          <button class="btn primary" type="button" id="generateReportBtn">Gerar rascunho</button>
           <button class="btn secondary" type="button" id="loadReportsBtn">Carregar relatorios</button>
           <button class="btn secondary" type="button" id="copyReportBtn" disabled>Copiar resumo</button>
         </div>
@@ -984,6 +985,33 @@ async function loadWeeklyReports(){
   }
 }
 
+async function generateWeeklyReportDraft(){
+  if(!selectedClient || creatingClient) return;
+  const btn = $('generateReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Gerando...';
+  try{
+    await saveClientContext();
+    const body = {
+      client_email: selectedClient.email,
+      period_start: $('dataInicio').value || undefined,
+      period_end: $('dataFim').value || undefined
+    };
+    const {data, error} = await supa.functions.invoke('weekly-report', {body});
+    if(error) throw error;
+    if(!data || data.ok === false) throw new Error((data && data.error) || 'Funcao nao retornou ok.');
+    toast('Rascunho semanal gerado.');
+    await loadWeeklyReports();
+    if(data.reports && data.reports[0] && data.reports[0].id) selectReport(data.reports[0].id);
+  }catch(err){
+    toast('Erro ao gerar rascunho: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
 function renderWeeklyReports(){
   if(!weeklyReports.length){
     $('reportList').innerHTML = '<div class="state">Ainda nao existe rascunho semanal para este cliente. Depois que a Edge Function rodar, ele aparece aqui.</div>';
@@ -1238,6 +1266,7 @@ $('applyMediaBtn').addEventListener('click', applyResolvedMedia);
 $('notifyTrainingBtn').addEventListener('click', notifyTraining);
 $('saveContextBtn').addEventListener('click', saveClientContext);
 $('reloadContextBtn').addEventListener('click', loadClientContext);
+$('generateReportBtn').addEventListener('click', generateWeeklyReportDraft);
 $('loadReportsBtn').addEventListener('click', loadWeeklyReports);
 $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));

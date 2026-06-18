@@ -43,10 +43,13 @@ No Supabase, a funcao precisa ter:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `WEEKLY_REPORT_SECRET` opcional, para proteger chamadas manuais
+- `ADMIN_EMAIL` opcional, por padrao `giovani.work@hotmail.com`
 - `ANTHROPIC_API_KEY` opcional, para gerar a devolutiva com Claude
 - `ANTHROPIC_MODEL` opcional, para escolher o modelo Claude usado
 
 Se `ANTHROPIC_API_KEY` nao estiver configurada, a funcao continua gerando o relatorio normalmente e preenche um rascunho simples de fallback.
+
+O Admin tambem consegue chamar a funcao manualmente pelo botao `Gerar rascunho`, desde que a funcao esteja publicada no Supabase Functions e o usuario logado seja o Admin.
 
 ## 4. Teste manual esperado
 
@@ -76,6 +79,7 @@ O Admin ja possui uma area de revisao dos rascunhos gerados:
 
 - selecione o cliente
 - abra `Relatorios semanais`
+- opcionalmente clique em `Gerar rascunho` para criar um relatorio manual do periodo escolhido
 - clique em `Carregar relatorios`
 - revise o rascunho e as notas
 - use `Marcar pronto` quando a devolutiva estiver pronta para a proxima etapa
