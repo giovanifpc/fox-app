@@ -334,6 +334,66 @@ canvas{display:block;width:100%}
 .dev-date{font-family:'Courier New',monospace;font-size:9px;color:#8B6A30;letter-spacing:.5px;margin-top:2px}
 .dev-btn{background:linear-gradient(135deg,#8B6420,#6B4A10);border:none;border-radius:6px;padding:8px 14px;font-family:'Courier New',monospace;font-size:10px;font-weight:700;letter-spacing:1px;color:#F5E8C0;cursor:pointer;text-transform:uppercase;flex-shrink:0}
 
+/* Dashboard validado: ficha pessoal com papel timbrado */
+.dash-folder{position:relative;padding-top:28px}
+.dash-tab{position:absolute;top:0;left:8px;min-width:176px;height:34px;padding:9px 18px 0;background:linear-gradient(180deg,#f1c75a,#d9a32b);border:1px solid #b88414;border-bottom:0;border-radius:9px 18px 0 0;color:#5a3900;font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-cover{background:linear-gradient(180deg,#f3c85a 0%,#e1ad34 100%);border:1px solid #b88414;border-radius:0 12px 12px 12px;padding:14px;box-shadow:0 18px 40px rgba(0,0,0,.42)}
+.dash-cover-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:4px 2px 13px;border-bottom:1px solid rgba(92,58,0,.22)}
+.dash-eyebrow{font-family:"Courier New",monospace;font-size:9px;font-weight:700;letter-spacing:1.4px;color:#6b4600;text-transform:uppercase}
+.dash-letterhead{display:flex;align-items:center;gap:7px;opacity:.62}
+.dash-letterhead img{width:34px;height:34px;object-fit:contain;opacity:.38;filter:sepia(1) saturate(.55) brightness(.65)}
+.dash-letterhead-text{font-size:8px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;color:#4e3303;white-space:nowrap;line-height:1.1}
+.dash-paper{position:relative;margin-top:14px;background:linear-gradient(90deg,rgba(170,130,50,.13) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(180deg,#fffdf6,#f5ead1);border:1px solid rgba(117,82,13,.24);border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(73,48,4,.18);color:#15120c}
+.dash-paper::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(180deg,#ff8c42,#4fc3f7,#22c55e,#a855f7)}
+.dash-paper-inner{padding:15px 14px 13px 18px}
+.dash-paper-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
+.dash-title{font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;color:#342714}
+.dash-date{font-family:"Courier New",monospace;font-size:9px;color:#8a7a59;white-space:nowrap}
+.dash-progress-wrap{display:grid;grid-template-columns:138px 1fr;gap:14px;align-items:center}
+.dash-rings{width:138px;height:138px;position:relative;display:grid;place-items:center}
+.dash-rings svg{width:138px;height:138px}
+.dash-center{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:1;min-width:34px;min-height:34px;justify-content:center;background:rgba(255,253,246,.92);border:1px solid rgba(119,86,25,.18);border-radius:50%;box-shadow:0 5px 12px rgba(78,50,4,.13),inset 0 1px 0 rgba(255,255,255,.85)}
+.dash-center strong{font-family:Georgia,serif;font-size:14px;color:#1c1509}
+.dash-center span{margin-top:2px;font-size:4.8px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;color:#81704e}
+.dash-score{border:1px solid #dfd2b1;background:rgba(255,255,255,.58);border-radius:8px;padding:10px 10px 11px}
+.dash-score-label{font-size:9px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:#7b6a47;margin-bottom:6px}
+.dash-score-value{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#15120c}
+.dash-score-note{font-size:10px;line-height:1.35;color:#75684f;margin-top:4px}
+.dash-metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+.dash-metric{border:1px solid #dfd2b1;background:rgba(255,255,255,.62);border-radius:8px;padding:9px 9px 8px;min-height:68px}
+.dash-metric-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.dash-metric-name{font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#4c402b}
+.dash-dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.dash-bar{height:6px;border-radius:999px;background:#e6dbc0;overflow:hidden}
+.dash-fill{height:100%;border-radius:999px}
+.dash-metric-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:#6f634a}
+.dash-metric-foot strong{color:#1e170d}
+.dash-achievements{margin-top:10px;padding:10px;border:1px dashed rgba(101,72,16,.35);border-radius:8px;background:rgba(255,255,255,.25)}
+.dash-ach-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.dash-ach-title{font-size:9px;font-weight:900;letter-spacing:1.4px;text-transform:uppercase;color:#5b4b2d}
+.dash-ach-count{font-family:"Courier New",monospace;font-size:9px;font-weight:700;color:#8a7a59;white-space:nowrap}
+.dash-ach-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.medal{min-height:48px;border:1px solid rgba(224,211,179,.9);border-radius:7px;background:rgba(255,255,255,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 2px}
+.medal-icon{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:#ded4bc;color:#94866a;filter:grayscale(1);opacity:.55;font-weight:900}
+.medal span{font-size:6px;line-height:1.15;color:#8a806c;text-align:center;font-weight:800}
+.medal.on{border-color:rgba(255,140,66,.45);background:linear-gradient(180deg,rgba(255,255,255,.76),rgba(255,237,205,.55));box-shadow:0 4px 12px rgba(255,140,66,.12)}
+.medal.on .medal-icon{background:linear-gradient(135deg,#ffd36b,#ff8c42);color:#3b2505;filter:none;opacity:1;box-shadow:0 3px 8px rgba(255,140,66,.25)}
+.medal.on span{color:#4a3820}
+.medal.seed{border-color:rgba(130,96,28,.34);background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(240,224,184,.52))}
+.medal.seed .medal-icon{background:linear-gradient(135deg,#f5e3ad,#d6a73d);color:#4a3103;filter:none;opacity:1}
+.medal.seed span{color:#5a4624}
+.dash-week-stamp{position:absolute;right:13px;bottom:12px;transform:rotate(-8deg);border:2px solid rgba(177,66,39,.32);color:rgba(177,66,39,.58);border-radius:50%;width:54px;height:54px;display:grid;place-items:center;text-align:center;font-size:7px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;line-height:1.25}
+.dossie-body > .ficha:first-of-type{display:none}
+@media (max-width:390px){
+  .dash-progress-wrap{grid-template-columns:126px 1fr;gap:10px}
+  .dash-rings,.dash-rings svg{width:126px;height:126px}
+  .dash-score-value{font-size:26px}
+  .dash-metric{padding:8px 7px}
+  .dash-ach-grid{grid-template-columns:repeat(5,1fr);gap:5px}
+  .medal{min-height:45px}
+  .medal span{font-size:5.6px}
+}
+
 </style>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -496,11 +556,15 @@ function applyWeeklyGoalsToDashboard(metas){
     return null;
   }
 
+  var totalDone = 0;
+  var totalGoal = 0;
   window.FOX_WEEKLY_GOALS.forEach(function(m){
     const cfg = ringMap[m.nome] || cfgByGoalName(m.nome);
     if(!cfg) return;
     const meta = Number(m.meta_valor || 0);
     const feito = Number(m.realizado || 0);
+    totalDone += feito;
+    totalGoal += meta;
     const ratio = meta > 0 ? Math.max(0, Math.min(1, feito / meta)) : 0;
     const pctText = Math.round(ratio * 100) + '%';
     const ring = document.getElementById(cfg.ring);
@@ -511,13 +575,18 @@ function applyWeeklyGoalsToDashboard(metas){
     if(bar) bar.style.width = pctText;
     const pct = document.getElementById(cfg.pct);
     if(pct){
-      pct.textContent = pctText;
+      pct.textContent = feito + '/' + meta;
       if(cfg.ring === 'dash-ring1') pct.style.color = colorMap.dash1;
       if(cfg.ring === 'dash-ring2') pct.style.color = colorMap.dash2;
       if(cfg.ring === 'dash-ring3') pct.style.color = colorMap.dash3;
       if(cfg.ring === 'dash-ring4') pct.style.color = colorMap.dash4;
     }
   });
+  var adherence = totalGoal > 0 ? Math.round((totalDone / totalGoal) * 100) : 0;
+  var adherenceEl = document.getElementById('dash-adherence');
+  if(adherenceEl) adherenceEl.textContent = adherence + '%';
+  var scoreEl = document.getElementById('dash-score');
+  if(scoreEl) scoreEl.textContent = totalDone + '/' + totalGoal;
 }
 
 function updateRingsFromGoals(metas){
@@ -647,20 +716,17 @@ function foxRefreshTrainingAchievements(){
   var box = document.getElementById('dash-achievements');
   if(!box) return;
   var items = box.querySelectorAll('[data-ach]');
+  var earnedCount = 0;
   for(var i=0;i<items.length;i++){
     var item = items[i];
     var id = item.getAttribute('data-ach');
     var realId = alias[id] || id;
     var earned = badges.indexOf(realId) >= 0 || badges.indexOf(id) >= 0;
-    item.style.background = earned ? 'linear-gradient(145deg,#fff8e7,#fff)' : '#f8f8f8';
-    item.style.borderColor = earned ? 'rgba(255,140,66,.55)' : '#eee';
-    item.style.boxShadow = earned ? '0 0 14px rgba(255,140,66,.18)' : 'none';
-    var icon = item.querySelector('div');
-    if(icon){
-      icon.style.filter = earned ? 'none' : 'grayscale(1)';
-      icon.style.opacity = earned ? '1' : '.3';
-    }
+    if(earned) earnedCount++;
+    item.classList.toggle('on', earned);
   }
+  var countEl = document.getElementById('dash-ach-count');
+  if(countEl) countEl.textContent = earnedCount + '/9 liberadas';
 }
 
 function foxRefreshDashboardProgress(){
@@ -783,7 +849,10 @@ function renderSupabaseDevolutiva(rep){
   if(d) d.textContent = fmtDate(date);
   if(h) h.textContent = new Date(date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
   if(hint) hint.textContent = rep.drive_file_id ? '* PDF completo publicado pelo Giovani' : '* devolutiva publicada pelo Giovani';
-  if(b) b.onclick = function(){ openPublishedReport(rep); };
+  if(b){
+    b.textContent = rep.drive_file_id ? 'Abrir PDF' : 'Abrir texto';
+    b.onclick = function(){ openPublishedReport(rep); };
+  }
 }
 
 function openPublishedReport(rep){
@@ -833,6 +902,56 @@ function openPublishedReport(rep){
     </div>
   </div>
   <div class="dossie-body">
+    <article class="dash-paper">
+      <div class="dash-paper-inner">
+        <div class="dash-paper-top">
+          <div class="dash-title">Metas da semana</div>
+          <div class="dash-date" id="dash-week-range">--</div>
+        </div>
+        <div class="dash-progress-wrap">
+          <div class="dash-rings" aria-label="Progresso semanal">
+            <svg viewBox="0 0 138 138">
+              <circle cx="69" cy="69" r="60" fill="none" stroke="#eadfca" stroke-width="10"/>
+              <circle cx="69" cy="69" r="60" fill="none" stroke="#ff8c42" stroke-width="10" stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="364.4" transform="rotate(-90 69 69)" id="dash-ring1" style="transition:stroke-dashoffset 1.2s ease"/>
+              <circle cx="69" cy="69" r="47" fill="none" stroke="#eadfca" stroke-width="10"/>
+              <circle cx="69" cy="69" r="47" fill="none" stroke="#4fc3f7" stroke-width="10" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 69 69)" id="dash-ring2" style="transition:stroke-dashoffset 1.2s ease .15s"/>
+              <circle cx="69" cy="69" r="34" fill="none" stroke="#eadfca" stroke-width="10"/>
+              <circle cx="69" cy="69" r="34" fill="none" stroke="#22c55e" stroke-width="10" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 69 69)" id="dash-ring3" style="transition:stroke-dashoffset 1.2s ease .3s"/>
+              <circle cx="69" cy="69" r="21" fill="none" stroke="#eadfca" stroke-width="10"/>
+              <circle cx="69" cy="69" r="21" fill="none" stroke="#a855f7" stroke-width="10" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2" transform="rotate(-90 69 69)" id="dash-ring4" style="transition:stroke-dashoffset 1.2s ease .45s"/>
+            </svg>
+            <div class="dash-center"><strong id="dash-adherence">0%</strong><span>adesao</span></div>
+          </div>
+          <aside class="dash-score">
+            <div class="dash-score-label">Resumo</div>
+            <div class="dash-score-value" id="dash-score">0/0</div>
+            <div class="dash-score-note">Pontos de rotina concluidos nesta semana.</div>
+          </aside>
+        </div>
+        <div class="dash-metric-grid">
+          <section class="dash-metric"><div class="dash-metric-head"><div class="dash-metric-name">Treino</div><div class="dash-dot" style="background:#ff8c42"></div></div><div class="dash-bar"><div class="dash-fill" id="bar1" style="width:0%;background:#ff8c42;transition:width 1s ease"></div></div><div class="dash-metric-foot"><span>Feito</span><strong id="barpct1">--</strong></div><span id="dash-leg1" style="display:none">Treinos --</span></section>
+          <section class="dash-metric"><div class="dash-metric-head"><div class="dash-metric-name">Hidratacao</div><div class="dash-dot" style="background:#4fc3f7"></div></div><div class="dash-bar"><div class="dash-fill" id="bar2" style="width:0%;background:#4fc3f7;transition:width 1s ease .1s"></div></div><div class="dash-metric-foot"><span>Feito</span><strong id="barpct2">--</strong></div><span id="dash-leg2" style="display:none">Hidratacao --</span></section>
+          <section class="dash-metric"><div class="dash-metric-head"><div class="dash-metric-name">Nutri</div><div class="dash-dot" style="background:#22c55e"></div></div><div class="dash-bar"><div class="dash-fill" id="bar3" style="width:0%;background:#22c55e;transition:width 1s ease .2s"></div></div><div class="dash-metric-foot"><span>Feito</span><strong id="barpct3">--</strong></div><span id="dash-leg3" style="display:none">Nutri --</span></section>
+          <section class="dash-metric"><div class="dash-metric-head"><div class="dash-metric-name">Sono</div><div class="dash-dot" style="background:#a855f7"></div></div><div class="dash-bar"><div class="dash-fill" id="bar4" style="width:0%;background:#a855f7;transition:width 1s ease .3s"></div></div><div class="dash-metric-foot"><span>Feito</span><strong id="barpct4">--</strong></div><span id="dash-leg4" style="display:none">Sono --</span></section>
+        </div>
+        <section class="dash-achievements">
+          <div class="dash-ach-head"><div class="dash-ach-title">Conquistas do ciclo</div><div class="dash-ach-count" id="dash-ach-count">0/9 liberadas</div></div>
+          <div class="dash-ach-grid" id="dash-achievements">
+            <div class="medal seed"><div class="medal-icon">FOX</div><span>Quadro<br>ativo</span></div>
+            <div class="medal" data-ach="first"><div class="medal-icon">1</div><span>Primeiro<br>treino</span></div>
+            <div class="medal" data-ach="volta1"><div class="medal-icon">A</div><span>Volta<br>A-B-C</span></div>
+            <div class="medal" data-ach="five"><div class="medal-icon">5</div><span>5<br>treinos</span></div>
+            <div class="medal" data-ach="streak2"><div class="medal-icon">2</div><span>2 sem.<br>seguidas</span></div>
+            <div class="medal" data-ach="ten"><div class="medal-icon">10</div><span>10<br>treinos</span></div>
+            <div class="medal" data-ach="load"><div class="medal-icon">+</div><span>Subiu<br>carga</span></div>
+            <div class="medal" data-ach="streak4"><div class="medal-icon">4</div><span>4 sem.<br>seguidas</span></div>
+            <div class="medal" data-ach="volta3"><div class="medal-icon">3</div><span>3 voltas<br>completas</span></div>
+            <div class="medal" data-ach="cycle"><div class="medal-icon">*</div><span>Ciclo<br>completo</span></div>
+          </div>
+        </section>
+      </div>
+      <div class="dash-week-stamp">Semana<br>ativa</div>
+    </article>
     <!-- FICHA 1 -->
     <div class="ficha" style="--ficha-accent:transparent;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.35)">
       <div style="height:3px;background:linear-gradient(90deg,#7B8FD4,#a855f7,#FF8C42)"></div>
