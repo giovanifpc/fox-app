@@ -730,6 +730,53 @@ async function foxSaveNutri(data){
   return;
 }
 
+async function foxSaveNutriRemote(data){
+  if(!data || !window.FOX_USER_EMAIL || !supa) return;
+  try{
+    var days = data.days || {};
+    var keys = Array.isArray(data.dayKeys) ? data.dayKeys : Object.keys(days);
+    var rows = [];
+    keys.forEach(function(key){
+      var day = days[key];
+      if(!day) return;
+      var meals = day.meals || {};
+      var totals = {kcal:0, protein:0, carbs:0, fat:0, items:0};
+      Object.keys(meals).forEach(function(mealName){
+        var items = Array.isArray(meals[mealName]) ? meals[mealName] : [];
+        items.forEach(function(item){
+          totals.items++;
+          totals.kcal += Number(item.kcal || 0);
+          totals.protein += Number(item.prot || item.protein || 0);
+          totals.carbs += Number(item.carb || item.carbs || 0);
+          totals.fat += Number(item.fat || 0);
+        });
+      });
+      var water = Number(day.water || 0);
+      if(!totals.items && !water) return;
+      rows.push({
+        client_email: String(window.FOX_USER_EMAIL).toLowerCase(),
+        date_key: key,
+        logged_at: new Date().toISOString(),
+        kcal: totals.kcal,
+        protein_g: totals.protein,
+        carbs_g: totals.carbs,
+        fat_g: totals.fat,
+        water_ml: Math.round(water),
+        meals: meals,
+        profile: data.profile || {},
+        raw_data: day,
+        updated_at: new Date().toISOString()
+      });
+    });
+    if(!rows.length) return;
+    var r = await supa.from('nutri_history')
+      .upsert(rows, {onConflict:'client_email,date_key'});
+    if(r.error) throw r.error;
+  }catch(err){
+    console.warn('Nao foi possivel salvar nutri no Supabase:', err && err.message ? err.message : err);
+  }
+}
+
 window.addEventListener('message', function(e){
   if(!e.data) return;
   if(e.data === 'fox-back') backToHub();
@@ -770,7 +817,7 @@ window.addEventListener('message', function(e){
       var dF2 = document.getElementById('frame-drive');
       if(dF2 && dF2.contentWindow) dF2.contentWindow.postMessage(e.data, '*');
     }
-    foxSaveNutri(e.data.data);
+    foxSaveNutriRemote(e.data.data);
   }
   if(e.data.type === 'fox-open-module' && e.data.module) openModule(e.data.module);
 });
