@@ -390,6 +390,15 @@ function namesMatch(a,b){
 function escapeHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function errorText(err){
+  if(!err) return 'Erro desconhecido.';
+  if(typeof err === 'string') return err;
+  if(err.message && typeof err.message === 'string') return err.message;
+  if(err.error && typeof err.error === 'string') return err.error;
+  if(err.details && typeof err.details === 'string') return err.details;
+  try{ return JSON.stringify(err); }
+  catch(e){ return String(err); }
+}
 
 async function loadExercisesDb(){
   if(exercisesDb) return exercisesDb;
@@ -677,7 +686,7 @@ async function auditProtocolMedia(){
       applyBtn.classList.remove('hidden');
     }
   }catch(err){
-    box.innerHTML = '<div class="state">Nao foi possivel validar: '+escapeHtml(err.message || err)+'</div>';
+    box.innerHTML = '<div class="state">Nao foi possivel validar: '+escapeHtml(errorText(err))+'</div>';
   }
 }
 
@@ -999,12 +1008,12 @@ async function generateWeeklyReportDraft(){
       period_end: $('dataFim').value || undefined
     };
     const data = await invokeWeeklyReport(body);
-    if(!data || data.ok === false) throw new Error((data && data.error) || 'Funcao nao retornou ok.');
+    if(!data || data.ok === false) throw new Error(data && data.error ? errorText(data.error) : 'Funcao nao retornou ok.');
     toast('Rascunho semanal gerado.');
     await loadWeeklyReports();
     if(data.reports && data.reports[0] && data.reports[0].id) selectReport(data.reports[0].id);
   }catch(err){
-    toast('Erro ao gerar rascunho: ' + (err.message || err));
+    toast('Erro ao gerar rascunho: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
@@ -1028,7 +1037,7 @@ async function invokeWeeklyReport(body){
   try{ data = text ? JSON.parse(text) : null; }
   catch(e){ data = {error:text || 'Resposta invalida da Edge Function.'}; }
   if(!res.ok){
-    throw new Error((data && data.error) ? data.error : ('Edge Function HTTP ' + res.status));
+    throw new Error((data && data.error) ? errorText(data.error) : ('Edge Function HTTP ' + res.status));
   }
   return data;
 }
