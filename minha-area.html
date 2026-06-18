@@ -267,7 +267,7 @@ canvas{display:block;width:100%}
 
 /* ── PRESILHAS DE FICHÁRIO ────────────────────────────── */
 .dossie-body{
-  padding:16px 16px 0 28px;
+  padding:6px 16px 0 28px;
   position:relative;
 }
 /* Sem presilhas, só furos */
@@ -343,7 +343,7 @@ canvas{display:block;width:100%}
 .dash-letterhead{display:flex;align-items:center;gap:7px;opacity:.62}
 .dash-letterhead img{width:34px;height:34px;object-fit:contain;opacity:.38;filter:sepia(1) saturate(.55) brightness(.65)}
 .dash-letterhead-text{font-size:8px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;color:#4e3303;white-space:nowrap;line-height:1.1}
-.dash-paper{position:relative;margin-top:14px;background:linear-gradient(90deg,rgba(170,130,50,.13) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(180deg,#fffdf6,#f5ead1);border:1px solid rgba(117,82,13,.24);border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(73,48,4,.18);color:#15120c}
+.dash-paper{position:relative;margin:0 0 16px;background:linear-gradient(90deg,rgba(170,130,50,.13) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(180deg,#fffdf6,#f5ead1);border:1px solid rgba(117,82,13,.24);border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(73,48,4,.18);color:#15120c}
 .dash-paper::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(180deg,#ff8c42,#4fc3f7,#22c55e,#a855f7)}
 .dash-paper-inner{padding:15px 14px 13px 18px}
 .dash-paper-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
@@ -382,7 +382,7 @@ canvas{display:block;width:100%}
 .medal.seed{border-color:rgba(130,96,28,.34);background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(240,224,184,.52))}
 .medal.seed .medal-icon{background:linear-gradient(135deg,#f5e3ad,#d6a73d);color:#4a3103;filter:none;opacity:1}
 .medal.seed span{color:#5a4624}
-.dash-week-stamp{position:absolute;right:13px;bottom:12px;transform:rotate(-8deg);border:2px solid rgba(177,66,39,.32);color:rgba(177,66,39,.58);border-radius:50%;width:54px;height:54px;display:grid;place-items:center;text-align:center;font-size:7px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;line-height:1.25}
+.dash-week-stamp{display:none}
 .dossie-body > .ficha:first-of-type{display:none}
 @media (max-width:390px){
   .dash-progress-wrap{grid-template-columns:126px 1fr;gap:10px}
@@ -950,7 +950,6 @@ function openPublishedReport(rep){
           </div>
         </section>
       </div>
-      <div class="dash-week-stamp">Semana<br>ativa</div>
     </article>
     <!-- FICHA 1 -->
     <div class="ficha" style="--ficha-accent:transparent;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.35)">
