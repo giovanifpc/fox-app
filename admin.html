@@ -321,6 +321,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
             <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
             <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
+            <button class="btn secondary" type="button" id="printReportBtn">Gerar PDF</button>
             <button class="btn secondary" type="button" id="notifyReportBtn">Avisar no WhatsApp</button>
             <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
           </div>
@@ -1153,6 +1154,42 @@ function buildReportText(){
   ].join('\n');
 }
 
+function openReportPdfView(){
+  if(!selectedReport){
+    toast('Selecione um relatorio primeiro.');
+    return;
+  }
+  const text = [
+    $('reportAiDraft').value.trim(),
+    $('reportCoachNotes').value.trim() ? '\n\nAjustes do Giovani:\n' + $('reportCoachNotes').value.trim() : ''
+  ].join('').trim();
+  if(!text){
+    toast('Preencha ou revise a devolutiva antes de gerar PDF.');
+    return;
+  }
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  const title = 'Devolutiva semanal';
+  const clientName = selectedClient ? (selectedClient.nome || selectedClient.email) : 'Cliente';
+  const period = fmtPeriod(selectedReport.period_start, selectedReport.period_end);
+  const win = window.open('', '_blank');
+  if(!win){
+    toast('Permita pop-ups para gerar o PDF.');
+    return;
+  }
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devolutiva Fox</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box}body{margin:0;background:#f3f0ea;color:#171717;font-family:Arial,Helvetica,sans-serif;line-height:1.5}.sheet{max-width:820px;margin:0 auto;background:#fff;min-height:100vh;padding:34px 38px}.brand{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #ff8c42;padding-bottom:18px;margin-bottom:24px}.brand h1{margin:0;font-size:24px;letter-spacing:.3px}.brand p{margin:5px 0 0;color:#666;font-size:13px}.stamp{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#7b8fd4;font-weight:800;text-align:right}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 24px}.box{border:1px solid #e2ddd3;border-radius:8px;padding:11px 12px;background:#fbfaf7}.k{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:#777;font-weight:800}.v{font-size:16px;font-weight:800;margin-top:4px}.content{white-space:pre-wrap;font-size:14px}.footer{border-top:1px solid #e2ddd3;margin-top:32px;padding-top:14px;color:#777;font-size:11px}.actions{position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;background:#f3f0ea;padding:10px}.actions button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#7b8fd4;color:#fff}.secondary{background:#fff;color:#222;border:1px solid #ddd!important}@media print{body{background:#fff}.sheet{padding:0;max-width:none}.actions{display:none}}</style></head><body><div class="actions"><button class="secondary" onclick="window.close()">Fechar</button><button class="primary" onclick="window.print()">Salvar como PDF</button></div><main class="sheet"><header class="brand"><div><h1></h1><p></p></div><div class="stamp">Fox Performance<br>Devolutiva</div></header><section class="meta"><div class="box"><div class="k">Cliente</div><div class="v" id="pdfClient"></div></div><div class="box"><div class="k">Periodo</div><div class="v" id="pdfPeriod"></div></div><div class="box"><div class="k">Publicacao</div><div class="v" id="pdfDate"></div></div><div class="box"><div class="k">Treinos</div><div class="v" id="pdfTrain"></div></div><div class="box"><div class="k">Nutri</div><div class="v" id="pdfNutri"></div></div><div class="box"><div class="k">Agua</div><div class="v" id="pdfWater"></div></div></section><section class="content" id="pdfText"></section><footer class="footer">Documento gerado pelo painel Fox Performance.</footer></main></body></html>');
+  win.document.querySelector('h1').textContent = title;
+  win.document.querySelector('header p').textContent = 'Acompanhamento personalizado de ' + clientName;
+  win.document.getElementById('pdfClient').textContent = clientName;
+  win.document.getElementById('pdfPeriod').textContent = period;
+  win.document.getElementById('pdfDate').textContent = new Date().toLocaleDateString('pt-BR');
+  win.document.getElementById('pdfTrain').textContent = (tr.sessions || 0) + ' sessoes';
+  win.document.getElementById('pdfNutri').textContent = (nu.food_days || 0) + ' dias';
+  win.document.getElementById('pdfWater').textContent = (nu.water_days || 0) + ' dias';
+  win.document.getElementById('pdfText').textContent = text;
+  win.document.close();
+}
+
 async function saveReportReview(status){
   if(!selectedReport) return;
   const btn = status ? $('readyReportBtn') : $('saveReportBtn');
@@ -1404,6 +1441,7 @@ $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
 $('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('publishReportBtn').addEventListener('click', publishReportToApp);
+$('printReportBtn').addEventListener('click', openReportPdfView);
 $('notifyReportBtn').addEventListener('click', notifyReport);
 $('deleteReportBtn').addEventListener('click', deleteReportDraft);
 $('protocolJson').addEventListener('input', resetMediaAudit);
