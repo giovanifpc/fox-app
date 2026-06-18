@@ -782,11 +782,16 @@ function renderSupabaseDevolutiva(rep){
   if(t) t.textContent = 'Devolutiva ciclo ' + (rep.ciclo || '-') + ' - semana ' + (rep.semana || '-');
   if(d) d.textContent = fmtDate(date);
   if(h) h.textContent = new Date(date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  if(hint) hint.textContent = '* devolutiva publicada pelo Giovani';
+  if(hint) hint.textContent = rep.drive_file_id ? '* PDF completo publicado pelo Giovani' : '* devolutiva publicada pelo Giovani';
   if(b) b.onclick = function(){ openPublishedReport(rep); };
 }
 
 function openPublishedReport(rep){
+  const driveLink = String(rep.drive_file_id || '').trim();
+  if(/^https?:\/\//i.test(driveLink)){
+    window.open(driveLink, '_blank');
+    return;
+  }
   const text = [
     rep.ai_draft || '',
     rep.coach_notes ? '\n\nAjustes do Giovani:\n' + rep.coach_notes : ''
