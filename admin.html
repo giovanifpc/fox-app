@@ -362,7 +362,7 @@ function asNum(id, fallback){
 }
 function toast(msg){
   const t = $('toast');
-  t.textContent = msg;
+  t.textContent = errorText(msg);
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
@@ -395,7 +395,11 @@ function errorText(err){
   if(typeof err === 'string') return err;
   if(err.message && typeof err.message === 'string') return err.message;
   if(err.error && typeof err.error === 'string') return err.error;
+  if(err.context && typeof err.context === 'object') return errorText(err.context);
+  if(err.cause && typeof err.cause === 'object') return errorText(err.cause);
   if(err.details && typeof err.details === 'string') return err.details;
+  if(err.hint && typeof err.hint === 'string') return err.hint;
+  if(err.code && typeof err.code === 'string') return err.code + ': ' + JSON.stringify(err);
   try{ return JSON.stringify(err); }
   catch(e){ return String(err); }
 }
@@ -734,7 +738,7 @@ function applyResolvedMedia(){
     toast(applied ? applied + ' GIF(s) preenchido(s) no JSON.' : 'Nada novo para preencher.');
     auditProtocolMedia();
   }catch(err){
-    toast('Erro ao preencher GIFs: ' + (err.message || err));
+    toast('Erro ao preencher GIFs: ' + errorText(err));
   }
 }
 
@@ -761,7 +765,7 @@ async function loadProtocol(){
     $('protocolJson').value = JSON.stringify(data.protocol_json || {}, null, 2);
     resetMediaAudit();
   }catch(err){
-    toast('Treino dinamico ainda nao disponivel: ' + (err.message || err));
+    toast('Treino dinamico ainda nao disponivel: ' + errorText(err));
   }
 }
 
@@ -815,7 +819,7 @@ async function publishProtocol(){
     renderClients();
     toast('Treino publicado. O cliente vera no Training ao abrir o app.');
   }catch(err){
-    toast('Erro ao publicar treino: ' + (err.message || err));
+    toast('Erro ao publicar treino: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = 'Publicar treino';
@@ -876,7 +880,7 @@ async function loadClientContext(){
     clientWeeklyNote = noteRes.data || null;
     fillContextForm();
   }catch(err){
-    toast('Contexto ainda nao disponivel: ' + (err.message || err));
+    toast('Contexto ainda nao disponivel: ' + errorText(err));
   }
 }
 
@@ -926,7 +930,7 @@ async function saveClientContext(){
     clientWeeklyNote = noteRes.data;
     toast('Contexto salvo para proximas devolutivas.');
   }catch(err){
-    toast('Erro ao salvar contexto: ' + (err.message || err));
+    toast('Erro ao salvar contexto: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = 'Salvar contexto';
@@ -990,7 +994,7 @@ async function loadWeeklyReports(){
     weeklyReports = data || [];
     renderWeeklyReports();
   }catch(err){
-    $('reportList').innerHTML = '<div class="state">Nao foi possivel carregar relatorios: '+escapeHtml(err.message || err)+'</div>';
+    $('reportList').innerHTML = '<div class="state">Nao foi possivel carregar relatorios: '+escapeHtml(errorText(err))+'</div>';
   }
 }
 
@@ -1146,7 +1150,7 @@ async function saveReportReview(status){
     renderReportDetail();
     toast(status ? 'Relatorio marcado como pronto.' : 'Revisao salva.');
   }catch(err){
-    toast('Erro ao salvar relatorio: ' + (err.message || err));
+    toast('Erro ao salvar relatorio: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
@@ -1232,7 +1236,7 @@ async function publishGoals(e){
     renderClients();
     toast('Metas publicadas. O cliente ja pode ver no Dashboard.');
   }catch(err){
-    toast('Erro ao publicar: ' + (err.message || err));
+    toast('Erro ao publicar: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = 'Publicar metas';
@@ -1272,7 +1276,7 @@ async function saveClient(){
     renderClients();
     toast('Cliente salvo. Agora publique as metas semanais.');
   }catch(err){
-    toast('Erro ao salvar cliente: ' + (err.message || err));
+    toast('Erro ao salvar cliente: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = 'Salvar cadastro';
@@ -1314,7 +1318,7 @@ $('protocolFile').addEventListener('change', function(){
       resetMediaAudit();
       toast('JSON importado e validado.');
     }catch(err){
-      toast('JSON invalido: ' + (err.message || err));
+      toast('JSON invalido: ' + errorText(err));
     }
   };
   reader.readAsText(file);
