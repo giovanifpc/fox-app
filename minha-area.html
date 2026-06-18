@@ -1477,11 +1477,17 @@ function animateRings(){
 }
 async function loadLatestDevolutiva(){
   try{
-    if(window.FOX_SUPA && window.FOX_USER_EMAIL){
+    const loggedEmail = window.FOX_EMAIL || window.FOX_USER_EMAIL;
+    if((!window.FOX_SUPA || !loggedEmail) && (window._foxDevRetry || 0) < 10){
+      window._foxDevRetry = (window._foxDevRetry || 0) + 1;
+      setTimeout(loadLatestDevolutiva, 500);
+      return;
+    }
+    if(window.FOX_SUPA && loggedEmail){
       const {data, error} = await window.FOX_SUPA
         .from('weekly_reports')
         .select('id,ciclo,semana,period_start,period_end,published_at,ai_draft,coach_notes,drive_file_id,status')
-        .eq('client_email', window.FOX_USER_EMAIL)
+        .eq('client_email', loggedEmail)
         .eq('published', true)
         .order('published_at', {ascending:false})
         .limit(1)
