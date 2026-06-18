@@ -353,7 +353,7 @@ async function buildReportForClient(client: Json, start: string, end: string) {
 
   const { data, error } = await supa
     .from("weekly_reports")
-    .upsert(payload, { onConflict: "client_email,period_start,period_end" })
+    .insert(payload)
     .select("id,client_email,period_start,period_end,status")
     .single();
 
