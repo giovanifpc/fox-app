@@ -67,6 +67,21 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .media-row.ok .media-status{color:var(--green)}
 .media-row.warn .media-status{color:var(--amber)}
 .media-row.miss .media-status{color:#ff8b8b}
+.report-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.report-btn{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#0c0d12;color:var(--text);padding:11px;cursor:pointer}
+.report-btn.active{border-color:var(--green);box-shadow:0 0 0 1px rgba(82,183,136,.28)}
+.report-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.report-title{font-size:13px;font-weight:900}
+.report-period{font-size:11px;color:var(--muted);margin-top:3px}
+.report-status{font-size:10px;text-transform:uppercase;letter-spacing:.8px;border:1px solid var(--line);border-radius:999px;padding:4px 7px;color:var(--muted);white-space:nowrap}
+.report-status.draft{color:var(--amber);border-color:rgba(255,140,66,.38);background:rgba(255,140,66,.08)}
+.report-status.ready{color:var(--green);border-color:rgba(82,183,136,.38);background:rgba(82,183,136,.08)}
+.report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 12px}
+.summary-card{background:#101116;border:1px solid var(--line);border-radius:10px;padding:10px}
+.summary-k{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:800}
+.summary-v{font-size:18px;font-weight:900;margin-top:4px}
+.report-detail{margin-top:12px}
+.report-detail textarea{min-height:126px}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .btn{border:none;border-radius:11px;padding:12px 15px;font-weight:800;color:#fff;cursor:pointer}
 .btn.primary{background:linear-gradient(135deg,var(--purple),#5364b8)}
@@ -213,6 +228,48 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         </div>
         <div id="mediaAudit" class="media-audit hidden"></div>
       </div>
+
+      <div class="block-title">Relatorios semanais</div>
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Rascunhos consolidados pela automacao semanal. Revise os dados, adicione sua leitura e deixe pronto para a etapa de devolutiva/publicacao.
+        </div>
+        <div class="actions" style="margin-bottom:10px">
+          <button class="btn secondary" type="button" id="loadReportsBtn">Carregar relatorios</button>
+          <button class="btn secondary" type="button" id="copyReportBtn" disabled>Copiar resumo</button>
+        </div>
+        <div id="reportList" class="report-list">
+          <div class="state">Carregue os relatorios do cliente.</div>
+        </div>
+        <div id="reportDetail" class="report-detail hidden">
+          <div class="report-summary">
+            <div class="summary-card">
+              <div class="summary-k">Treinos</div>
+              <div class="summary-v" id="repTrain">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-k">Nutri</div>
+              <div class="summary-v" id="repNutri">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-k">Agua</div>
+              <div class="summary-v" id="repWater">-</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="reportAiDraft">Rascunho IA / Devolutiva</label>
+            <textarea id="reportAiDraft" placeholder="Na proxima etapa a Claude API preenche este campo automaticamente."></textarea>
+          </div>
+          <div class="field">
+            <label for="reportCoachNotes">Ajustes do Giovani</label>
+            <textarea id="reportCoachNotes" placeholder="Sua leitura final, correcoes e pontos para falar com o cliente."></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
+            <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
+          </div>
+        </div>
+      </div>
     </form>
   </section>
 </main>
@@ -240,6 +297,8 @@ let currentProtocol = null;
 let exercisesDb = null;
 let lastMediaAudit = [];
 let creatingClient = false;
+let weeklyReports = [];
+let selectedReport = null;
 
 function $(id){ return document.getElementById(id); }
 function asNum(id, fallback){
@@ -339,10 +398,13 @@ async function selectClient(email){
   creatingClient = false;
   selectedClient = clients.find(c => c.email === email);
   currentGoal = null;
+  weeklyReports = [];
+  selectedReport = null;
   renderClients();
   fillClientForm();
   await loadGoal();
   await loadProtocol();
+  await loadWeeklyReports();
 }
 
 function fillClientForm(){
@@ -378,8 +440,11 @@ function startNewClient(){
     numero_whatsapp:''
   };
   currentGoal = null;
+  weeklyReports = [];
+  selectedReport = null;
   renderClients();
   fillClientForm();
+  resetReports();
   $('nome').focus();
 }
 
@@ -697,6 +762,170 @@ function notifyTraining(){
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
+function resetReports(){
+  weeklyReports = [];
+  selectedReport = null;
+  $('reportList').innerHTML = '<div class="state">Carregue os relatorios do cliente.</div>';
+  $('reportDetail').classList.add('hidden');
+  $('copyReportBtn').disabled = true;
+}
+
+function statusLabel(status){
+  if(status === 'ready_for_publication') return 'Pronto';
+  if(status === 'published') return 'Publicado';
+  if(status === 'reviewed') return 'Revisado';
+  return 'Rascunho';
+}
+
+function statusClass(status){
+  if(status === 'ready_for_publication' || status === 'published' || status === 'reviewed') return 'ready';
+  return 'draft';
+}
+
+function fmtPeriod(start, end){
+  const a = start ? start.split('-').reverse().join('/') : '--';
+  const b = end ? end.split('-').reverse().join('/') : '--';
+  return a + ' a ' + b;
+}
+
+async function loadWeeklyReports(){
+  if(!selectedClient || creatingClient) return;
+  $('reportList').innerHTML = '<div class="state">Carregando relatorios...</div>';
+  $('reportDetail').classList.add('hidden');
+  $('copyReportBtn').disabled = true;
+  try{
+    const {data, error} = await supa.from('weekly_reports')
+      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .eq('client_email', selectedClient.email)
+      .order('period_start', {ascending:false})
+      .limit(12);
+    if(error) throw error;
+    weeklyReports = data || [];
+    renderWeeklyReports();
+  }catch(err){
+    $('reportList').innerHTML = '<div class="state">Nao foi possivel carregar relatorios: '+escapeHtml(err.message || err)+'</div>';
+  }
+}
+
+function renderWeeklyReports(){
+  if(!weeklyReports.length){
+    $('reportList').innerHTML = '<div class="state">Ainda nao existe rascunho semanal para este cliente. Depois que a Edge Function rodar, ele aparece aqui.</div>';
+    return;
+  }
+  $('reportList').innerHTML = weeklyReports.map(r=>`
+    <button class="report-btn ${selectedReport && selectedReport.id === r.id ? 'active' : ''}" type="button" data-id="${escapeHtml(r.id)}">
+      <div class="report-head">
+        <div>
+          <div class="report-title">Ciclo ${escapeHtml(r.ciclo || '-')} · Semana ${escapeHtml(r.semana || '-')}</div>
+          <div class="report-period">${escapeHtml(fmtPeriod(r.period_start, r.period_end))}</div>
+        </div>
+        <div class="report-status ${statusClass(r.status)}">${escapeHtml(statusLabel(r.status))}</div>
+      </div>
+    </button>
+  `).join('');
+  document.querySelectorAll('.report-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectReport(btn.dataset.id));
+  });
+}
+
+function selectReport(id){
+  selectedReport = weeklyReports.find(r => r.id === id) || null;
+  renderWeeklyReports();
+  renderReportDetail();
+}
+
+function renderReportDetail(){
+  if(!selectedReport){
+    $('reportDetail').classList.add('hidden');
+    $('copyReportBtn').disabled = true;
+    return;
+  }
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  $('reportDetail').classList.remove('hidden');
+  $('copyReportBtn').disabled = false;
+  $('repTrain').textContent = (tr.sessions || 0) + '/' + ((selectedReport.goals_snapshot || []).find(g => norm(g.nome).includes('treino'))?.meta_valor || '-');
+  $('repNutri').textContent = (nu.food_days || 0) + 'd';
+  $('repWater').textContent = (nu.water_days || 0) + 'd';
+  $('reportAiDraft').value = selectedReport.ai_draft || '';
+  $('reportCoachNotes').value = selectedReport.coach_notes || '';
+}
+
+function buildReportText(){
+  if(!selectedReport) return '';
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  const goals = selectedReport.goals_snapshot || [];
+  const goalLines = goals.length ? goals.map(g => '- ' + (g.nome || 'Meta') + ': ' + (g.realizado || 0) + '/' + (g.meta_valor || 0)).join('\n') : '- Sem metas no snapshot';
+  return [
+    'Relatorio semanal - ' + (selectedClient.nome || selectedClient.email),
+    'Periodo: ' + fmtPeriod(selectedReport.period_start, selectedReport.period_end),
+    '',
+    'Treino:',
+    '- sessoes: ' + (tr.sessions || 0),
+    '- completas: ' + (tr.complete_sessions || 0),
+    '- series: ' + (tr.sets_done || 0),
+    '',
+    'Nutri:',
+    '- dias com alimentos: ' + (nu.food_days || 0),
+    '- dias com agua: ' + (nu.water_days || 0),
+    '- media kcal: ' + (nu.avg_kcal || 0),
+    '- media proteina: ' + (nu.avg_protein_g || 0) + 'g',
+    '',
+    'Metas:',
+    goalLines,
+    '',
+    'Rascunho:',
+    $('reportAiDraft').value.trim() || '(sem rascunho)',
+    '',
+    'Notas do Giovani:',
+    $('reportCoachNotes').value.trim() || '(sem notas)'
+  ].join('\n');
+}
+
+async function saveReportReview(status){
+  if(!selectedReport) return;
+  const btn = status ? $('readyReportBtn') : $('saveReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Salvando...';
+  try{
+    const patch = {
+      ai_draft: $('reportAiDraft').value.trim() || null,
+      coach_notes: $('reportCoachNotes').value.trim() || null,
+      status: status || 'reviewed',
+      updated_at: new Date().toISOString()
+    };
+    const {data, error} = await supa.from('weekly_reports')
+      .update(patch)
+      .eq('id', selectedReport.id)
+      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .single();
+    if(error) throw error;
+    selectedReport = data;
+    weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
+    renderWeeklyReports();
+    renderReportDetail();
+    toast(status ? 'Relatorio marcado como pronto.' : 'Revisao salva.');
+  }catch(err){
+    toast('Erro ao salvar relatorio: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function copyReportSummary(){
+  if(!selectedReport) return;
+  const text = buildReportText();
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Resumo copiado.');
+  }catch(err){
+    toast('Nao consegui copiar automaticamente.');
+  }
+}
+
 async function loadGoal(){
   const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
   const semana = asNum('semana', selectedClient.semana_atual || 1);
@@ -827,6 +1056,10 @@ $('sampleProtocolBtn').addEventListener('click', ()=>{
 $('auditMediaBtn').addEventListener('click', auditProtocolMedia);
 $('applyMediaBtn').addEventListener('click', applyResolvedMedia);
 $('notifyTrainingBtn').addEventListener('click', notifyTraining);
+$('loadReportsBtn').addEventListener('click', loadWeeklyReports);
+$('copyReportBtn').addEventListener('click', copyReportSummary);
+$('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
+$('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
   const file = this.files && this.files[0];

@@ -49,5 +49,12 @@ Depois confira a tabela `weekly_reports`.
 
 ## 5. Proximo bloco
 
-O proximo passo e criar no Admin uma area de revisao dos rascunhos gerados.
+O Admin ja possui uma area de revisao dos rascunhos gerados:
+
+- selecione o cliente
+- abra `Relatorios semanais`
+- clique em `Carregar relatorios`
+- revise o rascunho e as notas
+- use `Marcar pronto` quando a devolutiva estiver pronta para a proxima etapa
+
 Depois disso entram Claude API, WhatsApp e publicacao no Drive.
