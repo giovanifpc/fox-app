@@ -517,6 +517,15 @@ function foxInWeeklyRange(dateLike){
   var key = String(dateLike || '').slice(0,10);
   return key >= window.FOX_WEEKLY_RANGE.inicio && key <= window.FOX_WEEKLY_RANGE.fim;
 }
+function foxTrainingPerformed(h){
+  if(!h) return false;
+  if(Number(h.setsDone || 0) > 0 || Number(h.exDone || 0) > 0) return true;
+  var detail = Array.isArray(h.detail) ? h.detail : [];
+  return detail.some(function(ex){
+    var sets = Array.isArray(ex.sets) ? ex.sets : [];
+    return sets.some(function(s){ return !!s.done; });
+  });
+}
 
 function foxReadLocalTrainingData(){
   try{
@@ -526,8 +535,13 @@ function foxReadLocalTrainingData(){
       if(!key || key.indexOf('foxTraining_') !== 0) continue;
       var store = JSON.parse(localStorage.getItem(key) || '{}');
       if(!Array.isArray(store.history)) continue;
+      if(store.cycleKey && window.FOX_PROFILE){
+        var storeCycle = String(store.cycleKey).split('|')[0];
+        var profileCycle = String(window.FOX_PROFILE.ciclo_atual || 1);
+        if(storeCycle !== profileCycle) continue;
+      }
       if(!best || store.history.length > ((best.history || []).length)){
-        best = {history:store.history,badges:store.badges||[],weekStreak:store.weekStreak||0,loopPos:store.loopPos||0,lastCarga:store.lastCarga||{}};
+        best = {history:store.history,badges:store.badges||[],weekStreak:store.weekStreak||0,loopPos:store.loopPos||0,lastCarga:store.lastCarga||{},cycleKey:store.cycleKey||''};
       }
     }
     return best;
@@ -583,39 +597,31 @@ function foxGoalsWithLiveData(){
     }
   }
   if(window.FOX_TRAINING_DATA && Array.isArray(window.FOX_TRAINING_DATA.history)){
-    var completedAll = window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete; }).length;
-    var completed = window.FOX_TRAINING_DATA.history.filter(function(h){ return !h.incomplete && foxInWeeklyRange(h.date); }).length;
-    if(!completed && completedAll) completed = completedAll;
-    apply(['treino'], completed);
+    var performed = window.FOX_TRAINING_DATA.history.filter(function(h){ return foxTrainingPerformed(h) && foxInWeeklyRange(h.date); }).length;
+    apply(['treino'], performed);
   }
   if(window.FOX_NUTRI_DATA && window.FOX_NUTRI_DATA.days){
-    var nutriDays = 0, waterDays = 0, nutriDaysAll = 0, waterDaysAll = 0;
+    var nutriDays = 0, waterDays = 0;
     Object.keys(window.FOX_NUTRI_DATA.days).forEach(function(k){
       var day = window.FOX_NUTRI_DATA.days[k] || {};
       var meals = day.meals || {};
       var hasFood = false;
       Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
-      if(hasFood) nutriDaysAll++;
-      if(Number(day.water || 0) > 0) waterDaysAll++;
       if(!foxInWeeklyRange(k)) return;
       if(hasFood) nutriDays++;
       if(Number(day.water || 0) > 0) waterDays++;
     });
-    if(!nutriDays && nutriDaysAll) nutriDays = nutriDaysAll;
-    if(!waterDays && waterDaysAll) waterDays = waterDaysAll;
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
   if(window.FOX_SLEEP_DATA && window.FOX_SLEEP_DATA.days){
-    var sleepDays = 0, sleepDaysAll = 0;
+    var sleepDays = 0;
     Object.keys(window.FOX_SLEEP_DATA.days).forEach(function(k){
       var rec = window.FOX_SLEEP_DATA.days[k] || {};
       var good = !rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8');
-      if(good) sleepDaysAll++;
       if(!foxInWeeklyRange(k)) return;
       if(good) sleepDays++;
     });
-    if(!sleepDays && sleepDaysAll) sleepDays = sleepDaysAll;
     apply(['sono'], sleepDays);
   }
   return goals;
@@ -650,6 +656,35 @@ function foxRefreshDashboardProgress(){
   if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length) applyWeeklyGoalsToDashboard(foxGoalsWithLiveData());
   foxRefreshTrainingAchievements();
 }
+function renderSupabaseDevolutiva(rep){
+  const t = document.getElementById('dash-dev-title');
+  const d = document.getElementById('dash-dev-date');
+  const b = document.getElementById('dash-dev-btn');
+  const h = document.getElementById('dash-dev-date-header');
+  const hint = document.getElementById('dash-dev-hint');
+  const date = rep.published_at || rep.period_end || rep.period_start || new Date().toISOString();
+  if(t) t.textContent = 'Devolutiva ciclo ' + (rep.ciclo || '-') + ' - semana ' + (rep.semana || '-');
+  if(d) d.textContent = fmtDate(date);
+  if(h) h.textContent = new Date(date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  if(hint) hint.textContent = '* devolutiva publicada pelo Giovani';
+  if(b) b.onclick = function(){ openPublishedReport(rep); };
+}
+
+function openPublishedReport(rep){
+  const text = [
+    rep.ai_draft || '',
+    rep.coach_notes ? '\n\nAjustes do Giovani:\n' + rep.coach_notes : ''
+  ].join('').trim() || 'Devolutiva publicada.';
+  const win = window.open('', '_blank');
+  if(!win){
+    toast('Permita pop-ups para abrir a devolutiva.');
+    return;
+  }
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devolutiva Fox</title><style>body{margin:0;background:#0b0c12;color:#f4f6ff;font-family:Inter,Arial,sans-serif;padding:24px;line-height:1.55}main{max-width:760px;margin:0 auto}h1{font-size:22px;margin:0 0 16px;color:#ff8f68}pre{white-space:pre-wrap;font:inherit;background:#12141d;border:1px solid #282b38;border-radius:14px;padding:18px}</style></head><body><main><h1>Devolutiva Fox Performance</h1><pre></pre></main></body></html>');
+  win.document.querySelector('pre').textContent = text;
+  win.document.close();
+}
+
 </script>
 </head>
 <body>
@@ -768,7 +803,7 @@ function foxRefreshDashboardProgress(){
           </div>
           <button id="dash-dev-btn" style="background:linear-gradient(135deg,#7B8FD4,#5a6ab0);border:none;border-radius:8px;padding:7px 13px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;flex-shrink:0;font-family:'Inter',sans-serif">Abrir</button>
         </div>
-        <div style="font-size:7.5px;color:#bbb;margin-top:10px;font-family:'Inter',sans-serif">* toque em abrir para visualizar o PDF completo</div>
+        <div style="font-size:7.5px;color:#bbb;margin-top:10px;font-family:'Inter',sans-serif" id="dash-dev-hint">* toque em abrir para visualizar a devolutiva completa</div>
       </div>
     </div>
   </div>
@@ -1442,6 +1477,20 @@ function animateRings(){
 }
 async function loadLatestDevolutiva(){
   try{
+    if(window.FOX_SUPA && window.FOX_USER_EMAIL){
+      const {data, error} = await window.FOX_SUPA
+        .from('weekly_reports')
+        .select('id,ciclo,semana,period_start,period_end,published_at,ai_draft,coach_notes,drive_file_id,status')
+        .eq('client_email', window.FOX_USER_EMAIL)
+        .eq('published', true)
+        .order('published_at', {ascending:false})
+        .limit(1)
+        .maybeSingle();
+      if(!error && data){
+        renderSupabaseDevolutiva(data);
+        return;
+      }
+    }
     const folders = await driveList(DRIVE_CONFIG.folderId,"mimeType='application/vnd.google-apps.folder'");
     const devFolder = folders.find(f=>f.name==='Devolutivas');
     if(!devFolder) return;

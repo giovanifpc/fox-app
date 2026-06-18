@@ -320,6 +320,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <div class="actions">
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
             <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
+            <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
           </div>
         </div>
       </div>
@@ -393,14 +394,17 @@ function escapeHtml(s){
 function errorText(err){
   if(!err) return 'Erro desconhecido.';
   if(typeof err === 'string') return err;
-  if(err.message && typeof err.message === 'string') return err.message;
+  if(err.message && typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
   if(err.error && typeof err.error === 'string') return err.error;
+  if(err.error && typeof err.error === 'object') return errorText(err.error);
+  if(err.response && typeof err.response === 'object') return errorText(err.response);
+  if(err.body && typeof err.body === 'object') return errorText(err.body);
   if(err.context && typeof err.context === 'object') return errorText(err.context);
   if(err.cause && typeof err.cause === 'object') return errorText(err.cause);
   if(err.details && typeof err.details === 'string') return err.details;
   if(err.hint && typeof err.hint === 'string') return err.hint;
   if(err.code && typeof err.code === 'string') return err.code + ': ' + JSON.stringify(err);
-  try{ return JSON.stringify(err); }
+  try{ return JSON.stringify(err, Object.getOwnPropertyNames(err)); }
   catch(e){ return String(err); }
 }
 
@@ -979,7 +983,7 @@ function fmtPeriod(start, end){
   return a + ' a ' + b;
 }
 
-async function loadWeeklyReports(){
+async function loadWeeklyReports(showToast){
   if(!selectedClient || creatingClient) return;
   $('reportList').innerHTML = '<div class="state">Carregando relatorios...</div>';
   $('reportDetail').classList.add('hidden');
@@ -993,6 +997,7 @@ async function loadWeeklyReports(){
     if(error) throw error;
     weeklyReports = data || [];
     renderWeeklyReports();
+    if(showToast) toast('Relatorios carregados.');
   }catch(err){
     $('reportList').innerHTML = '<div class="state">Nao foi possivel carregar relatorios: '+escapeHtml(errorText(err))+'</div>';
   }
@@ -1012,12 +1017,14 @@ async function generateWeeklyReportDraft(){
       period_end: $('dataFim').value || undefined
     };
     const data = await invokeWeeklyReport(body);
-    if(!data || data.ok === false) throw new Error(data && data.error ? errorText(data.error) : 'Funcao nao retornou ok.');
+    if(!data || data.ok === false) throw {source:'weekly-report', response:data || null, error:data && data.error ? data.error : 'Funcao nao retornou ok.'};
     toast('Rascunho semanal gerado.');
     await loadWeeklyReports();
     if(data.reports && data.reports[0] && data.reports[0].id) selectReport(data.reports[0].id);
   }catch(err){
-    toast('Erro ao gerar rascunho: ' + errorText(err));
+    const msg = errorText(err);
+    $('reportList').innerHTML = '<div class="state">Erro ao gerar rascunho:<br>'+escapeHtml(msg)+'</div>';
+    toast('Erro ao gerar rascunho: ' + msg);
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
@@ -1041,7 +1048,7 @@ async function invokeWeeklyReport(body){
   try{ data = text ? JSON.parse(text) : null; }
   catch(e){ data = {error:text || 'Resposta invalida da Edge Function.'}; }
   if(!res.ok){
-    throw new Error((data && data.error) ? errorText(data.error) : ('Edge Function HTTP ' + res.status));
+    throw {source:'weekly-report-http', status:res.status, response:data, text:text};
   }
   return data;
 }
@@ -1088,6 +1095,8 @@ function renderReportDetail(){
   $('repWater').textContent = (nu.water_days || 0) + 'd';
   $('reportAiDraft').value = selectedReport.ai_draft || '';
   $('reportCoachNotes').value = selectedReport.coach_notes || '';
+  $('publishReportBtn').disabled = selectedReport.published === true;
+  $('publishReportBtn').textContent = selectedReport.published === true ? 'Publicado' : 'Publicar no app';
 }
 
 function buildReportText(){
@@ -1154,6 +1163,45 @@ async function saveReportReview(status){
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
+  }
+}
+
+async function publishReportToApp(){
+  if(!selectedReport) return;
+  if(!$('reportAiDraft').value.trim() && !$('reportCoachNotes').value.trim()){
+    toast('Revise ou preencha a devolutiva antes de publicar.');
+    return;
+  }
+  const btn = $('publishReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Publicando...';
+  try{
+    const patch = {
+      ai_draft: $('reportAiDraft').value.trim() || null,
+      coach_notes: $('reportCoachNotes').value.trim() || null,
+      status: 'published',
+      published: true,
+      published_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    const {data, error} = await supa.from('weekly_reports')
+      .update(patch)
+      .eq('id', selectedReport.id)
+      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .single();
+    if(error) throw error;
+    selectedReport = data;
+    weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
+    renderWeeklyReports();
+    renderReportDetail();
+    toast('Devolutiva publicada no Minha Area.');
+  }catch(err){
+    toast('Erro ao publicar devolutiva: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+    renderReportDetail();
   }
 }
 
@@ -1301,10 +1349,11 @@ $('notifyTrainingBtn').addEventListener('click', notifyTraining);
 $('saveContextBtn').addEventListener('click', saveClientContext);
 $('reloadContextBtn').addEventListener('click', loadClientContext);
 $('generateReportBtn').addEventListener('click', generateWeeklyReportDraft);
-$('loadReportsBtn').addEventListener('click', loadWeeklyReports);
+$('loadReportsBtn').addEventListener('click', function(){ loadWeeklyReports(true); });
 $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
 $('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
+$('publishReportBtn').addEventListener('click', publishReportToApp);
 $('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
   const file = this.files && this.files[0];
