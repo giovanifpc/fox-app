@@ -120,6 +120,34 @@ function compactForPrompt(value: unknown) {
   return JSON.stringify(value, null, 2).slice(0, 12000);
 }
 
+function serializeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    };
+  }
+  if (typeof error === "string") {
+    return { message: error };
+  }
+  if (error && typeof error === "object") {
+    const out: Record<string, unknown> = {};
+    for (const key of ["message", "code", "details", "hint", "name", "status", "statusText"]) {
+      if (key in error) out[key] = (error as Record<string, unknown>)[key];
+    }
+    out.raw = error;
+    return out;
+  }
+  return { message: String(error) };
+}
+
+function errorMessage(error: unknown) {
+  const serialized = serializeError(error);
+  if (typeof serialized.message === "string" && serialized.message) return serialized.message;
+  return JSON.stringify(serialized);
+}
+
 function fallbackDraft(reportData: Json, training: Json, nutri: Json, goals: Json[]) {
   const client = reportData.client as Json;
   const period = reportData.period as Json;
@@ -293,7 +321,7 @@ async function buildReportForClient(client: Json, start: string, end: string) {
   } catch (error) {
     aiStatus = "error";
     aiDraft = fallbackDraft(reportData, trainingSummary, nutriSummary, goalsSnapshot);
-    reportData["ai_error"] = error instanceof Error ? error.message : String(error);
+    reportData["ai_error"] = serializeError(error);
   }
 
   const payload = {
@@ -375,9 +403,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("weekly-report failed:", message);
-    return new Response(JSON.stringify({ ok: false, error: message }), {
+    const serialized = serializeError(error);
+    console.error("weekly-report failed:", JSON.stringify(serialized));
+    return new Response(JSON.stringify({ ok: false, error: serialized, message: errorMessage(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
