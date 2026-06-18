@@ -94,6 +94,17 @@ body{padding-top:44px;padding-bottom:70px}
   color:var(--white);border-radius:9px;padding:10px 12px;
   font-family:var(--font);font-size:15px;font-weight:700;outline:none}
 .ci-field input:focus{border-color:var(--purple)}
+.profile-form{background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-bottom:14px}
+.profile-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
+.profile-field label{font-size:11px;color:var(--gray);font-weight:600;
+  text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px}
+.profile-field textarea{width:100%;min-height:72px;background:var(--surface);
+  border:1px solid var(--border);color:var(--white);border-radius:9px;
+  padding:10px 12px;font-family:var(--font);font-size:14px;line-height:1.45;
+  outline:none;resize:vertical}
+.profile-field textarea:focus{border-color:var(--purple)}
+.profile-hint{font-size:12px;color:var(--gray);line-height:1.45;margin-bottom:12px}
 .btn-save{width:100%;background:var(--purple);color:var(--white);border:none;
   border-radius:10px;padding:13px;font-family:var(--font);font-size:14px;
   font-weight:700;cursor:pointer;transition:.2s;letter-spacing:.3px}
@@ -379,6 +390,7 @@ canvas{display:block;width:100%}
 
     // Buscar metas da semana atual
     loadWeeklyGoals(supa, session.user.email, profile.ciclo_atual, profile.semana_atual);
+    loadProfileContext(supa, session.user.email);
   }
 })();
 
@@ -656,6 +668,110 @@ function foxRefreshDashboardProgress(){
   if(window.FOX_WEEKLY_GOALS && window.FOX_WEEKLY_GOALS.length) applyWeeklyGoalsToDashboard(foxGoalsWithLiveData());
   foxRefreshTrainingAchievements();
 }
+
+async function loadProfileContext(supaClient, email){
+  try{
+    const client = supaClient || window.FOX_SUPA;
+    const userEmail = email || window.FOX_EMAIL || window.FOX_USER_EMAIL;
+    if(!client || !userEmail) return;
+    const {data, error} = await client
+      .from('client_context')
+      .select('primary_goal,limitations,routine_notes,injuries_pain,food_restrictions,preferences,motivation_notes,communication_style,attention_points,anamnesis,updated_at')
+      .eq('client_email', userEmail)
+      .maybeSingle();
+    if(error) throw error;
+    window.FOX_CLIENT_CONTEXT = data || {};
+    fillProfileContext();
+    updateProfileCard();
+  }catch(e){
+    updateProfileCard();
+  }
+}
+
+function fillProfileContext(){
+  const c = window.FOX_CLIENT_CONTEXT || {};
+  const map = {
+    profileGoal: c.primary_goal || '',
+    profileRoutine: c.limitations || c.routine_notes || '',
+    profileInjuries: c.injuries_pain || '',
+    profileFood: c.food_restrictions || c.preferences || '',
+    profileMotivation: c.motivation_notes || ''
+  };
+  Object.keys(map).forEach(function(id){
+    const el = document.getElementById(id);
+    if(el && !el.value) el.value = map[id];
+  });
+}
+
+function profileFilledCount(){
+  const c = window.FOX_CLIENT_CONTEXT || {};
+  return [
+    c.primary_goal,
+    c.limitations || c.routine_notes,
+    c.injuries_pain,
+    c.food_restrictions || c.preferences,
+    c.motivation_notes
+  ].filter(function(v){ return String(v || '').trim().length > 0; }).length;
+}
+
+function updateProfileCard(){
+  const count = profileFilledCount();
+  const status = document.getElementById('dash-profile-status');
+  const hint = document.getElementById('dash-profile-hint');
+  if(status) status.textContent = count >= 4 ? 'completo' : count ? 'parcial' : 'pendente';
+  if(hint) hint.textContent = count >= 4 ? 'Dados atualizados para suas devolutivas' : 'Complete para melhorar suas devolutivas';
+}
+
+function openProfileForm(){
+  setView('checkin');
+  setTimeout(function(){
+    const form = document.getElementById('profileForm');
+    if(form) form.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 80);
+}
+
+async function saveProfileContext(){
+  const client = window.FOX_SUPA;
+  const userEmail = window.FOX_EMAIL || window.FOX_USER_EMAIL;
+  if(!client || !userEmail){
+    toast('Sessao ainda carregando. Tente novamente.');
+    return;
+  }
+  const btn = document.getElementById('profileSaveBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Salvando...'; }
+  const payload = {
+    client_email: userEmail,
+    primary_goal: (document.getElementById('profileGoal')?.value || '').trim() || null,
+    limitations: (document.getElementById('profileRoutine')?.value || '').trim() || null,
+    routine_notes: (document.getElementById('profileRoutine')?.value || '').trim() || null,
+    injuries_pain: (document.getElementById('profileInjuries')?.value || '').trim() || null,
+    food_restrictions: (document.getElementById('profileFood')?.value || '').trim() || null,
+    preferences: (document.getElementById('profileFood')?.value || '').trim() || null,
+    motivation_notes: (document.getElementById('profileMotivation')?.value || '').trim() || null,
+    anamnesis: {
+      source: 'minha-area',
+      updated_by_client: true,
+      updated_at: new Date().toISOString()
+    },
+    updated_at: new Date().toISOString()
+  };
+  try{
+    const {data, error} = await client
+      .from('client_context')
+      .upsert(payload, {onConflict:'client_email'})
+      .select('primary_goal,limitations,routine_notes,injuries_pain,food_restrictions,preferences,motivation_notes,communication_style,attention_points,anamnesis,updated_at')
+      .single();
+    if(error) throw error;
+    window.FOX_CLIENT_CONTEXT = data || payload;
+    updateProfileCard();
+    toast('Perfil salvo.');
+  }catch(e){
+    toast('Nao foi possivel salvar o perfil.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Salvar perfil'; }
+  }
+}
+
 function renderSupabaseDevolutiva(rep){
   const t = document.getElementById('dash-dev-title');
   const d = document.getElementById('dash-dev-date');
@@ -806,6 +922,24 @@ function openPublishedReport(rep){
         <div style="font-size:7.5px;color:#bbb;margin-top:10px;font-family:'Inter',sans-serif" id="dash-dev-hint">* toque em abrir para visualizar a devolutiva completa</div>
       </div>
     </div>
+    <!-- FICHA 4: PERFIL -->
+    <div class="ficha" style="--ficha-accent:transparent;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.35)">
+      <div style="height:3px;background:linear-gradient(90deg,#FF8C42,#7B8FD4)"></div>
+      <div class="ficha-body" style="padding:13px 15px 15px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:9px;font-weight:700;letter-spacing:2px;color:#555;text-transform:uppercase;font-family:'Inter',sans-serif">Perfil e anamnese</span>
+          <span style="font-size:9px;color:#999;font-family:'Inter',sans-serif" id="dash-profile-status">pendente</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:#f5f5f5;border:1px solid #eee;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">ID</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:#111;font-family:'Inter',sans-serif">Dados pessoais do processo</div>
+            <div style="font-size:9px;color:#888;margin-top:2px;font-family:'Inter',sans-serif" id="dash-profile-hint">Complete para melhorar suas devolutivas</div>
+          </div>
+          <button onclick="openProfileForm()" style="background:linear-gradient(135deg,#FF8C42,#c96a2f);border:none;border-radius:8px;padding:7px 13px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;flex-shrink:0;font-family:'Inter',sans-serif">Editar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -845,6 +979,34 @@ function openPublishedReport(rep){
 
 <!-- CHECK-IN MEDIDAS -->
 <div class="page" id="page-checkin">
+  <div class="profile-form" id="profileForm">
+    <div class="ci-title">Perfil e anamnese</div>
+    <div class="profile-hint">Essas respostas ajudam o Giovani a ajustar treino, nutricao e devolutivas ao seu momento atual.</div>
+    <div class="profile-grid">
+      <div class="profile-field">
+        <label>Objetivo principal</label>
+        <textarea id="profileGoal" placeholder="Ex.: reduzir gordura, ganhar massa, melhorar condicionamento."></textarea>
+      </div>
+      <div class="profile-field">
+        <label>Rotina e limitacoes</label>
+        <textarea id="profileRoutine" placeholder="Horarios, viagens, trabalho, tempo para treinar/cozinhar."></textarea>
+      </div>
+      <div class="profile-field">
+        <label>Dores, lesoes ou cuidados</label>
+        <textarea id="profileInjuries" placeholder="Ex.: joelho, lombar, ombro, movimentos que incomodam."></textarea>
+      </div>
+      <div class="profile-field">
+        <label>Restricoes e preferencias alimentares</label>
+        <textarea id="profileFood" placeholder="Alimentos que evita, intolerancias, preferidos e rotina alimentar."></textarea>
+      </div>
+      <div class="profile-field">
+        <label>Motivacao e comunicacao</label>
+        <textarea id="profileMotivation" placeholder="O que te ajuda a manter constancia e como prefere receber orientacoes."></textarea>
+      </div>
+    </div>
+    <button class="btn-save" id="profileSaveBtn" onclick="saveProfileContext()">Salvar perfil</button>
+  </div>
+
   <div class="checkin-form">
     <div class="ci-title">📏 Novo registro</div>
     <div class="ci-grid">
@@ -944,7 +1106,7 @@ function setView(v){
   if(v==="dashboard") initDashboard();
   if(v==="docs" && !allFiles.length) loadDrive();
   if(v==="fotos" && !allFiles.length) loadDrive();
-  if(v==="checkin") renderCheckin();
+  if(v==="checkin"){ renderCheckin(); fillProfileContext(); }
   if(v==="relatorio") initRelatorio();
 }
 
@@ -1440,6 +1602,8 @@ function finToast(m){
 document.addEventListener("DOMContentLoaded", function(){
   setView("dashboard");
   try{ parent.postMessage({type:"fox-area-ready"},"*"); }catch(e){}
+  fillProfileContext();
+  updateProfileCard();
   setTimeout(foxRefreshDashboardProgress, 500);
   setTimeout(foxRefreshDashboardProgress, 1500);
   setTimeout(foxRefreshDashboardProgress, 3000);
