@@ -998,8 +998,7 @@ async function generateWeeklyReportDraft(){
       period_start: $('dataInicio').value || undefined,
       period_end: $('dataFim').value || undefined
     };
-    const {data, error} = await supa.functions.invoke('weekly-report', {body});
-    if(error) throw error;
+    const data = await invokeWeeklyReport(body);
     if(!data || data.ok === false) throw new Error((data && data.error) || 'Funcao nao retornou ok.');
     toast('Rascunho semanal gerado.');
     await loadWeeklyReports();
@@ -1010,6 +1009,28 @@ async function generateWeeklyReportDraft(){
     btn.disabled = false;
     btn.textContent = oldText;
   }
+}
+
+async function invokeWeeklyReport(body){
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session || !session.access_token) throw new Error('Sessao expirada. Entre novamente no Admin.');
+  const res = await fetch(SUPA_URL + '/functions/v1/weekly-report', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer ' + session.access_token,
+      'apikey': SUPA_KEY
+    },
+    body: JSON.stringify(body)
+  });
+  const text = await res.text();
+  let data = null;
+  try{ data = text ? JSON.parse(text) : null; }
+  catch(e){ data = {error:text || 'Resposta invalida da Edge Function.'}; }
+  if(!res.ok){
+    throw new Error((data && data.error) ? data.error : ('Edge Function HTTP ' + res.status));
+  }
+  return data;
 }
 
 function renderWeeklyReports(){
