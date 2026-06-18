@@ -54,6 +54,8 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .protocol-box textarea{min-height:210px;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px;white-space:pre}
 .protocol-hint{font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 10px}
 .file-input{padding:9px;background:#101116}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.context-grid .field{margin-bottom:0}
 .media-audit{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
 .media-row{display:grid;grid-template-columns:74px 1fr;gap:10px;align-items:center;background:#0c0d12;border:1px solid var(--line);border-radius:12px;padding:9px}
 .media-row.ok{border-color:rgba(82,183,136,.42)}
@@ -96,6 +98,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
   body{padding:18px 14px 34px}
   .top{flex-direction:column}
   .grid{grid-template-columns:1fr}
+  .context-grid{grid-template-columns:1fr}
   .row,.row.two,.meta{grid-template-columns:1fr}
   .pill{white-space:normal}
 }
@@ -193,6 +196,55 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
+      </div>
+
+      <div class="block-title">Contexto do cliente</div>
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Memoria fixa e nota semanal que entram na devolutiva automatica. Use a nota semanal para incluir o que veio de conversas no WhatsApp ou ajustes pessoais.
+        </div>
+        <div class="context-grid">
+          <div class="field">
+            <label for="ctxGoal">Objetivo principal</label>
+            <textarea id="ctxGoal" placeholder="Ex.: perder gordura mantendo massa magra."></textarea>
+          </div>
+          <div class="field">
+            <label for="ctxLimitations">Limitacoes / rotina</label>
+            <textarea id="ctxLimitations" placeholder="Ex.: trabalha viajando, treina a noite, pouco tempo para cozinhar."></textarea>
+          </div>
+          <div class="field">
+            <label for="ctxInjuries">Dores / lesoes</label>
+            <textarea id="ctxInjuries" placeholder="Ex.: dor no joelho direito em agachamentos profundos."></textarea>
+          </div>
+          <div class="field">
+            <label for="ctxFood">Restricoes alimentares</label>
+            <textarea id="ctxFood" placeholder="Ex.: evita lactose, nao gosta de peixe."></textarea>
+          </div>
+          <div class="field">
+            <label for="ctxMotivation">Motivadores</label>
+            <textarea id="ctxMotivation" placeholder="Ex.: responde bem a reconhecimento e metas curtas."></textarea>
+          </div>
+          <div class="field">
+            <label for="ctxCommunication">Estilo de comunicacao</label>
+            <textarea id="ctxCommunication" placeholder="Ex.: direto, acolhedor, sem tom de cobranca."></textarea>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label for="ctxAttention">Pontos de atencao fixos</label>
+          <textarea id="ctxAttention" placeholder="Pontos que a IA deve sempre considerar antes de escrever."></textarea>
+        </div>
+        <div class="field">
+          <label for="weeklyNote">Nota semanal do Giovani</label>
+          <textarea id="weeklyNote" placeholder="Ex.: cliente relatou cansaço, teve viagem, pediu para focar em constancia."></textarea>
+        </div>
+        <div class="field">
+          <label for="weeklyInstruction">Instrucao para a devolutiva desta semana</label>
+          <textarea id="weeklyInstruction" placeholder="Ex.: reforcar progresso sem pesar no tom; nao mencionar balanca."></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="saveContextBtn">Salvar contexto</button>
+          <button class="btn secondary" type="button" id="reloadContextBtn">Recarregar contexto</button>
+        </div>
       </div>
 
       <div class="block-title">Treino do ciclo</div>
@@ -299,6 +351,8 @@ let lastMediaAudit = [];
 let creatingClient = false;
 let weeklyReports = [];
 let selectedReport = null;
+let clientContext = null;
+let clientWeeklyNote = null;
 
 function $(id){ return document.getElementById(id); }
 function asNum(id, fallback){
@@ -400,9 +454,12 @@ async function selectClient(email){
   currentGoal = null;
   weeklyReports = [];
   selectedReport = null;
+  clientContext = null;
+  clientWeeklyNote = null;
   renderClients();
   fillClientForm();
   await loadGoal();
+  await loadClientContext();
   await loadProtocol();
   await loadWeeklyReports();
 }
@@ -426,6 +483,7 @@ function fillClientForm(){
   $('dataFim').value = addDaysISO(todayISO(), 6);
   $('foco').value = '';
   renderMetas(META_DEFS);
+  clearContextForm();
 }
 
 function startNewClient(){
@@ -442,6 +500,8 @@ function startNewClient(){
   currentGoal = null;
   weeklyReports = [];
   selectedReport = null;
+  clientContext = null;
+  clientWeeklyNote = null;
   renderClients();
   fillClientForm();
   resetReports();
@@ -762,6 +822,123 @@ function notifyTraining(){
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
+function clearContextForm(){
+  ['ctxGoal','ctxLimitations','ctxInjuries','ctxFood','ctxMotivation','ctxCommunication','ctxAttention','weeklyNote','weeklyInstruction'].forEach(id => {
+    if($(id)) $(id).value = '';
+  });
+}
+
+function fillContextForm(){
+  const c = clientContext || {};
+  const n = clientWeeklyNote || {};
+  $('ctxGoal').value = c.primary_goal || '';
+  $('ctxLimitations').value = c.limitations || c.routine_notes || '';
+  $('ctxInjuries').value = c.injuries_pain || '';
+  $('ctxFood').value = c.food_restrictions || '';
+  $('ctxMotivation').value = c.motivation_notes || '';
+  $('ctxCommunication').value = c.communication_style || '';
+  $('ctxAttention').value = c.attention_points || '';
+  $('weeklyNote').value = n.note || '';
+  $('weeklyInstruction').value = n.instruction || '';
+}
+
+async function loadClientContext(){
+  if(!selectedClient || creatingClient) return;
+  clearContextForm();
+  const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
+  const semana = asNum('semana', selectedClient.semana_atual || 1);
+  try{
+    const [contextRes, noteRes] = await Promise.all([
+      supa.from('client_context')
+        .select('*')
+        .eq('client_email', selectedClient.email)
+        .maybeSingle(),
+      supa.from('client_weekly_notes')
+        .select('*')
+        .eq('client_email', selectedClient.email)
+        .eq('ciclo', ciclo)
+        .eq('semana', semana)
+        .maybeSingle()
+    ]);
+    if(contextRes.error) throw contextRes.error;
+    if(noteRes.error) throw noteRes.error;
+    clientContext = contextRes.data || null;
+    clientWeeklyNote = noteRes.data || null;
+    fillContextForm();
+  }catch(err){
+    toast('Contexto ainda nao disponivel: ' + (err.message || err));
+  }
+}
+
+async function saveClientContext(){
+  if(!selectedClient || creatingClient) return;
+  const btn = $('saveContextBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  const ciclo = asNum('ciclo', 1);
+  const semana = asNum('semana', 1);
+  try{
+    const contextPayload = {
+      client_email: selectedClient.email,
+      primary_goal: $('ctxGoal').value.trim() || null,
+      limitations: $('ctxLimitations').value.trim() || null,
+      routine_notes: $('ctxLimitations').value.trim() || null,
+      injuries_pain: $('ctxInjuries').value.trim() || null,
+      food_restrictions: $('ctxFood').value.trim() || null,
+      motivation_notes: $('ctxMotivation').value.trim() || null,
+      communication_style: $('ctxCommunication').value.trim() || null,
+      attention_points: $('ctxAttention').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    const notePayload = {
+      client_email: selectedClient.email,
+      ciclo: ciclo,
+      semana: semana,
+      period_start: $('dataInicio').value || null,
+      period_end: $('dataFim').value || null,
+      note: $('weeklyNote').value.trim() || null,
+      instruction: $('weeklyInstruction').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    const [contextRes, noteRes] = await Promise.all([
+      supa.from('client_context')
+        .upsert(contextPayload, {onConflict:'client_email'})
+        .select('*')
+        .single(),
+      supa.from('client_weekly_notes')
+        .upsert(notePayload, {onConflict:'client_email,ciclo,semana'})
+        .select('*')
+        .single()
+    ]);
+    if(contextRes.error) throw contextRes.error;
+    if(noteRes.error) throw noteRes.error;
+    clientContext = contextRes.data;
+    clientWeeklyNote = noteRes.data;
+    toast('Contexto salvo para proximas devolutivas.');
+  }catch(err){
+    toast('Erro ao salvar contexto: ' + (err.message || err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Salvar contexto';
+  }
+}
+
+function contextTextForReport(){
+  const parts = [];
+  if(clientContext){
+    if(clientContext.primary_goal) parts.push('Objetivo: ' + clientContext.primary_goal);
+    if(clientContext.limitations) parts.push('Limitacoes/rotina: ' + clientContext.limitations);
+    if(clientContext.injuries_pain) parts.push('Dores/lesoes: ' + clientContext.injuries_pain);
+    if(clientContext.food_restrictions) parts.push('Restricoes alimentares: ' + clientContext.food_restrictions);
+    if(clientContext.motivation_notes) parts.push('Motivadores: ' + clientContext.motivation_notes);
+    if(clientContext.communication_style) parts.push('Estilo: ' + clientContext.communication_style);
+    if(clientContext.attention_points) parts.push('Atencao: ' + clientContext.attention_points);
+  }
+  if(clientWeeklyNote && clientWeeklyNote.note) parts.push('Nota semanal: ' + clientWeeklyNote.note);
+  if(clientWeeklyNote && clientWeeklyNote.instruction) parts.push('Instrucao semanal: ' + clientWeeklyNote.instruction);
+  return parts.join('\n');
+}
+
 function resetReports(){
   weeklyReports = [];
   selectedReport = null;
@@ -874,6 +1051,9 @@ function buildReportText(){
     '',
     'Metas:',
     goalLines,
+    '',
+    'Contexto e nota semanal:',
+    contextTextForReport() || '(sem contexto salvo)',
     '',
     'Rascunho:',
     $('reportAiDraft').value.trim() || '(sem rascunho)',
@@ -1056,6 +1236,8 @@ $('sampleProtocolBtn').addEventListener('click', ()=>{
 $('auditMediaBtn').addEventListener('click', auditProtocolMedia);
 $('applyMediaBtn').addEventListener('click', applyResolvedMedia);
 $('notifyTrainingBtn').addEventListener('click', notifyTraining);
+$('saveContextBtn').addEventListener('click', saveClientContext);
+$('reloadContextBtn').addEventListener('click', loadClientContext);
 $('loadReportsBtn').addEventListener('click', loadWeeklyReports);
 $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
@@ -1082,8 +1264,8 @@ $('logoutBtn').addEventListener('click', async()=>{
   await supa.auth.signOut();
   window.location.href = 'login.html';
 });
-$('ciclo').addEventListener('change', loadGoal);
-$('semana').addEventListener('change', loadGoal);
+$('ciclo').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
+$('semana').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
 
 boot();
 </script>
