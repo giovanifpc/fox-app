@@ -12,6 +12,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const adminSecret = Deno.env.get("WEEKLY_REPORT_SECRET") || "";
+const adminEmail = (Deno.env.get("ADMIN_EMAIL") || "giovani.work@hotmail.com").toLowerCase();
 const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const anthropicModel = Deno.env.get("ANTHROPIC_MODEL") || "claude-3-5-sonnet-20241022";
 
@@ -39,6 +40,22 @@ function defaultPreviousWeek() {
 function numberValue(value: unknown) {
   const n = Number(value || 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+async function getRequesterEmail(req: Request) {
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return "";
+  const { data, error } = await supa.auth.getUser(token);
+  if (error || !data.user?.email) return "";
+  return data.user.email.toLowerCase();
+}
+
+async function isAuthorized(req: Request) {
+  const received = req.headers.get("x-weekly-report-secret") || "";
+  if (adminSecret && received === adminSecret) return true;
+  const requester = await getRequesterEmail(req);
+  return requester === adminEmail;
 }
 
 function performedTraining(row: Json) {
@@ -324,14 +341,11 @@ serve(async (req) => {
       throw new Error("SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY nao configurado.");
     }
 
-    if (adminSecret) {
-      const received = req.headers.get("x-weekly-report-secret") || "";
-      if (received !== adminSecret) {
-        return new Response(JSON.stringify({ error: "unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (!(await isAuthorized(req))) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const body = (req.method === "POST" ? await req.json().catch(() => ({})) : {}) as Record<string, unknown>;
