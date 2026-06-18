@@ -321,6 +321,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
             <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
             <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
+            <button class="btn secondary" type="button" id="notifyReportBtn">Avisar no WhatsApp</button>
             <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
           </div>
         </div>
@@ -841,6 +842,20 @@ function notifyTraining(){
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
+function notifyReport(){
+  if(!selectedClient || !selectedReport) return;
+  if(selectedReport.published !== true){
+    toast('Publique a devolutiva no app antes de avisar o cliente.');
+    return;
+  }
+  const phone = String($('whatsapp').value || selectedClient.numero_whatsapp || '').replace(/\D/g,'');
+  if(!phone){ toast('Cadastre o WhatsApp do cliente para usar este botao.'); return; }
+  const nome = selectedClient.nome || 'cliente';
+  const periodo = fmtPeriod(selectedReport.period_start, selectedReport.period_end);
+  const msg = 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app. Ela ja esta na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
+}
+
 function clearContextForm(){
   ['ctxGoal','ctxLimitations','ctxInjuries','ctxFood','ctxMotivation','ctxCommunication','ctxAttention','weeklyNote','weeklyInstruction'].forEach(id => {
     if($(id)) $(id).value = '';
@@ -1098,6 +1113,7 @@ function renderReportDetail(){
   $('reportCoachNotes').value = selectedReport.coach_notes || '';
   $('publishReportBtn').disabled = selectedReport.published === true;
   $('publishReportBtn').textContent = selectedReport.published === true ? 'Publicado' : 'Publicar no app';
+  $('notifyReportBtn').disabled = selectedReport.published !== true;
   $('deleteReportBtn').disabled = selectedReport.published === true;
   $('deleteReportBtn').classList.toggle('hidden', selectedReport.published === true);
 }
@@ -1388,6 +1404,7 @@ $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
 $('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('publishReportBtn').addEventListener('click', publishReportToApp);
+$('notifyReportBtn').addEventListener('click', notifyReport);
 $('deleteReportBtn').addEventListener('click', deleteReportDraft);
 $('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
