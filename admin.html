@@ -992,7 +992,7 @@ async function loadWeeklyReports(showToast){
     const {data, error} = await supa.from('weekly_reports')
       .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
       .eq('client_email', selectedClient.email)
-      .order('period_start', {ascending:false})
+      .order('generated_at', {ascending:false})
       .limit(12);
     if(error) throw error;
     weeklyReports = data || [];

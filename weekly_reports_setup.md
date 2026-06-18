@@ -19,6 +19,12 @@ Ele cria:
 - `client_context`: memoria fixa/anamnese do cliente
 - `client_weekly_notes`: nota semanal e instrucao do Giovani para a devolutiva
 
+Se o projeto ja tinha relatorios publicados e voce quer gerar novas versoes sem sobrescrever a devolutiva atual do cliente, rode tambem:
+
+`supabase_weekly_reports_versions_fix.sql`
+
+Ele permite que uma devolutiva publicada continue visivel no app enquanto um novo rascunho da mesma semana fica em revisao.
+
 ## 2. Edge Function
 
 A funcao esta em:
@@ -34,7 +40,7 @@ Ela consolida:
 - nota semanal em `client_weekly_notes`
 - dados principais do cliente em `clients`
 
-O resultado entra em `weekly_reports` com `status = draft`.
+O resultado entra em `weekly_reports` como uma nova linha com `status = draft`.
 
 ## 3. Variaveis da funcao
 
@@ -50,6 +56,10 @@ No Supabase, a funcao precisa ter:
 Se `ANTHROPIC_API_KEY` nao estiver configurada, a funcao continua gerando o relatorio normalmente e preenche um rascunho simples de fallback.
 
 O Admin tambem consegue chamar a funcao manualmente pelo botao `Gerar rascunho`, desde que a funcao esteja publicada no Supabase Functions e o usuario logado seja o Admin.
+
+Para publicar a funcao, siga tambem:
+
+`edge_function_deploy.md`
 
 ## 4. Teste manual esperado
 
