@@ -288,7 +288,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         </div>
         <div class="actions" style="margin-bottom:10px">
           <button class="btn primary" type="button" id="generateReportBtn">Gerar rascunho</button>
-          <button class="btn secondary" type="button" id="loadReportsBtn">Carregar relatorios</button>
+          <button class="btn secondary" type="button" id="loadReportsBtn">Atualizar lista</button>
           <button class="btn secondary" type="button" id="copyReportBtn" disabled>Copiar resumo</button>
         </div>
         <div id="reportList" class="report-list">
@@ -321,6 +321,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
             <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
             <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
+            <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
           </div>
         </div>
       </div>
@@ -1097,6 +1098,8 @@ function renderReportDetail(){
   $('reportCoachNotes').value = selectedReport.coach_notes || '';
   $('publishReportBtn').disabled = selectedReport.published === true;
   $('publishReportBtn').textContent = selectedReport.published === true ? 'Publicado' : 'Publicar no app';
+  $('deleteReportBtn').disabled = selectedReport.published === true;
+  $('deleteReportBtn').classList.toggle('hidden', selectedReport.published === true);
 }
 
 function buildReportText(){
@@ -1202,6 +1205,37 @@ async function publishReportToApp(){
     btn.disabled = false;
     btn.textContent = oldText;
     renderReportDetail();
+  }
+}
+
+async function deleteReportDraft(){
+  if(!selectedReport) return;
+  if(selectedReport.published === true){
+    toast('Relatorio publicado fica preservado no historico.');
+    return;
+  }
+  if(!confirm('Excluir este rascunho? Esta acao nao afeta a devolutiva publicada no app.')) return;
+  const id = selectedReport.id;
+  const btn = $('deleteReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Excluindo...';
+  try{
+    const {error} = await supa.from('weekly_reports')
+      .delete()
+      .eq('id', id)
+      .eq('published', false);
+    if(error) throw error;
+    weeklyReports = weeklyReports.filter(r => r.id !== id);
+    selectedReport = weeklyReports[0] || null;
+    renderWeeklyReports();
+    renderReportDetail();
+    toast('Rascunho excluido.');
+  }catch(err){
+    toast('Erro ao excluir rascunho: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
   }
 }
 
@@ -1354,6 +1388,7 @@ $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
 $('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('publishReportBtn').addEventListener('click', publishReportToApp);
+$('deleteReportBtn').addEventListener('click', deleteReportDraft);
 $('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
   const file = this.files && this.files[0];
