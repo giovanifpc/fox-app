@@ -692,6 +692,15 @@ async function foxSaveTraining(data){
 async function foxSaveTrainingSession(record){
   if(!record || !window.FOX_USER_EMAIL || !supa) return;
   try{
+    var detail = Array.isArray(record.detail) ? record.detail : [];
+    var setsDone = detail.reduce(function(total, ex){
+      var sets = Array.isArray(ex.sets) ? ex.sets : [];
+      return total + sets.filter(function(s){ return !!s.done; }).length;
+    }, 0);
+    var exercisesDone = detail.filter(function(ex){
+      var sets = Array.isArray(ex.sets) ? ex.sets : [];
+      return sets.some(function(s){ return !!s.done; });
+    }).length;
     var payload = {
       client_email: String(window.FOX_USER_EMAIL).toLowerCase(),
       session_uid: record.sessionUid || ('tr_' + Date.now()),
@@ -701,12 +710,12 @@ async function foxSaveTrainingSession(record){
       ciclo: record.cycle || null,
       semana: record.week || null,
       minutes: record.minutes || 0,
-      sets_done: record.setsDone || 0,
-      exercises_done: record.exDone || 0,
+      sets_done: setsDone || record.setsDone || 0,
+      exercises_done: exercisesDone || record.exDone || 0,
       incomplete: !!record.incomplete,
       protocol_title: record.protocolTitle || null,
       protocol_version: record.protocolVersion || null,
-      detail: record.detail || [],
+      detail: detail,
       raw_data: record
     };
     var r = await supa.from('training_history')
