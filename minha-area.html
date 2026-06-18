@@ -99,12 +99,23 @@ body{padding-top:44px;padding-bottom:70px}
 .profile-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
 .profile-field label{font-size:11px;color:var(--gray);font-weight:600;
   text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px}
-.profile-field textarea{width:100%;min-height:72px;background:var(--surface);
+.profile-field textarea,.profile-field input,.profile-field select{width:100%;background:var(--surface);
   border:1px solid var(--border);color:var(--white);border-radius:9px;
   padding:10px 12px;font-family:var(--font);font-size:14px;line-height:1.45;
   outline:none;resize:vertical}
-.profile-field textarea:focus{border-color:var(--purple)}
+.profile-field textarea{min-height:72px}
+.profile-field input,.profile-field select{resize:none}
+.profile-field textarea:focus,.profile-field input:focus,.profile-field select:focus{border-color:var(--purple)}
 .profile-hint{font-size:12px;color:var(--gray);line-height:1.45;margin-bottom:12px}
+.profile-alert{margin:0 16px 12px 28px;background:linear-gradient(135deg,rgba(255,140,66,.16),rgba(123,143,212,.13));border:1px solid rgba(255,140,66,.34);border-radius:12px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.profile-alert.hidden{display:none}
+.profile-alert strong{display:block;font-size:13px;margin-bottom:3px}
+.profile-alert span{font-size:12px;color:#d3d7e6;line-height:1.35}
+.profile-alert button{flex:0 0 auto;border:1px solid rgba(255,255,255,.18);background:#101116;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800}
+.profile-section{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.018);margin-bottom:10px}
+.profile-section-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--amber);margin-bottom:10px}
+.profile-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.profile-alert{margin:0 14px 12px 26px;align-items:flex-start;flex-direction:column}.profile-alert button{width:100%}.profile-two{grid-template-columns:1fr}}
 .btn-save{width:100%;background:var(--purple);color:var(--white);border:none;
   border-radius:10px;padding:13px;font-family:var(--font);font-size:14px;
   font-weight:700;cursor:pointer;transition:.2s;letter-spacing:.3px}
@@ -756,12 +767,21 @@ async function loadProfileContext(supaClient, email){
 
 function fillProfileContext(){
   const c = window.FOX_CLIENT_CONTEXT || {};
+  const a = c.anamnesis || {};
   const map = {
     profileGoal: c.primary_goal || '',
+    profileExpected: a.expected_result || '',
     profileRoutine: c.limitations || c.routine_notes || '',
+    profileTrainingDays: a.training_days || '',
+    profileTrainingTime: a.training_time || '',
+    profileTrainingHistory: a.training_history || '',
     profileInjuries: c.injuries_pain || '',
     profileFood: c.food_restrictions || c.preferences || '',
-    profileMotivation: c.motivation_notes || ''
+    profileSleep: a.sleep || '',
+    profileStress: a.stress || '',
+    profileLifestyle: a.lifestyle || '',
+    profileMotivation: c.motivation_notes || '',
+    profileCommunication: a.communication_preference || ''
   };
   Object.keys(map).forEach(function(id){
     const el = document.getElementById(id);
@@ -771,11 +791,19 @@ function fillProfileContext(){
 
 function profileFilledCount(){
   const c = window.FOX_CLIENT_CONTEXT || {};
+  const a = c.anamnesis || {};
   return [
     c.primary_goal,
+    a.expected_result,
     c.limitations || c.routine_notes,
+    a.training_days,
+    a.training_time,
+    a.training_history,
     c.injuries_pain,
     c.food_restrictions || c.preferences,
+    a.sleep,
+    a.stress,
+    a.lifestyle,
     c.motivation_notes
   ].filter(function(v){ return String(v || '').trim().length > 0; }).length;
 }
@@ -784,8 +812,11 @@ function updateProfileCard(){
   const count = profileFilledCount();
   const status = document.getElementById('dash-profile-status');
   const hint = document.getElementById('dash-profile-hint');
-  if(status) status.textContent = count >= 4 ? 'completo' : count ? 'parcial' : 'pendente';
-  if(hint) hint.textContent = count >= 4 ? 'Dados atualizados para suas devolutivas' : 'Complete para melhorar suas devolutivas';
+  const alert = document.getElementById('profileOnboardingAlert');
+  const complete = count >= 8;
+  if(status) status.textContent = complete ? 'completo' : count ? 'parcial' : 'pendente';
+  if(hint) hint.textContent = complete ? 'Anamnese pronta para personalizar devolutivas' : 'Complete a anamnese inicial';
+  if(alert) alert.classList.toggle('hidden', complete);
 }
 
 function openProfileForm(){
@@ -805,20 +836,32 @@ async function saveProfileContext(){
   }
   const btn = document.getElementById('profileSaveBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Salvando...'; }
+  const text = function(id){ return (document.getElementById(id)?.value || '').trim(); };
+  const anamnesis = {
+    source: 'minha-area',
+    updated_by_client: true,
+    updated_at: new Date().toISOString(),
+    expected_result: text('profileExpected') || null,
+    training_days: text('profileTrainingDays') || null,
+    training_time: text('profileTrainingTime') || null,
+    training_history: text('profileTrainingHistory') || null,
+    sleep: text('profileSleep') || null,
+    stress: text('profileStress') || null,
+    lifestyle: text('profileLifestyle') || null,
+    communication_preference: text('profileCommunication') || null
+  };
+  const routineParts = [text('profileRoutine'), text('profileLifestyle')].filter(Boolean);
+  const motivationParts = [text('profileMotivation'), text('profileCommunication') ? 'Comunicacao preferida: ' + text('profileCommunication') : ''].filter(Boolean);
   const payload = {
     client_email: userEmail,
-    primary_goal: (document.getElementById('profileGoal')?.value || '').trim() || null,
-    limitations: (document.getElementById('profileRoutine')?.value || '').trim() || null,
-    routine_notes: (document.getElementById('profileRoutine')?.value || '').trim() || null,
-    injuries_pain: (document.getElementById('profileInjuries')?.value || '').trim() || null,
-    food_restrictions: (document.getElementById('profileFood')?.value || '').trim() || null,
-    preferences: (document.getElementById('profileFood')?.value || '').trim() || null,
-    motivation_notes: (document.getElementById('profileMotivation')?.value || '').trim() || null,
-    anamnesis: {
-      source: 'minha-area',
-      updated_by_client: true,
-      updated_at: new Date().toISOString()
-    },
+    primary_goal: text('profileGoal') || null,
+    limitations: routineParts.join('\n') || null,
+    routine_notes: routineParts.join('\n') || null,
+    injuries_pain: text('profileInjuries') || null,
+    food_restrictions: text('profileFood') || null,
+    preferences: text('profileFood') || null,
+    motivation_notes: motivationParts.join('\n') || null,
+    anamnesis: anamnesis,
     updated_at: new Date().toISOString()
   };
   try{
@@ -830,11 +873,11 @@ async function saveProfileContext(){
     if(error) throw error;
     window.FOX_CLIENT_CONTEXT = data || payload;
     updateProfileCard();
-    toast('Perfil salvo.');
+    toast('Anamnese salva.');
   }catch(e){
-    toast('Nao foi possivel salvar o perfil.');
+    toast('Nao foi possivel salvar a anamnese.');
   }finally{
-    if(btn){ btn.disabled = false; btn.textContent = 'Salvar perfil'; }
+    if(btn){ btn.disabled = false; btn.textContent = 'Salvar anamnese'; }
   }
 }
 
@@ -900,6 +943,13 @@ function openPublishedReport(rep){
       </div>
       <hr class="dossie-rule">
     </div>
+  </div>
+  <div class="profile-alert hidden" id="profileOnboardingAlert">
+    <div>
+      <strong>Anamnese inicial pendente</strong>
+      <span>Complete seu perfil para o Giovani personalizar treinos, metas e devolutivas.</span>
+    </div>
+    <button type="button" onclick="openProfileForm()">Preencher</button>
   </div>
   <div class="dossie-body">
     <article class="dash-paper">
@@ -1103,31 +1153,100 @@ function openPublishedReport(rep){
 <!-- CHECK-IN MEDIDAS -->
 <div class="page" id="page-checkin">
   <div class="profile-form" id="profileForm">
-    <div class="ci-title">Perfil e anamnese</div>
-    <div class="profile-hint">Essas respostas ajudam o Giovani a ajustar treino, nutricao e devolutivas ao seu momento atual.</div>
-    <div class="profile-grid">
-      <div class="profile-field">
-        <label>Objetivo principal</label>
-        <textarea id="profileGoal" placeholder="Ex.: reduzir gordura, ganhar massa, melhorar condicionamento."></textarea>
-      </div>
-      <div class="profile-field">
-        <label>Rotina e limitacoes</label>
-        <textarea id="profileRoutine" placeholder="Horarios, viagens, trabalho, tempo para treinar/cozinhar."></textarea>
-      </div>
-      <div class="profile-field">
-        <label>Dores, lesoes ou cuidados</label>
-        <textarea id="profileInjuries" placeholder="Ex.: joelho, lombar, ombro, movimentos que incomodam."></textarea>
-      </div>
-      <div class="profile-field">
-        <label>Restricoes e preferencias alimentares</label>
-        <textarea id="profileFood" placeholder="Alimentos que evita, intolerancias, preferidos e rotina alimentar."></textarea>
-      </div>
-      <div class="profile-field">
-        <label>Motivacao e comunicacao</label>
-        <textarea id="profileMotivation" placeholder="O que te ajuda a manter constancia e como prefere receber orientacoes."></textarea>
+    <div class="ci-title">Anamnese inicial</div>
+    <div class="profile-hint">Preencha uma vez e atualize quando algo mudar. Essas respostas entram como contexto fixo para ajustes de treino, nutricao e devolutivas.</div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Objetivo e ponto de partida</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Objetivo principal</label>
+          <textarea id="profileGoal" placeholder="Ex.: reduzir gordura, ganhar massa, melhorar condicionamento."></textarea>
+        </div>
+        <div class="profile-field">
+          <label>Resultado esperado</label>
+          <textarea id="profileExpected" placeholder="O que precisa acontecer para voce sentir que o ciclo valeu a pena?"></textarea>
+        </div>
       </div>
     </div>
-    <button class="btn-save" id="profileSaveBtn" onclick="saveProfileContext()">Salvar perfil</button>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Rotina e disponibilidade</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Rotina e limitacoes</label>
+          <textarea id="profileRoutine" placeholder="Horarios, viagens, trabalho, tempo para treinar/cozinhar."></textarea>
+        </div>
+        <div class="profile-two">
+          <div class="profile-field">
+            <label>Dias para treinar</label>
+            <input id="profileTrainingDays" type="text" placeholder="Ex.: 3 a 4 dias/semana">
+          </div>
+          <div class="profile-field">
+            <label>Tempo por treino</label>
+            <input id="profileTrainingTime" type="text" placeholder="Ex.: 45 a 60 min">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Treino e cuidados</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Historico de treino</label>
+          <textarea id="profileTrainingHistory" placeholder="Experiencia, exercicios que domina, movimentos que evita, equipamentos disponiveis."></textarea>
+        </div>
+        <div class="profile-field">
+          <label>Dores, lesoes ou cuidados</label>
+          <textarea id="profileInjuries" placeholder="Ex.: joelho, lombar, ombro, movimentos que incomodam."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Nutricao e estilo de vida</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Restricoes e preferencias alimentares</label>
+          <textarea id="profileFood" placeholder="Alimentos que evita, intolerancias, preferidos e rotina alimentar."></textarea>
+        </div>
+        <div class="profile-two">
+          <div class="profile-field">
+            <label>Sono medio</label>
+            <input id="profileSleep" type="text" placeholder="Ex.: 6h, sono leve">
+          </div>
+          <div class="profile-field">
+            <label>Estresse atual</label>
+            <select id="profileStress">
+              <option value="">Selecione</option>
+              <option value="baixo">Baixo</option>
+              <option value="moderado">Moderado</option>
+              <option value="alto">Alto</option>
+            </select>
+          </div>
+        </div>
+        <div class="profile-field">
+          <label>Observacoes de estilo de vida</label>
+          <textarea id="profileLifestyle" placeholder="Bebidas, eventos sociais, trabalho, familia, viagens, pontos que interferem na rotina."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Motivacao e comunicacao</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Motivacao</label>
+          <textarea id="profileMotivation" placeholder="O que te ajuda a manter constancia? O que costuma te fazer abandonar?"></textarea>
+        </div>
+        <div class="profile-field">
+          <label>Como prefere receber orientacoes</label>
+          <textarea id="profileCommunication" placeholder="Ex.: direto, acolhedor, com metas curtas, sem tom de cobranca."></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="btn-save" id="profileSaveBtn" onclick="saveProfileContext()">Salvar anamnese</button>
   </div>
 
   <div class="checkin-form">

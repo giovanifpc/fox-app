@@ -234,6 +234,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <textarea id="ctxAttention" placeholder="Pontos que a IA deve sempre considerar antes de escrever."></textarea>
         </div>
         <div class="field">
+          <label for="ctxAnamnesis">Anamnese preenchida no app</label>
+          <textarea id="ctxAnamnesis" readonly placeholder="Quando o cliente preencher a anamnese inicial, o resumo aparece aqui."></textarea>
+        </div>
+        <div class="field">
           <label for="weeklyNote">Nota semanal do Giovani</label>
           <textarea id="weeklyNote" placeholder="Ex.: cliente relatou cansaço, teve viagem, pediu para focar em constancia."></textarea>
         </div>
@@ -866,8 +870,27 @@ function notifyReport(){
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
+function formatAnamnesis(anamnesis){
+  const a = anamnesis && typeof anamnesis === 'object' ? anamnesis : {};
+  const rows = [
+    ['Resultado esperado', a.expected_result],
+    ['Dias para treinar', a.training_days],
+    ['Tempo por treino', a.training_time],
+    ['Historico de treino', a.training_history],
+    ['Sono medio', a.sleep],
+    ['Estresse atual', a.stress],
+    ['Estilo de vida', a.lifestyle],
+    ['Comunicacao preferida', a.communication_preference]
+  ];
+  const text = rows
+    .filter(function(row){ return String(row[1] || '').trim(); })
+    .map(function(row){ return row[0] + ': ' + row[1]; })
+    .join('\n');
+  return text || 'Anamnese inicial ainda nao preenchida pelo cliente.';
+}
+
 function clearContextForm(){
-  ['ctxGoal','ctxLimitations','ctxInjuries','ctxFood','ctxMotivation','ctxCommunication','ctxAttention','weeklyNote','weeklyInstruction'].forEach(id => {
+  ['ctxGoal','ctxLimitations','ctxInjuries','ctxFood','ctxMotivation','ctxCommunication','ctxAttention','ctxAnamnesis','weeklyNote','weeklyInstruction'].forEach(id => {
     if($(id)) $(id).value = '';
   });
 }
@@ -882,6 +905,7 @@ function fillContextForm(){
   $('ctxMotivation').value = c.motivation_notes || '';
   $('ctxCommunication').value = c.communication_style || '';
   $('ctxAttention').value = c.attention_points || '';
+  $('ctxAnamnesis').value = formatAnamnesis(c.anamnesis);
   $('weeklyNote').value = n.note || '';
   $('weeklyInstruction').value = n.instruction || '';
 }
@@ -932,6 +956,7 @@ async function saveClientContext(){
       motivation_notes: $('ctxMotivation').value.trim() || null,
       communication_style: $('ctxCommunication').value.trim() || null,
       attention_points: $('ctxAttention').value.trim() || null,
+      anamnesis: (clientContext && clientContext.anamnesis) || {},
       updated_at: new Date().toISOString()
     };
     const notePayload = {
@@ -977,6 +1002,8 @@ function contextTextForReport(){
     if(clientContext.motivation_notes) parts.push('Motivadores: ' + clientContext.motivation_notes);
     if(clientContext.communication_style) parts.push('Estilo: ' + clientContext.communication_style);
     if(clientContext.attention_points) parts.push('Atencao: ' + clientContext.attention_points);
+    const anamnesisText = formatAnamnesis(clientContext.anamnesis);
+    if(!anamnesisText.includes('ainda nao preenchida')) parts.push('Anamnese detalhada:\n' + anamnesisText);
   }
   if(clientWeeklyNote && clientWeeklyNote.note) parts.push('Nota semanal: ' + clientWeeklyNote.note);
   if(clientWeeklyNote && clientWeeklyNote.instruction) parts.push('Instrucao semanal: ' + clientWeeklyNote.instruction);
