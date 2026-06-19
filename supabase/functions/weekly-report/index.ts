@@ -2,6 +2,11 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type Json = Record<string, unknown>;
+type DraftResult = {
+  text: string;
+  status: "claude" | "fallback_no_key" | "fallback_empty_response";
+  model: string;
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +19,7 @@ const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const adminSecret = Deno.env.get("WEEKLY_REPORT_SECRET") || "";
 const adminEmail = (Deno.env.get("ADMIN_EMAIL") || "giovani.work@hotmail.com").toLowerCase();
 const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
-const anthropicModel = Deno.env.get("ANTHROPIC_MODEL") || "claude-3-5-sonnet-20241022";
+const anthropicModel = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
 
 const supa = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
@@ -120,6 +125,24 @@ function compactForPrompt(value: unknown) {
   return JSON.stringify(value, null, 2).slice(0, 12000);
 }
 
+function formatAnamnesis(anamnesis: unknown) {
+  const a = anamnesis && typeof anamnesis === "object" ? anamnesis as Json : {};
+  const rows = [
+    ["Resultado esperado", a.expected_result],
+    ["Dias para treinar", a.training_days],
+    ["Tempo por treino", a.training_time],
+    ["Historico de treino", a.training_history],
+    ["Sono medio", a.sleep],
+    ["Estresse atual", a.stress],
+    ["Estilo de vida", a.lifestyle],
+    ["Comunicacao preferida", a.communication_preference],
+  ];
+  return rows
+    .filter(([, value]) => String(value || "").trim())
+    .map(([label, value]) => `- ${label}: ${value}`)
+    .join("\n");
+}
+
 function serializeError(error: unknown) {
   if (error instanceof Error) {
     return {
@@ -153,6 +176,7 @@ function fallbackDraft(reportData: Json, training: Json, nutri: Json, goals: Jso
   const period = reportData.period as Json;
   const context = (reportData.context as Json) || {};
   const weeklyNote = (reportData.weekly_note as Json) || {};
+  const anamnesisText = formatAnamnesis(context.anamnesis);
   return [
     `Devolutiva semanal - ${client?.nome || client?.email || "cliente"}`,
     `Periodo: ${period?.start || "-"} a ${period?.end || "-"}`,
@@ -172,6 +196,7 @@ function fallbackDraft(reportData: Json, training: Json, nutri: Json, goals: Jso
     context.primary_goal ? `- Objetivo: ${context.primary_goal}` : "- Objetivo nao registrado.",
     context.limitations ? `- Rotina/limitacoes: ${context.limitations}` : "",
     context.injuries_pain ? `- Dores/lesoes: ${context.injuries_pain}` : "",
+    anamnesisText ? `Anamnese detalhada:\n${anamnesisText}` : "",
     weeklyNote.note ? `- Nota semanal do Giovani: ${weeklyNote.note}` : "",
     weeklyNote.instruction ? `- Instrucao da semana: ${weeklyNote.instruction}` : "",
     "",
@@ -186,18 +211,25 @@ async function generateClaudeDraft(input: {
   trainingSummary: Json;
   nutriSummary: Json;
   goalsSnapshot: Json[];
-}) {
+}): Promise<DraftResult> {
   if (!anthropicApiKey) {
-    return fallbackDraft(input.reportData, input.trainingSummary, input.nutriSummary, input.goalsSnapshot);
+    return {
+      text: fallbackDraft(input.reportData, input.trainingSummary, input.nutriSummary, input.goalsSnapshot),
+      status: "fallback_no_key",
+      model: "fallback",
+    };
   }
 
   const prompt = [
     "Voce e assistente do Giovani, treinador da Fox Performance.",
-    "Gere uma devolutiva semanal curta, humana e revisavel para o cliente.",
+    "Gere uma devolutiva semanal humana, precisa e revisavel para o cliente.",
     "Nao invente dados. Use somente o JSON fornecido.",
     "Considere contexto fixo, anamnese e nota semanal do Giovani como prioridade para personalizar a resposta.",
     "Se houver instrucao semanal, siga essa instrucao acima das regras gerais de tom.",
     "Tom: direto, cuidadoso, profissional e motivador, sem exagero.",
+    "Nao mencione JSON, banco de dados, automacao, IA, Supabase, Claude ou campos tecnicos.",
+    "Se algum dado estiver fraco ou ausente, escreva com prudencia e diga que aquele ponto precisa ser acompanhado melhor.",
+    "Escreva em portugues do Brasil.",
     "Estrutura obrigatoria:",
     "1. Saudacao breve pelo nome.",
     "2. Leitura da semana em 1 paragrafo.",
@@ -243,7 +275,19 @@ async function generateClaudeDraft(input: {
     .join("\n\n")
     .trim();
 
-  return text || fallbackDraft(input.reportData, input.trainingSummary, input.nutriSummary, input.goalsSnapshot);
+  if (!text) {
+    return {
+      text: fallbackDraft(input.reportData, input.trainingSummary, input.nutriSummary, input.goalsSnapshot),
+      status: "fallback_empty_response",
+      model: anthropicModel,
+    };
+  }
+
+  return {
+    text,
+    status: "claude",
+    model: anthropicModel,
+  };
 }
 
 async function buildReportForClient(client: Json, start: string, end: string) {
@@ -310,19 +354,28 @@ async function buildReportForClient(client: Json, start: string, end: string) {
   };
 
   let aiDraft = "";
-  let aiStatus = "generated";
+  let aiStatus = "";
+  let aiModel = "";
+  let aiError: unknown = null;
   try {
-    aiDraft = await generateClaudeDraft({
+    const draftResult = await generateClaudeDraft({
       reportData,
       trainingSummary,
       nutriSummary,
       goalsSnapshot,
     });
+    aiDraft = draftResult.text;
+    aiStatus = draftResult.status;
+    aiModel = draftResult.model;
   } catch (error) {
-    aiStatus = "error";
+    aiStatus = "claude_error";
+    aiModel = anthropicApiKey ? anthropicModel : "fallback";
+    aiError = serializeError(error);
     aiDraft = fallbackDraft(reportData, trainingSummary, nutriSummary, goalsSnapshot);
-    reportData["ai_error"] = serializeError(error);
   }
+  reportData["ai_status"] = aiStatus;
+  reportData["ai_model"] = aiModel;
+  if (aiError) reportData["ai_error"] = aiError;
 
   const payload = {
     client_email: email,
@@ -346,7 +399,8 @@ async function buildReportForClient(client: Json, start: string, end: string) {
       client_context: contextRes.data || null,
       weekly_note: noteRes.data || null,
       ai_status: aiStatus,
-      ai_model: anthropicApiKey ? anthropicModel : "fallback",
+      ai_model: aiModel,
+      ai_error: aiError,
     },
     updated_at: new Date().toISOString(),
   };
