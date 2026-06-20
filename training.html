@@ -181,6 +181,49 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .set-field input:focus{outline:none;border-color:var(--gold)}
 .set-field label{font-size:9px;color:var(--txt-faint);text-transform:uppercase;letter-spacing:.5px}
 
+/* EXEC compacto: séries mais próximas da área principal */
+#exec .topbar{padding:calc(env(safe-area-inset-top) + 9px) 16px 9px}
+#exec .exec-progress-top{padding:0 16px 3px}
+#exec .exec-body{padding:6px 16px 104px}
+#exec .exec-counter{font-size:10px;margin-bottom:4px;letter-spacing:.8px}
+#exec .exec-name{font-size:21px;line-height:1.08;margin-bottom:10px}
+#exec .exec-media{
+  width:min(100%,260px);
+  aspect-ratio:1/1;
+  margin:0 auto 11px;
+  border-radius:14px;
+}
+#exec .media-badge{font-size:9px;padding:4px 8px;top:8px;left:8px}
+#exec .carga-rec{padding:8px 11px;margin-bottom:10px;font-size:12px;border-radius:9px}
+#exec .sets-head{margin-bottom:8px}
+#exec .sets-head .sh-title{font-size:15px;color:var(--gold-soft)}
+#exec .sets-head .sh-target{font-size:11px}
+#exec .set-row{padding:9px 11px;margin-bottom:7px;border-radius:11px;gap:9px}
+#exec .set-check{width:34px;height:34px;border-radius:10px;font-size:17px}
+#exec .set-num{width:44px;font-size:12px}
+#exec .set-inputs{gap:6px}
+#exec .set-field input{width:52px;padding:6px 4px;font-size:14px}
+#exec .set-field label{font-size:8px}
+#exec .coach-note{
+  margin:14px 0 0;
+  padding:11px 13px;
+  border-radius:10px;
+  background:rgba(74,158,191,.07);
+}
+#exec .coach-note .cn-lbl{font-size:9px;margin-bottom:4px}
+#exec .coach-note .cn-txt{font-size:12px;line-height:1.42;color:var(--txt-dim)}
+@media(max-height:720px){
+  #exec .topbar{padding-top:calc(env(safe-area-inset-top) + 7px);padding-bottom:7px}
+  #exec .exec-name{font-size:19px;margin-bottom:8px}
+  #exec .exec-media{width:min(100%,220px);margin-bottom:9px}
+  #exec .carga-rec{display:none}
+  #exec .coach-note{margin-top:10px}
+}
+@media(max-height:640px){
+  #exec .exec-media{width:min(100%,190px)}
+  #exec .coach-note .cn-txt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+}
+
 /* REST */
 .rest-bar{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:var(--bg-card-2);border-top:1px solid var(--gold-dim);padding:16px 18px calc(16px + env(safe-area-inset-bottom));transform:translateY(110%);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:50}
 .rest-bar.show{transform:translateY(0)}
@@ -1269,15 +1312,16 @@ function renderExercise(){
         </div>
       </div>`;
   });
+  const noteHtml = ex.note ? `<div class="coach-note"><div class="cn-lbl">Orientação do exercício</div><div class="cn-txt">${ex.note}</div></div>` : "";
 
   document.getElementById("execBody").innerHTML=`
     <div class="exec-counter">Exercício ${i+1} de ${w.exercises.length} · Semana ${wk}</div>
     <div class="exec-name">${ex.nome}</div>
     <div class="exec-media">${media}</div>
-    ${ex.note?`<div class="coach-note"><div class="cn-lbl">Orientação do Giovani</div><div class="cn-txt">${ex.note}</div></div>`:''}
     ${cargaRec}
     <div class="sets-head"><span class="sh-title">Séries</span><span class="sh-target">Meta: ${prog.sets} × ${prog.reps} · descanso ${ex.rest}s</span></div>
-    ${setsHtml}`;
+    ${setsHtml}
+    ${noteHtml}`;
 
   document.getElementById("prevBtn").style.visibility = i===0?"hidden":"visible";
   document.getElementById("nextBtn").textContent = i===w.exercises.length-1?"Finalizar treino":"Próximo";
