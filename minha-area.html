@@ -431,11 +431,9 @@ canvas{display:block;width:100%}
   if(profile){
     window.FOX_PROFILE = profile;
 
-    // Atualizar DRIVE_CONFIG com folder_id do banco
-    if(profile.folder_id && typeof DRIVE_CONFIG !== 'undefined'){
-      DRIVE_CONFIG.folderId = profile.folder_id;
-      DRIVE_CONFIG.clientName = profile.nome;
-    }
+    window.FOX_DRIVE_FOLDER_ID = profile.folder_id || '';
+    window.FOX_DRIVE_CLIENT_NAME = profile.nome || 'Cliente';
+    if(typeof applyDriveProfileConfig === 'function') applyDriveProfileConfig();
 
     // Atualizar UI após DOM pronto
     function applyProfile(){
@@ -1337,9 +1335,9 @@ function openPublishedReport(rep){
 const DRIVE_CONFIG = {
   clientName: "Cliente",
   apiKey: "AIzaSyAzGaqmVrf6p4L2w1ebOVrPdbsF7KLXRRg",
-  folderId: "1_9UFXRFe5D1ya5y-2nGVkP04BlHWIDYb",
+  folderId: "",
   folderTypes: { "Devolutivas":"devolutiva","Treinos":"treino","Fotos":"foto","Documentos":"documento" },
-  checkinKey: "foxCheckin_rafael",
+  checkinKey: "foxCheckin_cliente",
   whatsappNumber: "5511943503379"
 };
 const CHECKIN_FIELDS = [
@@ -1350,6 +1348,32 @@ const CHECKIN_FIELDS = [
   {id:"braco",label:"Braço",unit:"cm",color:"#f5a623"},
   {id:"coxa",label:"Coxa",unit:"cm",color:"#e05555"}
 ];
+
+function extractDriveFolderId(value){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const folderMatch = raw.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if(folderMatch) return folderMatch[1];
+  const idMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(idMatch) return idMatch[1];
+  return raw;
+}
+
+function applyDriveProfileConfig(){
+  const folderId = extractDriveFolderId(window.FOX_DRIVE_FOLDER_ID || '');
+  const clientName = window.FOX_DRIVE_CLIENT_NAME || (window.FOX_PROFILE && window.FOX_PROFILE.nome) || DRIVE_CONFIG.clientName;
+  DRIVE_CONFIG.folderId = folderId;
+  DRIVE_CONFIG.clientName = clientName || 'Cliente';
+  DRIVE_CONFIG.checkinKey = 'foxCheckin_' + String(window.FOX_EMAIL || window.FOX_USER_EMAIL || clientName || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'_');
+  const sub = document.getElementById("clientNameSub");
+  if(sub) sub.textContent = DRIVE_CONFIG.clientName;
+  allFiles = [];
+  if(folderId) loadDrive();
+  else{
+    showArea("docs","empty");
+    showArea("fotos","empty");
+  }
+}
 
 document.getElementById("clientNameSub").textContent = DRIVE_CONFIG.clientName;
 
@@ -1377,16 +1401,23 @@ function setView(v){
 }
 
 /* ── DRIVE ────────────────────────────────────────────────────────────────── */
-loadDrive();
+applyDriveProfileConfig();
 
 async function loadDrive(){
   showArea("docs","loading"); showArea("fotos","loading");
+  if(!DRIVE_CONFIG.folderId){
+    showArea("docs","empty");
+    showArea("fotos","empty");
+    return;
+  }
   try{
     const folders = await driveList(DRIVE_CONFIG.folderId,"mimeType='application/vnd.google-apps.folder'");
     const subFolders = {};
     folders.forEach(f=>{ subFolders[f.id]={name:f.name,type:DRIVE_CONFIG.folderTypes[f.name]||"outro"}; });
     const results = await Promise.all(folders.map(f=>driveList(f.id,"mimeType!='application/vnd.google-apps.folder'")));
+    const rootFiles = await driveList(DRIVE_CONFIG.folderId,"mimeType!='application/vnd.google-apps.folder'");
     allFiles = [];
+    rootFiles.forEach(f=>allFiles.push({...f,folderName:'Raiz',type:typeFromFile(f)}));
     results.forEach((files,i)=>{
       const t = DRIVE_CONFIG.folderTypes[folders[i].name]||"outro";
       files.forEach(f=>allFiles.push({...f,folderName:folders[i].name,type:t}));
@@ -1403,6 +1434,16 @@ async function driveList(folderId,extraQ=""){
   const r = await fetch(url);
   if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||`Erro ${r.status}`); }
   return (await r.json()).files||[];
+}
+
+function typeFromFile(file){
+  const mime = String(file && file.mimeType || '').toLowerCase();
+  if(mime.indexOf('image/') === 0) return 'foto';
+  const name = String(file && file.name || '').toLowerCase();
+  if(/\.(jpg|jpeg|png|webp|gif)$/i.test(name)) return 'foto';
+  if(name.indexOf('treino') >= 0) return 'treino';
+  if(name.indexOf('devolut') >= 0 || name.indexOf('relatorio') >= 0) return 'devolutiva';
+  return 'documento';
 }
 
 function showArea(area,state,msg=""){

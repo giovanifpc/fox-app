@@ -451,6 +451,15 @@ function useCurrentWeek(){
 function norm(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
+function extractDriveFolderId(value){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const folderMatch = raw.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if(folderMatch) return folderMatch[1];
+  const idMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(idMatch) return idMatch[1];
+  return raw;
+}
 function normExercise(s){
   return norm(s).replace(/[^a-z0-9]+/g,' ').trim();
 }
@@ -872,7 +881,7 @@ async function publishProtocol(){
     const profileUpdate = {
       ciclo_atual: payload.ciclo,
       total_semanas: protocol.cycleWeeks,
-      folder_id: $('folderId').value.trim() || null,
+      folder_id: extractDriveFolderId($('folderId').value) || null,
       numero_whatsapp: $('whatsapp').value.trim() || null
     };
     const profileRes = await supa.from('clients')
@@ -1534,7 +1543,7 @@ async function publishGoals(e){
       ciclo_atual: ciclo,
       semana_atual: semana,
       total_semanas: total,
-      folder_id: $('folderId').value.trim() || null,
+      folder_id: extractDriveFolderId($('folderId').value) || null,
       numero_whatsapp: $('whatsapp').value.trim() || null
     };
     const profileRes = await supa.from('clients')
@@ -1584,7 +1593,7 @@ async function saveClient(){
     ciclo_atual: asNum('ciclo', 1),
     semana_atual: asNum('semana', 1),
     total_semanas: asNum('totalSemanas', 8),
-    folder_id: $('folderId').value.trim() || null,
+    folder_id: extractDriveFolderId($('folderId').value) || null,
     numero_whatsapp: $('whatsapp').value.trim() || null
   };
   const btn = $('saveClientBtn');
