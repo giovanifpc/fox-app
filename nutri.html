@@ -247,6 +247,11 @@ select option{background:var(--surface);}
 .qty-row{display:flex;align-items:center;gap:10px;margin-top:14px;}
 .qty-row input{flex:1;}
 .qty-row .btn{width:auto;padding:13px 20px;}
+.serving-tools{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.serving-select{background:var(--card);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:12px;font-family:var(--font-body);font-size:.9rem;width:100%;}
+.quick-servings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.quick-serving{background:transparent;border:1px solid var(--border);color:var(--lgray);border-radius:10px;padding:9px 4px;font-family:var(--font-head);font-size:.86rem;font-weight:600;}
+.quick-serving:active{border-color:var(--accent);color:var(--accent);}
 .no-results{text-align:center;padding:18px 0 8px;color:var(--gray);}
 .inline-register{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:4px;animation:fadeIn .2s ease;}
 .inline-register-title{font-family:var(--font-head);font-size:1rem;letter-spacing:.5px;margin-bottom:12px;color:var(--lgray);}
@@ -811,6 +816,15 @@ body{padding-top:44px!important}
           <div style="font-size:.78rem;color:var(--gray);" id="confirm-base"></div>
           <div class="sr-macros" style="margin-top:8px;" id="confirm-macros"></div>
         </div>
+        <div class="serving-tools">
+          <select id="serving-select" class="serving-select" onchange="changeServingOption()"></select>
+          <div class="quick-servings">
+            <button class="quick-serving" onclick="setQuickServing(.5)">0,5x</button>
+            <button class="quick-serving" onclick="setQuickServing(1)">1x</button>
+            <button class="quick-serving" onclick="setQuickServing(1.5)">1,5x</button>
+            <button class="quick-serving" onclick="setQuickServing(2)">2x</button>
+          </div>
+        </div>
         <div class="qty-row">
           <div class="input-group" style="flex:1;">
             <label id="qty-label">Quantidade (g)</label>
@@ -838,6 +852,9 @@ body{padding-top:44px!important}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0;">
             <div class="input-group"><label>Porção (g ou ml)</label><input id="modal-reg-portion" type="number" placeholder="100"></div>
+            <div class="input-group"><label>Unidade base</label><input id="modal-reg-unit" type="text" placeholder="g"></div>
+            <div class="input-group"><label>Porcao amigavel</label><input id="modal-reg-serving-label" type="text" placeholder="Ex: 1 pote"></div>
+            <div class="input-group"><label>Equivale a (g/ml)</label><input id="modal-reg-serving-grams" type="number" placeholder="Ex: 170"></div>
             <div class="input-group"><label>Calorias (kcal)</label><input id="modal-reg-kcal" type="number" placeholder="0"></div>
             <div class="input-group"><label>Proteína (g)</label><input id="modal-reg-prot" type="number" placeholder="0"></div>
             <div class="input-group"><label>Carboidrato (g)</label><input id="modal-reg-carb" type="number" placeholder="0"></div>
@@ -1927,6 +1944,8 @@ function openAddModal(meal){
   document.getElementById('qty-confirm').style.display='none';
   document.getElementById('modal-results').style.display='block';
   // Reset sheet size before opening
+  document.getElementById('confirm-base').textContent = 'Porcao principal: '+displayServingLabel(newFood);
+  renderServingControls(newFood);
   const sheet=document.querySelector('#modal-add .modal-sheet');
   if(sheet){ sheet.style.maxHeight=''; sheet.style.marginTop=''; sheet.classList.remove('keyboard-hidden'); }
   document.getElementById('modal-add').classList.add('open');
@@ -1993,7 +2012,13 @@ function normalizeOnlineFood(row){
     carb:Number(row.carb||row.carbs_g||0),
     fat:Number(row.fat||row.fat_g||0),
     cat:String(row.cat||'outros'),
-    source:row.source||'Supabase'
+    source:row.source||'Supabase',
+    brand:row.brand||'',
+    servingLabel:row.serving_label||'',
+    servingQty:Number(row.serving_qty||0)||null,
+    servingUnit:row.serving_unit||'',
+    servingGrams:Number(row.serving_grams||0)||null,
+    servingOptions:Array.isArray(row.serving_options)?row.serving_options:[]
   };
 }
 function rememberOnlineFoods(list){
@@ -2014,7 +2039,7 @@ async function searchOnlineFoods(q,cat=''){
   try{
     let query=window.FOX_SUPA
       .from('food_catalog')
-      .select('id,name,portion,unit,kcal,prot,carb,fat,cat,source')
+      .select('id,name,brand,portion,unit,kcal,prot,carb,fat,cat,source,serving_label,serving_qty,serving_unit,serving_grams,serving_options')
       .ilike('name','%'+String(q).trim()+'%')
       .limit(40);
     if(cat) query=query.eq('cat',cat);
@@ -2042,6 +2067,8 @@ function normalizeOpenFoodProduct(p){
   if(!name) return null;
   var n = p.nutriments || {};
   var code = p.code || p.id || name;
+  var serving = parseServingText(p.serving_size || p.quantity || '');
+  var servingLabel = p.serving_size || p.quantity || '';
   return {
     id:'off_'+String(code).replace(/[^a-zA-Z0-9_-]/g,''),
     remoteId:code,
@@ -2053,7 +2080,13 @@ function normalizeOpenFoodProduct(p){
     carb:Number(n.carbohydrates_100g || n.carbohydrates || 0),
     fat:Number(n.fat_100g || n.fat || 0),
     cat:openFoodCategory(p.categories_tags || p.categories || ''),
-    source:'Open Food Facts'
+    source:'Open Food Facts',
+    brand:p.brands||'',
+    servingLabel:servingLabel,
+    servingQty:serving ? serving.qty : null,
+    servingUnit:serving ? serving.unit : '',
+    servingGrams:serving ? (serving.grams || ((serving.unit==='g'||serving.unit==='ml') ? serving.qty : null)) : null,
+    servingOptions:serving ? [{label:servingLabel,qty:serving.qty,unit:serving.unit,grams:serving.grams || ((serving.unit==='g'||serving.unit==='ml')?serving.qty:null)}] : []
   };
 }
 async function fetchOpenFoodSearch(q){
@@ -2061,7 +2094,7 @@ async function fetchOpenFoodSearch(q){
   if(term.length < 3) return [];
   var key = normalize(term);
   if(openFoodSearchCache[key]) return openFoodSearchCache[key];
-  var fields = 'code,product_name,product_name_pt,generic_name,generic_name_pt,nutriments,categories,categories_tags';
+  var fields = 'code,product_name,product_name_pt,generic_name,generic_name_pt,brands,quantity,serving_size,nutriments,categories,categories_tags';
   var urls = [
     'https://br.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(term)+'&search_simple=1&action=process&json=1&page_size=25&fields='+encodeURIComponent(fields),
     'https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(term)+'&search_simple=1&action=process&json=1&page_size=25&fields='+encodeURIComponent(fields)
@@ -2090,8 +2123,87 @@ async function searchFoodsSmart(q,cat=''){
   const online=await searchOnlineFoods(q,cat);
   return mergeFoodResults(online,local);
 }
+function parseServingText(txt){
+  txt=String(txt||'').toLowerCase().replace(',', '.');
+  var m=txt.match(/([\d.]+)\s*(g|ml|kg|l|un|unidade|fatia|pote|scoop|colher|copo|pacote|barra)/i);
+  if(!m) return null;
+  var qty=Number(m[1]||1), unit=m[2]||'g';
+  var gm=txt.match(/([\d.]+)\s*(g|ml|kg|l)\b/i);
+  var grams=null;
+  if(gm){
+    grams=Number(gm[1]||0);
+    if(gm[2]==='kg'||gm[2]==='l') grams*=1000;
+  }
+  if(unit==='kg'){qty*=1000;unit='g';}
+  if(unit==='l'){qty*=1000;unit='ml';}
+  if(unit==='unidade') unit='un';
+  return {qty:qty,unit:unit,grams:grams};
+}
+function getServingOptions(food){
+  if(!food) return [];
+  var opts=[];
+  if(Array.isArray(food.servingOptions)) opts=food.servingOptions.slice();
+  if(food.servingLabel){
+    opts.unshift({label:food.servingLabel,qty:Number(food.servingQty||1),unit:food.servingUnit||'un',grams:Number(food.servingGrams||food.baseGrams||0)||null});
+  }
+  opts.push({label:String(food.portion||100)+String(food.unit||'g'),qty:Number(food.portion||100),unit:food.unit||'g',grams:(food.unit==='g'||food.unit==='ml')?Number(food.portion||100):null});
+  var seen={};
+  return opts.filter(function(o){
+    if(!o||!o.label) return false;
+    o.qty=Number(o.qty||1);
+    o.unit=String(o.unit||food.unit||'g');
+    var key=o.label+'|'+o.qty+'|'+o.unit;
+    if(seen[key]) return false;
+    seen[key]=1;
+    return true;
+  });
+}
+function displayServingLabel(food){
+  var opts=getServingOptions(food);
+  return opts.length&&opts[0].label?opts[0].label:String(food.portion||100)+String(food.unit||'g');
+}
+function selectedServingOption(){
+  var idx=parseInt((document.getElementById('serving-select')||{}).value||'0',10)||0;
+  var opts=getServingOptions(pendingFood);
+  return opts[idx]||opts[0]||{qty:pendingFood?pendingFood.portion:100,unit:pendingFood?pendingFood.unit:'g',grams:null};
+}
+function baseQtyFromSelection(qty,opt,food){
+  qty=Number(qty||0);
+  if(!opt||!food) return qty;
+  if(opt.unit===food.unit) return qty;
+  if(opt.grams) return qty*Number(opt.grams);
+  return qty;
+}
+function renderServingControls(food){
+  var sel=document.getElementById('serving-select');
+  if(!sel||!food) return;
+  var opts=getServingOptions(food);
+  sel.innerHTML=opts.map(function(o,i){return '<option value="'+i+'">'+o.label+'</option>';}).join('');
+  sel.style.display=opts.length>1?'block':'none';
+  document.getElementById('qty-input').value=opts[0]?opts[0].qty:food.portion;
+  updateQtyLabel();
+}
+function updateQtyLabel(){
+  var opt=selectedServingOption();
+  var label=document.getElementById('qty-label');
+  if(label) label.textContent='Quantidade ('+(opt.unit||'g')+')';
+}
+function changeServingOption(){
+  var opt=selectedServingOption();
+  document.getElementById('qty-input').value=opt.qty||1;
+  updateQtyLabel();
+  updateConfirmMacros();
+}
+function setQuickServing(mult){
+  var opt=selectedServingOption();
+  document.getElementById('qty-input').value=Number(((opt.qty||1)*mult).toFixed(2));
+  updateConfirmMacros();
+}
 function foodCard(f){
   return `<div class="search-result" onclick="selectFood('${f.id}')"><div class="sr-name">${f.name}</div><div class="sr-detail">Porção: ${f.portion}${f.unit}</div><div class="sr-macros"><span class="sr-macro k">${f.kcal} kcal</span><span class="sr-macro p">P ${f.prot}g</span><span class="sr-macro c">C ${f.carb}g</span><span class="sr-macro f">G ${f.fat}g</span></div></div>`;
+}
+function foodCard(f){
+  return `<div class="search-result" onclick="selectFood('${f.id}')"><div class="sr-name">${f.name}</div><div class="sr-detail">Porcao: ${displayServingLabel(f)}</div><div class="sr-macros"><span class="sr-macro k">${f.kcal} kcal</span><span class="sr-macro p">P ${f.prot}g</span><span class="sr-macro c">C ${f.carb}g</span><span class="sr-macro f">G ${f.fat}g</span></div></div>`;
 }
 function selectFood(id){
   const all=[...LOCAL_FOODS,...getCustomFoods()];
@@ -2104,9 +2216,8 @@ function selectFood(id){
     document.getElementById('modal-results').style.display='none';
     document.getElementById('qty-confirm').style.display='block';
     document.getElementById('confirm-name').textContent=food.name;
-    document.getElementById('confirm-base').textContent='Valores para '+food.portion+food.unit;
-    document.getElementById('qty-input').value=food.portion;
-    document.getElementById('qty-label').textContent='Quantidade ('+food.unit+')';
+    document.getElementById('confirm-base').textContent='Porcao principal: '+displayServingLabel(food);
+    renderServingControls(food);
     // Reset sheet height so confirm panel has full space
     const sheet=document.querySelector('#modal-add .modal-sheet');
     if(sheet){ sheet.style.maxHeight=''; sheet.classList.add('keyboard-hidden'); }
@@ -2134,7 +2245,9 @@ function selectFood(id){
 function updateConfirmMacros(){
   if(!pendingFood) return;
   const qty=parseFloat(document.getElementById('qty-input').value)||0;
-  const r=qty/pendingFood.portion;
+  const opt=selectedServingOption();
+  const baseQty=baseQtyFromSelection(qty,opt,pendingFood);
+  const r=baseQty/pendingFood.portion;
   document.getElementById('confirm-macros').innerHTML=`<span class="sr-macro k">${Math.round(pendingFood.kcal*r)} kcal</span><span class="sr-macro p">P ${Math.round(pendingFood.prot*r)}g</span><span class="sr-macro c">C ${Math.round(pendingFood.carb*r)}g</span><span class="sr-macro f">G ${Math.round(pendingFood.fat*r)}g</span>`;
 }
 function backToSearch(){
@@ -2156,7 +2269,7 @@ function openInlineRegister(prefillName){
     document.getElementById('modal-reg-name').value = prefillName;
   }
   // Limpa campos anteriores
-  ['modal-reg-portion','modal-reg-kcal','modal-reg-prot','modal-reg-carb','modal-reg-fat'].forEach(id=>{
+  ['modal-reg-portion','modal-reg-unit','modal-reg-serving-label','modal-reg-serving-grams','modal-reg-kcal','modal-reg-prot','modal-reg-carb','modal-reg-fat'].forEach(id=>{
     document.getElementById(id).value='';
   });
   scrollResultsTop();
@@ -2188,6 +2301,9 @@ function openScannerFromModal(){
 function saveAndAddInline(){
   const name    = document.getElementById('modal-reg-name').value.trim();
   const portion = parseFloat(document.getElementById('modal-reg-portion').value) || 100;
+  const unit    = (document.getElementById('modal-reg-unit').value.trim() || 'g').toLowerCase();
+  const servingLabel = document.getElementById('modal-reg-serving-label').value.trim();
+  const servingGrams = parseFloat(document.getElementById('modal-reg-serving-grams').value) || 0;
   const kcal    = parseFloat(document.getElementById('modal-reg-kcal').value)    || 0;
   const prot    = parseFloat(document.getElementById('modal-reg-prot').value)    || 0;
   const carb    = document.getElementById('modal-reg-carb').value;
@@ -2198,8 +2314,12 @@ function saveAndAddInline(){
 
   // Salva no banco local
   const newFood = {
-    id:'c_'+Date.now(), name, portion, unit:'g',
-    kcal, prot, carb:carbVal, fat, cat:'graos'
+    id:'c_'+Date.now(), name, portion, unit,
+    kcal, prot, carb:carbVal, fat, cat:'graos',
+    servingLabel: servingLabel || '',
+    servingQty: servingLabel ? 1 : null,
+    servingUnit: servingLabel ? ((parseServingText(servingLabel)||{}).unit || 'un') : null,
+    servingGrams: servingGrams || null
   };
   const customs = getCustomFoods();
   customs.push(newFood);
@@ -2223,8 +2343,10 @@ function saveAndAddInline(){
 function confirmAddFood(){
   if(!pendingFood||!pendingMeal) return;
   const qty=parseFloat(document.getElementById('qty-input').value)||pendingFood.portion;
-  const r=qty/pendingFood.portion;
-  const entry={name:pendingFood.name,qty,unit:pendingFood.unit,kcal:pendingFood.kcal*r,prot:pendingFood.prot*r,carb:pendingFood.carb*r,fat:pendingFood.fat*r};
+  const opt=selectedServingOption();
+  const baseQty=baseQtyFromSelection(qty,opt,pendingFood);
+  const r=baseQty/pendingFood.portion;
+  const entry={name:pendingFood.name,qty,unit:opt.unit,baseQty,baseUnit:pendingFood.unit,kcal:pendingFood.kcal*r,prot:pendingFood.prot*r,carb:pendingFood.carb*r,fat:pendingFood.fat*r};
   const data=getDayData(currentDateKey);
   data.meals[pendingMeal].push(entry);
   saveDayData(currentDateKey,data);
