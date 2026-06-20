@@ -1944,8 +1944,6 @@ function openAddModal(meal){
   document.getElementById('qty-confirm').style.display='none';
   document.getElementById('modal-results').style.display='block';
   // Reset sheet size before opening
-  document.getElementById('confirm-base').textContent = 'Porcao principal: '+displayServingLabel(newFood);
-  renderServingControls(newFood);
   const sheet=document.querySelector('#modal-add .modal-sheet');
   if(sheet){ sheet.style.maxHeight=''; sheet.style.marginTop=''; sheet.classList.remove('keyboard-hidden'); }
   document.getElementById('modal-add').classList.add('open');
@@ -2333,7 +2331,10 @@ function saveAndAddInline(){
   document.getElementById('confirm-name').textContent = newFood.name;
   document.getElementById('confirm-base').textContent = 'Porção: '+newFood.portion+'g';
   document.getElementById('qty-input').value = newFood.portion;
+  document.getElementById('confirm-base').textContent = 'Porcao principal: '+displayServingLabel(newFood);
+  renderServingControls(newFood);
   document.getElementById('qty-label').textContent = 'Quantidade (g)';
+  updateQtyLabel();
   const sheet=document.querySelector('#modal-add .modal-sheet');
   if(sheet){ sheet.style.maxHeight=''; sheet.classList.add('keyboard-hidden'); }
   updateConfirmMacros();
