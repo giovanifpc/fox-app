@@ -487,6 +487,7 @@ async function loadWeeklyGoals(supa, email, ciclo, semana){
     // Atualizar range da semana
     if(data.data_inicio && data.data_fim){
       window.FOX_WEEKLY_RANGE = {inicio:data.data_inicio, fim:data.data_fim};
+      updateWeeklyRangeAlert();
       var rangeEl = document.getElementById('dash-week-range');
       if(rangeEl){
         var ini = new Date(data.data_inicio);
@@ -507,6 +508,23 @@ async function loadWeeklyGoals(supa, email, ciclo, semana){
 }
 
 // ── Atualizar rings com dados reais ─────────────────────────────────────────
+function todayKeyLocal(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function updateWeeklyRangeAlert(){
+  var alert = document.getElementById('weeklyRangeAlert');
+  if(!alert) return;
+  var r = window.FOX_WEEKLY_RANGE || {};
+  var stale = !!(r.fim && r.fim < todayKeyLocal());
+  alert.classList.toggle('hidden', !stale);
+  if(stale){
+    var span = alert.querySelector('span');
+    if(span) span.textContent = 'A semana publicada terminou em ' + String(r.fim).split('-').reverse().join('/') + '. Registros feitos depois dessa data nao entram nos rings ate as metas da semana atual serem publicadas.';
+  }
+}
+
 function updateRingsFromGoals(metas){
   const C = 188.5;
   const ringMap = {
@@ -950,6 +968,12 @@ function openPublishedReport(rep){
       <span>Complete seu perfil para o Giovani personalizar treinos, metas e devolutivas.</span>
     </div>
     <button type="button" onclick="openProfileForm()">Preencher</button>
+  </div>
+  <div class="profile-alert hidden" id="weeklyRangeAlert">
+    <div>
+      <strong>Semana do app encerrada</strong>
+      <span>Os registros mais recentes entram quando o ciclo/semana atual for atualizado pelo Giovani.</span>
+    </div>
   </div>
   <div class="dossie-body">
     <article class="dash-paper">

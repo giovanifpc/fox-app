@@ -78,6 +78,11 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .report-status{font-size:10px;text-transform:uppercase;letter-spacing:.8px;border:1px solid var(--line);border-radius:999px;padding:4px 7px;color:var(--muted);white-space:nowrap}
 .report-status.draft{color:var(--amber);border-color:rgba(255,140,66,.38);background:rgba(255,140,66,.08)}
 .report-status.ready{color:var(--green);border-color:rgba(82,183,136,.38);background:rgba(82,183,136,.08)}
+.ai-status{border:1px solid var(--line);border-radius:12px;background:#101116;padding:10px 12px;margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
+.ai-status strong{color:var(--text)}
+.ai-status.claude{border-color:rgba(82,183,136,.42);background:rgba(82,183,136,.08)}
+.ai-status.fallback{border-color:rgba(255,140,66,.46);background:rgba(255,140,66,.08)}
+.ai-status.error{border-color:rgba(224,85,85,.48);background:rgba(224,85,85,.08)}
 .report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 12px}
 .summary-card{background:#101116;border:1px solid var(--line);border-radius:10px;padding:10px}
 .summary-k{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:800}
@@ -183,6 +188,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <input id="dataFim" type="date">
         </div>
       </div>
+      <div id="goalDateAlert" class="state hidden" style="margin:-2px 0 12px"></div>
 
       <div class="field">
         <label for="foco">Foco da semana</label>
@@ -195,6 +201,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
         <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
+        <button class="btn secondary" type="button" id="useCurrentWeekBtn">Usar semana atual</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
       </div>
 
@@ -290,6 +297,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <div class="protocol-hint">
           Rascunhos consolidados pela automacao semanal. Revise os dados, adicione sua leitura e deixe pronto para a etapa de devolutiva/publicacao.
         </div>
+        <div id="reportPeriodAlert" class="state hidden" style="margin-bottom:10px"></div>
         <div class="actions" style="margin-bottom:10px">
           <button class="btn primary" type="button" id="generateReportBtn">Gerar rascunho</button>
           <button class="btn secondary" type="button" id="loadReportsBtn">Atualizar lista</button>
@@ -299,6 +307,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <div class="state">Carregue os relatorios do cliente.</div>
         </div>
         <div id="reportDetail" class="report-detail hidden">
+          <div class="ai-status" id="reportAiStatus">Origem do rascunho: --</div>
           <div class="report-summary">
             <div class="summary-card">
               <div class="summary-k">Treinos</div>
@@ -355,6 +364,7 @@ const META_DEFS = [
   {nome:'Diário Nutri', unidade:'dias', meta_valor:7, realizado:0},
   {nome:'Sono 7h+', unidade:'dias', meta_valor:7, realizado:0}
 ];
+const REPORT_SELECT = 'id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,raw_data,ai_draft,coach_notes,published,published_at,drive_file_id';
 
 const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 let clients = [];
@@ -389,6 +399,53 @@ function addDaysISO(iso, days){
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + days);
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function currentWeekRangeISO(){
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  const start = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const end = addDaysISO(start, 6);
+  return {start, end};
+}
+function dateRangeState(){
+  const start = $('dataInicio') ? $('dataInicio').value : '';
+  const end = $('dataFim') ? $('dataFim').value : '';
+  const today = todayISO();
+  if(!start || !end) return {start, end, includesToday:false, stale:false, future:false};
+  return {
+    start,
+    end,
+    includesToday: start <= today && today <= end,
+    stale: end < today,
+    future: start > today
+  };
+}
+function updateDateAlerts(){
+  const state = dateRangeState();
+  const goalAlert = $('goalDateAlert');
+  const reportAlert = $('reportPeriodAlert');
+  let msg = '';
+  if(state.stale){
+    msg = 'A semana ativa terminou em ' + fmtPeriod(state.start, state.end) + '. Treinos, nutri e agua registrados hoje nao entram nos rings nem no relatorio deste periodo. Use "Usar semana atual" e publique as metas para atualizar o cliente.';
+  }else if(state.future){
+    msg = 'Este periodo comeca no futuro. Dados de hoje ainda nao entram nos rings nem no relatorio.';
+  }else if(state.start && state.end && !state.includesToday){
+    msg = 'Este periodo nao inclui hoje. Confira as datas antes de gerar rascunho.';
+  }
+  [goalAlert, reportAlert].forEach(el=>{
+    if(!el) return;
+    el.classList.toggle('hidden', !msg);
+    if(msg) el.textContent = msg;
+  });
+}
+function useCurrentWeek(){
+  const range = currentWeekRangeISO();
+  $('dataInicio').value = range.start;
+  $('dataFim').value = range.end;
+  updateDateAlerts();
+  toast('Semana atual aplicada. Clique em Publicar metas para atualizar o cliente.');
 }
 function norm(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -515,6 +572,7 @@ function fillClientForm(){
   $('foco').value = '';
   renderMetas(META_DEFS);
   clearContextForm();
+  updateDateAlerts();
 }
 
 function startNewClient(){
@@ -1030,6 +1088,55 @@ function statusClass(status){
   return 'draft';
 }
 
+function reportAiMeta(report){
+  const raw = report && report.raw_data ? report.raw_data : {};
+  const data = report && report.report_data ? report.report_data : {};
+  return {
+    status: raw.ai_status || data.ai_status || '',
+    model: raw.ai_model || data.ai_model || '',
+    error: raw.ai_error || data.ai_error || null
+  };
+}
+
+function reportAiLabel(report){
+  const status = reportAiMeta(report || {}).status;
+  if(status === 'claude') return 'IA: Claude API';
+  if(status === 'fallback_no_key') return 'IA: fallback sem chave';
+  if(status === 'fallback_empty_response') return 'IA: fallback vazio';
+  if(status === 'claude_error') return 'IA: erro Claude';
+  return 'IA: --';
+}
+
+function renderAiStatus(report){
+  const el = $('reportAiStatus');
+  if(!el) return;
+  const meta = reportAiMeta(report || {});
+  el.className = 'ai-status';
+  let title = 'Origem do rascunho: nao identificada';
+  let detail = 'Este rascunho pode ter sido gerado antes do controle de origem da IA.';
+  if(meta.status === 'claude'){
+    el.classList.add('claude');
+    title = 'Origem do rascunho: Claude API';
+    detail = 'Modelo: ' + (meta.model || 'nao informado') + '. Revise antes de publicar.';
+  }else if(meta.status === 'fallback_no_key'){
+    el.classList.add('fallback');
+    title = 'Origem do rascunho: fallback sem Claude API';
+    detail = 'A chave ANTHROPIC_API_KEY ainda nao esta configurada nos secrets da Edge Function.';
+  }else if(meta.status === 'fallback_empty_response'){
+    el.classList.add('fallback');
+    title = 'Origem do rascunho: fallback por resposta vazia';
+    detail = 'A Claude API respondeu sem texto util. Foi usado o rascunho estruturado simples.';
+  }else if(meta.status === 'claude_error'){
+    el.classList.add('error');
+    title = 'Origem do rascunho: erro na Claude API';
+    const err = typeof meta.error === 'string'
+      ? meta.error
+      : (meta.error && (meta.error.message || meta.error.code || meta.error.status) ? (meta.error.message || meta.error.code || meta.error.status) : 'erro nao detalhado');
+    detail = 'Foi usado fallback. Detalhe: ' + err;
+  }
+  el.innerHTML = '<strong>' + escapeHtml(title) + '</strong><br>' + escapeHtml(detail);
+}
+
 function fmtPeriod(start, end){
   const a = start ? start.split('-').reverse().join('/') : '--';
   const b = end ? end.split('-').reverse().join('/') : '--';
@@ -1043,7 +1150,7 @@ async function loadWeeklyReports(showToast){
   $('copyReportBtn').disabled = true;
   try{
     const {data, error} = await supa.from('weekly_reports')
-      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .select(REPORT_SELECT)
       .eq('client_email', selectedClient.email)
       .order('generated_at', {ascending:false})
       .limit(12);
@@ -1058,6 +1165,12 @@ async function loadWeeklyReports(showToast){
 
 async function generateWeeklyReportDraft(){
   if(!selectedClient || creatingClient) return;
+  updateDateAlerts();
+  const rangeState = dateRangeState();
+  if(rangeState.start && rangeState.end && !rangeState.includesToday){
+    const ok = confirm('O periodo selecionado e ' + fmtPeriod(rangeState.start, rangeState.end) + ' e nao inclui hoje. Dados registrados fora desse periodo nao serao computados. Gerar mesmo assim?');
+    if(!ok) return;
+  }
   const btn = $('generateReportBtn');
   btn.disabled = true;
   const oldText = btn.textContent;
@@ -1117,6 +1230,7 @@ function renderWeeklyReports(){
         <div>
           <div class="report-title">Ciclo ${escapeHtml(r.ciclo || '-')} · Semana ${escapeHtml(r.semana || '-')}</div>
           <div class="report-period">${escapeHtml(fmtPeriod(r.period_start, r.period_end))}</div>
+          <div class="report-period">${escapeHtml(reportAiLabel(r))}</div>
         </div>
         <div class="report-status ${statusClass(r.status)}">${escapeHtml(statusLabel(r.status))}</div>
       </div>
@@ -1148,6 +1262,7 @@ function renderReportDetail(){
   $('repWater').textContent = (nu.water_days || 0) + 'd';
   $('reportAiDraft').value = selectedReport.ai_draft || '';
   $('reportCoachNotes').value = selectedReport.coach_notes || '';
+  renderAiStatus(selectedReport);
   $('reportDriveLink').value = selectedReport.drive_file_id || '';
   $('reportDriveStatus').textContent = selectedReport.drive_file_id ? 'PDF vinculado ao Minha Area. O botao Abrir vai usar este link.' : 'PDF ainda nao vinculado. Sem link, o Minha Area abre o texto da devolutiva.';
   $('publishReportBtn').disabled = selectedReport.published === true;
@@ -1162,10 +1277,12 @@ function buildReportText(){
   const tr = selectedReport.training_summary || {};
   const nu = selectedReport.nutri_summary || {};
   const goals = selectedReport.goals_snapshot || [];
+  const ai = reportAiMeta(selectedReport);
   const goalLines = goals.length ? goals.map(g => '- ' + (g.nome || 'Meta') + ': ' + (g.realizado || 0) + '/' + (g.meta_valor || 0)).join('\n') : '- Sem metas no snapshot';
   return [
     'Relatorio semanal - ' + (selectedClient.nome || selectedClient.email),
     'Periodo: ' + fmtPeriod(selectedReport.period_start, selectedReport.period_end),
+    'Origem do rascunho: ' + (ai.status || 'nao identificada') + (ai.model ? ' (' + ai.model + ')' : ''),
     '',
     'Treino:',
     '- sessoes: ' + (tr.sessions || 0),
@@ -1244,7 +1361,7 @@ async function saveReportReview(status){
     const {data, error} = await supa.from('weekly_reports')
       .update(patch)
       .eq('id', selectedReport.id)
-      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .select(REPORT_SELECT)
       .single();
     if(error) throw error;
     selectedReport = data;
@@ -1282,7 +1399,7 @@ async function publishReportToApp(){
     const {data, error} = await supa.from('weekly_reports')
       .update(patch)
       .eq('id', selectedReport.id)
-      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .select(REPORT_SELECT)
       .single();
     if(error) throw error;
     selectedReport = data;
@@ -1317,7 +1434,7 @@ async function saveReportDriveLink(){
         updated_at: new Date().toISOString()
       })
       .eq('id', selectedReport.id)
-      .select('id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,ai_draft,coach_notes,published,published_at,drive_file_id')
+      .select(REPORT_SELECT)
       .single();
     if(error) throw error;
     selectedReport = data;
@@ -1395,6 +1512,7 @@ async function loadGoal(){
   $('foco').value = data.foco_semana || '';
   if(data.data_inicio) $('dataInicio').value = data.data_inicio;
   if(data.data_fim) $('dataFim').value = data.data_fim;
+  updateDateAlerts();
 }
 
 async function publishGoals(e){
@@ -1441,6 +1559,7 @@ async function publishGoals(e){
     clients = clients.map(c => c.email === selectedClient.email ? selectedClient : c);
     currentGoal = payload;
     renderClients();
+    updateDateAlerts();
     toast('Metas publicadas. O cliente ja pode ver no Dashboard.');
   }catch(err){
     toast('Erro ao publicar: ' + errorText(err));
@@ -1495,6 +1614,7 @@ $('goalForm').addEventListener('submit', publishGoals);
 $('newClientBtn').addEventListener('click', startNewClient);
 $('saveClientBtn').addEventListener('click', saveClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
+$('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
 $('loadProtocolBtn').addEventListener('click', loadProtocol);
 $('publishProtocolBtn').addEventListener('click', publishProtocol);
 $('sampleProtocolBtn').addEventListener('click', ()=>{
@@ -1517,6 +1637,8 @@ $('printReportBtn').addEventListener('click', openReportPdfView);
 $('saveReportDriveBtn').addEventListener('click', saveReportDriveLink);
 $('notifyReportBtn').addEventListener('click', notifyReport);
 $('deleteReportBtn').addEventListener('click', deleteReportDraft);
+$('dataInicio').addEventListener('change', updateDateAlerts);
+$('dataFim').addEventListener('change', updateDateAlerts);
 $('protocolJson').addEventListener('input', resetMediaAudit);
 $('protocolFile').addEventListener('change', function(){
   const file = this.files && this.files[0];
