@@ -290,6 +290,7 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .training-help-card{background:rgba(255,140,66,.06);border:1px solid rgba(255,140,66,.2);border-radius:12px;padding:14px 16px;margin:12px 16px;display:flex;align-items:center;gap:12px}
+#training-help-card{display:none!important}
 .thc-text{flex:1;font-size:.8rem;color:#aaa;line-height:1.4}
 .thc-text strong{color:var(--amber);display:block;margin-bottom:2px}
 .thc-btns{display:flex;flex-direction:column;gap:6px}
@@ -990,7 +991,6 @@ function init(){
   const mi = document.getElementById("modalIncompleteIcon"); if(mi) mi.src = FOX_LOGO_SRC;
 
   document.getElementById("welcomeName").textContent = "Olá, " + CLIENT.nome;
-  showTrainingHelp();
   document.getElementById("welcomeCycle").textContent =
     `Ciclo ${CLIENT.cycleNumber} — ${CLIENT.cycleWeeks} semanas`;
 
