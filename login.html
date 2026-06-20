@@ -90,6 +90,12 @@ const REDIRECT_URL = 'https://giovanifpc.github.io/fox-app/login.html';
 // Inicializar cliente Supabase
 const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
+async function isAllowedClient(email){
+  const {data, error} = await supa.rpc('is_allowed_client', {check_email: email});
+  if(error) throw error;
+  return data === true;
+}
+
 // ── Processar token do magic link ─────────────────────────
 async function processAuthCallback(){
   const hash = window.location.hash;
@@ -117,6 +123,21 @@ async function processAuthCallback(){
     return true;
   }
 
+  const userEmail = data && data.user && data.user.email ? data.user.email.toLowerCase() : '';
+  try{
+    const allowed = await isAllowedClient(userEmail);
+    if(!allowed){
+      await supa.auth.signOut();
+      window.history.replaceState(null,'',window.location.pathname);
+      showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+      return true;
+    }
+  }catch(e){
+    await supa.auth.signOut();
+    showMsg('Nao foi possivel validar seu acesso agora. Tente novamente em instantes.','error');
+    return true;
+  }
+
   // Sucesso — redirecionar para o app
   window.location.replace('index.html');
   return true;
@@ -125,7 +146,14 @@ async function processAuthCallback(){
 // ── Verificar sessão ativa ────────────────────────────────
 async function checkSession(){
   const {data:{session}} = await supa.auth.getSession();
-  if(session) window.location.replace('index.html');
+  if(!session) return;
+  try{
+    const allowed = await isAllowedClient(session.user.email);
+    if(allowed) window.location.replace('index.html');
+    else await supa.auth.signOut();
+  }catch(e){
+    await supa.auth.signOut();
+  }
 }
 
 // ── Enviar magic link via SDK ─────────────────────────────
@@ -141,6 +169,21 @@ async function sendMagicLink(){
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Enviando...';
   document.getElementById('loginMsg').style.display = 'none';
+
+  try{
+    const allowed = await isAllowedClient(email);
+    if(!allowed){
+      showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar link de acesso';
+      return;
+    }
+  }catch(e){
+    showMsg('Nao foi possivel validar seu acesso agora. Tente novamente em instantes.','error');
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar link de acesso';
+    return;
+  }
 
   const {error} = await supa.auth.signInWithOtp({
     email,
@@ -177,6 +220,14 @@ function showMsg(text, type){
   msg.style.display = 'block';
 }
 
+function showAccessDeniedIfNeeded(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('access') === 'denied'){
+    window.history.replaceState(null,'',window.location.pathname);
+    showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+  }
+}
+
 document.getElementById('emailInput').addEventListener('keydown', e=>{
   if(e.key==='Enter') sendMagicLink();
 });
@@ -185,6 +236,7 @@ document.getElementById('emailInput').addEventListener('keydown', e=>{
 (async()=>{
   const isCallback = await processAuthCallback();
   if(!isCallback) await checkSession();
+  showAccessDeniedIfNeeded();
 })();
 </script>
 </body>

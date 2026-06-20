@@ -330,7 +330,12 @@ async function boot(){
   window.FOX_SESSION = session;
   window.FOX_USER_EMAIL = session.user.email;
 
-  await loadProfile(session.user.email);
+  var allowedProfile = await loadProfile(session.user.email);
+  if(!allowedProfile){
+    await supa.auth.signOut();
+    window.location.replace('login.html?access=denied');
+    return;
+  }
   await loadWeeklyGoals();
   initBanner();
 
@@ -357,11 +362,12 @@ async function loadProfile(email){
       var pct = total > 0 ? Math.round(((semana - 1) / total) * 100) : 0;
       setText('cyclePct', pct + '% DO CICLO CONCLUÍDO');
       setWidth('cycleFill', pct);
+      return true;
     }else{
-      setText('greeting', greetingByHour('Atleta'));
+      return false;
     }
   }catch(e){
-    setText('greeting', greetingByHour('Atleta'));
+    return false;
   }
 }
 
@@ -433,6 +439,11 @@ function readLocalTrainingData(){
       if(!key || key.indexOf('foxTraining_') !== 0) continue;
       var store = JSON.parse(localStorage.getItem(key) || '{}');
       if(!Array.isArray(store.history)) continue;
+      if(store.cycleKey && currentProfile){
+        var storeCycle = String(store.cycleKey).split('|')[0];
+        var profileCycle = String(currentProfile.ciclo_atual || 1);
+        if(storeCycle !== profileCycle) continue;
+      }
       if(!best || store.history.length > ((best.history || []).length)){
         best = {
           clientName: key.replace('foxTraining_', ''),
@@ -440,7 +451,8 @@ function readLocalTrainingData(){
           badges: store.badges || [],
           weekStreak: store.weekStreak || 0,
           loopPos: store.loopPos || 0,
-          lastCarga: store.lastCarga || {}
+          lastCarga: store.lastCarga || {},
+          cycleKey: store.cycleKey || ''
         };
       }
     }
@@ -488,6 +500,15 @@ function inCurrentGoalRange(dateLike){
   var key = String(dateLike || '').slice(0,10);
   return key >= currentGoalRange.inicio && key <= currentGoalRange.fim;
 }
+function isTrainingPerformed(h){
+  if(!h) return false;
+  if(Number(h.setsDone || 0) > 0 || Number(h.exDone || 0) > 0) return true;
+  var detail = Array.isArray(h.detail) ? h.detail : [];
+  return detail.some(function(ex){
+    var sets = Array.isArray(ex.sets) ? ex.sets : [];
+    return sets.some(function(s){ return !!s.done; });
+  });
+}
 
 function cloneGoalsWithLiveData(){
   syncLocalProgress();
@@ -505,44 +526,33 @@ function cloneGoalsWithLiveData(){
   }
 
   if(latestTrainingData && Array.isArray(latestTrainingData.history)){
-    var completedAll = latestTrainingData.history.filter(function(h){ return !h.incomplete; }).length;
-    var completed = latestTrainingData.history.filter(function(h){ return !h.incomplete && inCurrentGoalRange(h.date); }).length;
-    if(!completed && completedAll) completed = completedAll;
-    apply(['treino'], completed);
+    var performed = latestTrainingData.history.filter(function(h){ return isTrainingPerformed(h) && inCurrentGoalRange(h.date); }).length;
+    apply(['treino'], performed);
   }
 
   if(latestNutriData && latestNutriData.days){
     var nutriDays = 0;
     var waterDays = 0;
-    var nutriDaysAll = 0;
-    var waterDaysAll = 0;
     Object.keys(latestNutriData.days).forEach(function(k){
       var day = latestNutriData.days[k] || {};
       var meals = day.meals || {};
       var hasFood = false;
       Object.keys(meals).forEach(function(m){ if(Array.isArray(meals[m]) && meals[m].length) hasFood = true; });
-      if(hasFood) nutriDaysAll++;
-      if(Number(day.water || 0) > 0) waterDaysAll++;
       if(!inCurrentGoalRange(k)) return;
       if(hasFood) nutriDays++;
       if(Number(day.water || 0) > 0) waterDays++;
     });
-    if(!nutriDays && nutriDaysAll) nutriDays = nutriDaysAll;
-    if(!waterDays && waterDaysAll) waterDays = waterDaysAll;
     apply(['nutri'], nutriDays);
     apply(['hidrat'], waterDays);
   }
   if(latestSleepData && latestSleepData.days){
     var sleepDays = 0;
-    var sleepDaysAll = 0;
     Object.keys(latestSleepData.days).forEach(function(k){
       var rec = latestSleepData.days[k] || {};
       var good = !rec.skipped && (rec.duration === '6a8' || rec.duration === 'mais8');
-      if(good) sleepDaysAll++;
       if(!inCurrentGoalRange(k)) return;
       if(good) sleepDays++;
     });
-    if(!sleepDays && sleepDaysAll) sleepDays = sleepDaysAll;
     apply(['sono'], sleepDays);
   }
   return goals;
