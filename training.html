@@ -57,6 +57,8 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 #welcome{justify-content:center;align-items:center;text-align:center;padding:40px 28px}
 #welcome .logo-wrap{animation:logoIn .9s cubic-bezier(.2,.8,.2,1)}
 @keyframes logoIn{0%{opacity:0;transform:translateY(20px) scale(.85)}100%{opacity:1;transform:none}}
+#welcome.screen,#finish.screen{animation:none}
+#welcome .logo-wrap{animation:none}
 .welcome-name{font-size:26px;font-weight:800;margin-top:32px;letter-spacing:.3px}
 .welcome-cycle{font-size:13px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:8px}
 .welcome-tag{font-size:13px;color:var(--txt-dim);margin-top:24px;line-height:1.7;max-width:300px;font-style:italic}
@@ -247,6 +249,7 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .profile-cycle{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 .menu-item{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:11px;text-decoration:none;color:var(--txt);transition:.18s;cursor:pointer;width:100%;text-align:left;font-family:var(--font)}
 .menu-item:active{background:var(--bg-card-2);transform:scale(.98)}
+#linkNutri{display:none}
 .menu-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .menu-ico.report{background:rgba(255,140,66,.15);border:1px solid var(--gold-dim)}
 .menu-ico.nutri{background:rgba(74,158,191,.15);border:1px solid var(--blue)}
@@ -556,7 +559,7 @@ body{padding-top:44px!important;min-height:100svh!important}
       <div class="profile-cycle" id="profileCycle">Ciclo 1 · Semana 1</div>
     </div>
 
-    <div class="section-label">Ecossistema Fox</div>
+    <div class="section-label">Contato</div>
     <a class="menu-item" id="linkNutri" href="#" target="_blank">
       <div class="menu-ico nutri">🥗</div>
       <div class="menu-info"><div class="mi-title">NutriTracker</div><div class="mi-sub">Acompanhe sua alimentação</div></div>
@@ -783,16 +786,24 @@ function foxIcon(size){ return `<img src="${FOX_LOGO_SRC}" alt="Fox" style="widt
 
 /* ---- STORAGE ---- */
 const STORAGE_KEY = "foxTraining_" + (CLIENT.nome||"cliente").toLowerCase().replace(/\s/g,"");
+function currentStoreCycleKey(){
+  return String(CLIENT.cycleNumber || 1) + '|' + String(CLIENT.startDate || '');
+}
+function freshStore(){
+  return { history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:null, cycleKey:currentStoreCycleKey() };
+}
 function loadStore(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    const def = { history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:null };
+    const def = freshStore();
     if(!raw) return def;
-    return Object.assign(def, JSON.parse(raw));
-  }catch(e){ return { history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:null }; }
+    const parsed = JSON.parse(raw);
+    if(parsed.cycleKey && parsed.cycleKey !== currentStoreCycleKey()) return def;
+    return Object.assign(def, parsed, {cycleKey: parsed.cycleKey || currentStoreCycleKey()});
+  }catch(e){ return freshStore(); }
 }
 function saveStore(d){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+  try{ d.cycleKey = currentStoreCycleKey(); localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
   catch(e){ toast("Não foi possível salvar. Verifique o armazenamento."); }
 }
 
@@ -1678,7 +1689,7 @@ function confirmReset(){
   // zera tudo e redefine data de início para hoje
   const today=new Date();
   const iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
-  const fresh={ history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:iso };
+  const fresh={ history:[], badges:[], weekStreak:0, lastWeekTrained:null, loopPos:0, lastCarga:{}, startOverride:iso, cycleKey:currentStoreCycleKey() };
   saveStore(fresh);
   resetReportDone=false;
   document.getElementById("resetConfirmBtn").style.opacity=".4";

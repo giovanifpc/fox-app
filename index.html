@@ -45,7 +45,7 @@ button{font-family:var(--font-body)}
 @keyframes splashLogo{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:none}}
 
 /* HOME */
-#entry{position:relative;z-index:1;min-height:100dvh;padding:24px 22px calc(90px + env(safe-area-inset-bottom));opacity:0;transition:opacity .55s ease;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#entry{position:relative;z-index:1;min-height:100dvh;padding:24px 22px calc(24px + env(safe-area-inset-bottom));opacity:0;transition:opacity .55s ease;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 #entry.show{opacity:1}
 body.in-module #entry{display:none}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
@@ -113,14 +113,15 @@ body.in-module #entry{display:none}
 .metric-bar{height:5px;background:#29303a;border-radius:5px;overflow:hidden;margin-top:10px}.metric-fill{height:100%;border-radius:5px;width:0%;transition:width 1s ease}.metric.training .metric-fill{background:var(--amber)}.metric.water .metric-fill{background:var(--cyan)}.metric.sleep .metric-fill{background:var(--purple)}.metric.ok .metric-fill{background:var(--green)}
 
 /* BOTTOM NAV */
-.bottom-tabs{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:10;width:100%;max-width:520px;background:rgba(10,10,10,.94);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(14px);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -18px 40px rgba(0,0,0,.36)}
+.bottom-tabs{display:none}
 .bottom-tab{border:none;background:none;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--font-head);font-size:.82rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer}.bottom-tab.active{color:var(--purple)}.bottom-tab .ico{font-size:25px;line-height:1}.bottom-tab.nutri-tab.active,.bottom-tab.nutri-tab{color:var(--cyan)}
 
 /* SLEEP MODAL */
 .sleep-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:22px}.sleep-overlay.show{display:flex}.sleep-card{width:100%;max-width:360px;background:linear-gradient(160deg,rgba(25,27,35,.98),rgba(16,17,22,.98));border:1px solid rgba(123,143,212,.85);border-radius:28px;padding:28px 22px 24px;box-shadow:0 0 52px rgba(123,143,212,.26),0 32px 80px rgba(0,0,0,.65);position:relative;animation:modalIn .28s cubic-bezier(.2,.8,.2,1)}@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}.sleep-close{position:absolute;right:18px;top:16px;background:none;border:none;color:#ddd;font-size:34px;line-height:1;cursor:pointer}.moon{width:78px;height:78px;border-radius:50%;margin:6px auto 16px;display:flex;align-items:center;justify-content:center;font-size:42px;background:radial-gradient(circle,rgba(123,143,212,.30),rgba(123,143,212,.08) 62%,transparent)}.sleep-title{font-family:var(--font-head);font-size:2.45rem;letter-spacing:2px;font-weight:800;text-align:center;color:#8d7cff;text-shadow:0 0 18px rgba(123,143,212,.35)}.sleep-sub{max-width:280px;margin:10px auto 24px;color:#c4c7d0;text-align:center;line-height:1.35;font-size:1rem}.sleep-section{display:flex;align-items:center;gap:10px;justify-content:center;margin:18px 0 12px}.sleep-section::before,.sleep-section::after{content:"";height:1px;background:linear-gradient(90deg,transparent,var(--purple));flex:1}.sleep-section::after{background:linear-gradient(90deg,var(--purple),transparent)}.sleep-section span{font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:#a88cff;letter-spacing:1.8px;text-transform:uppercase;white-space:nowrap}.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.choice-row.duration{grid-template-columns:repeat(3,1fr)}.sleep-choice{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.035);border-radius:16px;color:var(--white);padding:16px 8px;cursor:pointer;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.sleep-choice .emoji{font-size:30px}.sleep-choice .main{font-family:var(--font-head);font-size:1.25rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}.sleep-choice .hint{font-size:.75rem;color:#c3c6d0}.sleep-choice.selected{border-color:#9b75ff;box-shadow:0 0 0 1px rgba(155,117,255,.52),0 0 20px rgba(123,143,212,.20);background:rgba(123,143,212,.14)}.sleep-confirm{width:100%;border:none;border-radius:16px;background:linear-gradient(135deg,#8d7cff,#4e63df);color:#fff;font-family:var(--font-head);font-size:1.28rem;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;padding:15px;margin-top:22px;cursor:pointer}.sleep-confirm:disabled{opacity:.45}.sleep-privacy{text-align:center;color:#a6a8b0;font-size:.84rem;line-height:1.3;margin-top:16px}
+.tutorial-overlay{position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.76);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:18px}.tutorial-overlay.show{display:flex}.tutorial-card{width:100%;max-width:430px;max-height:88vh;overflow-y:auto;background:linear-gradient(160deg,rgba(23,25,32,.98),rgba(12,13,18,.99));border:1px solid rgba(123,143,212,.78);border-radius:26px;box-shadow:0 0 48px rgba(123,143,212,.22),0 28px 80px rgba(0,0,0,.68);position:relative;animation:modalIn .28s cubic-bezier(.2,.8,.2,1);padding:26px 20px 22px}.tutorial-close{position:absolute;right:16px;top:13px;background:none;border:none;color:#d6d9e2;font-size:30px;line-height:1;cursor:pointer}.tutorial-hero{text-align:center;padding:10px 18px 18px}.tutorial-mark{width:66px;height:66px;border-radius:22px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(123,143,212,.24),rgba(79,195,247,.12));border:1px solid rgba(255,255,255,.12);font-family:var(--font-head);font-size:1.8rem;font-weight:800;color:#fff}.tutorial-title{font-family:var(--font-head);font-size:2.15rem;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;line-height:.98}.tutorial-sub{color:#b8bfcc;font-size:.95rem;line-height:1.45;margin-top:10px}.tutorial-section{margin-top:16px}.tutorial-section-title{font-family:var(--font-head);font-size:1.05rem;letter-spacing:1.6px;text-transform:uppercase;color:#a8b2ff;font-weight:800;margin:0 2px 10px}.tutorial-grid{display:grid;grid-template-columns:1fr;gap:10px}.tutorial-item{display:grid;grid-template-columns:42px 1fr;gap:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:13px}.tutorial-ico{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:1rem;font-weight:800;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}.tutorial-item.training .tutorial-ico{color:var(--amber);border-color:rgba(255,140,66,.28)}.tutorial-item.nutri .tutorial-ico{color:var(--cyan);border-color:rgba(79,195,247,.28)}.tutorial-item.area .tutorial-ico{color:var(--purple);border-color:rgba(123,143,212,.30)}.tutorial-item.check .tutorial-ico{color:var(--green);border-color:rgba(82,183,136,.30)}.tutorial-item h3{font-family:var(--font-head);font-size:1.1rem;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}.tutorial-item p{color:#b7beca;font-size:.88rem;line-height:1.38}.tutorial-flow{display:grid;gap:8px;counter-reset:step}.tutorial-step{position:relative;background:rgba(123,143,212,.07);border:1px solid rgba(123,143,212,.16);border-radius:14px;padding:12px 12px 12px 46px;color:#d6dae5;font-size:.9rem;line-height:1.35}.tutorial-step::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#7B8FD4;color:#fff;font-family:var(--font-head);font-weight:800}.faq-list{display:grid;gap:9px}.faq-item{background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px}.faq-item b{display:block;font-family:var(--font-head);font-size:1rem;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px;color:#f0f2f7}.faq-item span{display:block;color:#b6bdc9;font-size:.86rem;line-height:1.38}.tutorial-done{width:100%;border:none;border-radius:15px;background:linear-gradient(135deg,#7B8FD4,#4e63df);color:#fff;font-family:var(--font-head);font-size:1.14rem;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;padding:15px;margin-top:18px;cursor:pointer}.tutorial-foot{text-align:center;color:#8f96a4;font-size:.78rem;line-height:1.35;margin-top:12px}
 
 /* BANNER / IFRAMES */
-.payment-banner{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:456px;background:linear-gradient(135deg,rgba(82,183,136,.15),rgba(45,122,85,.1));border:1px solid #2D7A55;border-radius:13px;padding:13px 44px 13px 15px;z-index:500;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5);backdrop-filter:blur(8px)}.payment-banner.visible{display:block}.payment-banner .pb-title{font-size:13px;font-weight:800;color:#52B788;margin-bottom:3px}.payment-banner .pb-body{font-size:12px;color:var(--muted);line-height:1.5}.payment-banner .pb-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--faint);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px}.payment-banner .pb-link{display:inline-block;margin-top:6px;color:#52B788;font-size:12px;font-weight:700;cursor:pointer}.module-frame{position:fixed;inset:0;width:100%;height:100%;border:none;z-index:600;display:none;background:#0a0a0a}.module-frame.active{display:block}
+.payment-banner{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:456px;background:linear-gradient(135deg,rgba(82,183,136,.15),rgba(45,122,85,.1));border:1px solid #2D7A55;border-radius:13px;padding:13px 44px 13px 15px;z-index:500;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5);backdrop-filter:blur(8px)}.payment-banner.visible{display:block}.payment-banner .pb-title{font-size:13px;font-weight:800;color:#52B788;margin-bottom:3px}.payment-banner .pb-body{font-size:12px;color:var(--muted);line-height:1.5}.payment-banner .pb-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--faint);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px}.payment-banner .pb-link{display:inline-block;margin-top:6px;color:#52B788;font-size:12px;font-weight:700;cursor:pointer}.module-frame{position:fixed;inset:0;width:100%;height:100%;border:none;z-index:600;display:none;background:#0a0a0a}.module-frame.active{display:block}
 
 @media(max-width:380px){#entry{padding-left:16px;padding-right:16px}.greeting h1{font-size:2.45rem}.action-title{font-size:1.76rem}.small-title{font-size:1.42rem}.summary-grid{gap:4px}.metric-top{font-size:1.55rem}.metric-label{font-size:.75rem}.status-grid{grid-template-columns:1fr}.today-box{border-left:none;border-top:1px solid rgba(255,255,255,.10);padding-left:0;padding-top:14px}.action-row{gap:10px}.small-action{min-height:168px;padding:15px 13px}}
 
@@ -135,7 +136,7 @@ body::before{
     linear-gradient(180deg,#0a0a0a 0%,#0b0c0f 55%,#0a0a0a 100%);
 }
 body::after{opacity:.08;background-size:100% 5px}
-#entry{padding:22px 23px calc(84px + env(safe-area-inset-bottom));}
+#entry{padding:22px 23px calc(24px + env(safe-area-inset-bottom));}
 .top-row{margin-bottom:22px}
 .brand-logo{width:48px;height:48px;filter:drop-shadow(0 0 16px rgba(255,255,255,.06))}
 .brand-text{font-size:1.82rem;letter-spacing:2.2px;line-height:.82}
@@ -165,7 +166,7 @@ body::after{opacity:.08;background-size:100% 5px}
 .action-row{gap:13px;margin-bottom:14px}.small-action{min-height:150px;border-radius:16px;padding:15px 15px;background:linear-gradient(145deg,rgba(255,255,255,.032),rgba(255,255,255,.012));box-shadow:none}.small-action.training{border-color:rgba(255,140,66,.24)}.small-action.drive{border-color:rgba(123,143,212,.24)}
 .small-icon{width:48px;height:48px;margin-bottom:10px;font-size:0;background:rgba(255,255,255,.018)}.small-kicker{font-size:.84rem;letter-spacing:1.3px}.small-title{font-size:1.28rem;line-height:1.05;letter-spacing:.4px}.small-desc{font-size:.82rem;line-height:1.28;color:#9ea6b2;margin-top:8px}.small-arrow{font-size:24px;right:14px;bottom:13px}
 .summary-card{border-radius:16px;padding:16px 14px;background:linear-gradient(145deg,rgba(255,255,255,.030),rgba(255,255,255,.012));border-color:rgba(255,255,255,.07)}.summary-label{font-size:.92rem;letter-spacing:1.5px;margin-bottom:14px;color:#9097a3}.summary-grid{gap:6px}.metric{padding-right:6px}.metric-top{font-size:1.42rem;gap:5px}.metric-top span:first-child{font-size:.92rem;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid currentColor;opacity:.86}.metric-label{font-size:.68rem;letter-spacing:.7px;line-height:1.18;margin-top:7px;min-height:25px}.metric-bar{height:4px;margin-top:9px;background:#252b35}.metric.training .metric-top span:first-child{color:var(--amber)}.metric.water .metric-top span:first-child{color:var(--cyan)}.metric.sleep .metric-top span:first-child{color:var(--purple)}.metric.ok .metric-top span:first-child{color:var(--green)}
-.bottom-tabs{padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(10,10,10,.965);border-top-color:rgba(255,255,255,.065);box-shadow:0 -12px 28px rgba(0,0,0,.32)}.bottom-tab{font-size:.66rem;letter-spacing:1px;gap:3px;color:#5f6572}.bottom-tab.active{color:#7B8FD4}.bottom-tab.nutri-tab{color:#4FC3F7}.bottom-tab .ico{font-size:.86rem;width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);font-family:var(--font-head);font-weight:800;background:rgba(255,255,255,.018)}.bottom-tab.active .ico{border-color:rgba(123,143,212,.35);background:rgba(123,143,212,.08)}.bottom-tab.nutri-tab .ico{border-color:rgba(79,195,247,.32);background:rgba(79,195,247,.06)}
+.bottom-tabs{display:none!important}.bottom-tab{font-size:.66rem;letter-spacing:1px;gap:3px;color:#5f6572}.bottom-tab.active{color:#7B8FD4}.bottom-tab.nutri-tab{color:#4FC3F7}.bottom-tab .ico{font-size:.86rem;width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);font-family:var(--font-head);font-weight:800;background:rgba(255,255,255,.018)}.bottom-tab.active .ico{border-color:rgba(123,143,212,.35);background:rgba(123,143,212,.08)}.bottom-tab.nutri-tab .ico{border-color:rgba(79,195,247,.32);background:rgba(79,195,247,.06)}
 @media(max-width:380px){.greeting h1{font-size:2rem}.action-title{font-size:1.45rem}.small-title{font-size:1.12rem}.small-action{min-height:140px}.summary-grid{grid-template-columns:repeat(2,1fr);row-gap:12px}.metric:nth-child(2){border-right:none}.metric-label{min-height:auto}.status-grid{grid-template-columns:1fr}.today-box{border-left:none;border-top:1px solid rgba(255,255,255,.08);padding-left:0;padding-top:13px}}
 
 </style>
@@ -183,7 +184,7 @@ body::after{opacity:.08;background-size:100% 5px}
       <img class="brand-logo" src="fox-logo-sem-fundo.svg" alt="Fox Performance">
       <div class="brand-text">FOX<span>PERFORMANCE</span></div>
     </div>
-    <button class="icon-btn" type="button" onclick="openModule('drive')" aria-label="Abrir notificações e área do cliente"><span class="bell-min">!</span><span class="dot" id="noticeDot"></span></button>
+    <button class="icon-btn" type="button" onclick="openTutorial()" aria-label="Abrir tutorial da plataforma"><span class="bell-min">?</span><span class="dot" id="noticeDot"></span></button>
   </header>
 
   <section class="greeting">
@@ -278,6 +279,63 @@ body::after{opacity:.08;background-size:100% 5px}
     </div>
     <button class="sleep-confirm" id="sleepConfirm" onclick="saveSleepCheckin()" disabled>Confirmar</button>
     <div class="sleep-privacy">🔒 Seus dados são privados e usados somente para seu acompanhamento.</div>
+  </div>
+</div>
+
+<div class="tutorial-overlay" id="tutorialOverlay" aria-modal="true" role="dialog" aria-label="Tutorial da plataforma Fox Performance">
+  <div class="tutorial-card">
+    <button class="tutorial-close" onclick="closeTutorial()" aria-label="Fechar tutorial">×</button>
+    <div class="tutorial-hero">
+      <div class="tutorial-mark">FOX</div>
+      <div class="tutorial-title">Como usar</div>
+      <div class="tutorial-sub">Sua plataforma concentra treino, nutrição, registros da semana e devolutivas em um só lugar.</div>
+    </div>
+
+    <section class="tutorial-section">
+      <div class="tutorial-section-title">Principais áreas</div>
+      <div class="tutorial-grid">
+        <div class="tutorial-item training">
+          <div class="tutorial-ico">TR</div>
+          <div><h3>Training</h3><p>Abra seu treino, registre séries, cargas e repetições. Ao concluir, o app envia o progresso para sua área.</p></div>
+        </div>
+        <div class="tutorial-item nutri">
+          <div class="tutorial-ico">NT</div>
+          <div><h3>NutriTracker</h3><p>Registre refeições e água durante o dia. Esses dados ajudam a acompanhar adesão e rotina.</p></div>
+        </div>
+        <div class="tutorial-item area">
+          <div class="tutorial-ico">MA</div>
+          <div><h3>Minha área</h3><p>Veja metas da semana, documentos, fotos, relatórios, conquistas e a última devolutiva publicada.</p></div>
+        </div>
+        <div class="tutorial-item check">
+          <div class="tutorial-ico">OK</div>
+          <div><h3>Resumo do hub</h3><p>A tela inicial mostra um panorama rápido da semana, puxando registros recentes do treino, nutrição, água e sono.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tutorial-section">
+      <div class="tutorial-section-title">Rotina recomendada</div>
+      <div class="tutorial-flow">
+        <div class="tutorial-step">Ao abrir o app, confira o foco da semana e o resumo rápido.</div>
+        <div class="tutorial-step">Nos dias de treino, entre no Training e finalize a sessão para registrar sua evolução.</div>
+        <div class="tutorial-step">Ao longo do dia, use o NutriTracker para alimentos e hidratação.</div>
+        <div class="tutorial-step">Acompanhe sua Minha Área para metas, documentos, relatórios e novas devolutivas.</div>
+      </div>
+    </section>
+
+    <section class="tutorial-section">
+      <div class="tutorial-section-title">FAQ</div>
+      <div class="faq-list">
+        <div class="faq-item"><b>Preciso registrar tudo todos os dias?</b><span>Quanto mais completo o registro, melhor a análise. Mas o principal é manter consistência e não abandonar o acompanhamento.</span></div>
+        <div class="faq-item"><b>O que acontece se eu pular um treino?</b><span>O app mantém o histórico. Se o treino for encerrado como incompleto, ele entra como registro parcial.</span></div>
+        <div class="faq-item"><b>Por que minha área mostra metas semanais?</b><span>As metas são publicadas pelo Giovani e servem como referência do ciclo atual.</span></div>
+        <div class="faq-item"><b>Quem vê meus dados?</b><span>Seu acesso é individual. Os registros são usados para acompanhamento dentro da consultoria Fox Performance.</span></div>
+        <div class="faq-item"><b>Quando recebo devolutiva?</b><span>Quando o relatório for revisado e publicado, ele aparece automaticamente na Minha Área.</span></div>
+      </div>
+    </section>
+
+    <button class="tutorial-done" type="button" onclick="closeTutorial()">Entendi, fechar tutorial</button>
+    <div class="tutorial-foot">Dica: se algo não atualizar na hora, aguarde alguns segundos e toque novamente em Minha Área.</div>
   </div>
 </div>
 
@@ -608,6 +666,14 @@ function dismissSleepModal(saveSkip){
     try{ localStorage.setItem('foxSleep_' + todayKey(), JSON.stringify({date:todayKey(), skipped:true, savedAt:new Date().toISOString()})); }catch(e){}
   }
   document.getElementById('sleepOverlay').classList.remove('show');
+}
+function openTutorial(){
+  var el = document.getElementById('tutorialOverlay');
+  if(el) el.classList.add('show');
+}
+function closeTutorial(){
+  var el = document.getElementById('tutorialOverlay');
+  if(el) el.classList.remove('show');
 }
 async function saveSleepCheckin(){
   if(!(sleepQuality && sleepDuration)) return;
