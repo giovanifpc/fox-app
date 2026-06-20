@@ -201,7 +201,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
         <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
-        <button class="btn secondary" type="button" id="useCurrentWeekBtn">Usar semana atual</button>
+        <button class="btn secondary" type="button" id="useCurrentWeekBtn">Usar essa semana</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
       </div>
 
@@ -301,6 +301,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <div class="actions" style="margin-bottom:10px">
           <button class="btn primary" type="button" id="generateReportBtn">Gerar rascunho</button>
           <button class="btn secondary" type="button" id="loadReportsBtn">Atualizar lista</button>
+          <button class="btn secondary" type="button" id="useCurrentWeekReportBtn">Usar essa semana</button>
           <button class="btn secondary" type="button" id="copyReportBtn" disabled>Copiar resumo</button>
         </div>
         <div id="reportList" class="report-list">
@@ -1615,6 +1616,7 @@ $('newClientBtn').addEventListener('click', startNewClient);
 $('saveClientBtn').addEventListener('click', saveClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
 $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
+$('useCurrentWeekReportBtn').addEventListener('click', useCurrentWeek);
 $('loadProtocolBtn').addEventListener('click', loadProtocol);
 $('publishProtocolBtn').addEventListener('click', publishProtocol);
 $('sampleProtocolBtn').addEventListener('click', ()=>{
