@@ -292,7 +292,6 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .profile-cycle{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 .menu-item{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:11px;text-decoration:none;color:var(--txt);transition:.18s;cursor:pointer;width:100%;text-align:left;font-family:var(--font)}
 .menu-item:active{background:var(--bg-card-2);transform:scale(.98)}
-#linkNutri{display:none}
 .menu-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .menu-ico.report{background:rgba(255,140,66,.15);border:1px solid var(--gold-dim)}
 .menu-ico.nutri{background:rgba(74,158,191,.15);border:1px solid var(--blue)}
@@ -332,14 +331,6 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg-elev);border:1px solid var(--gold-dim);color:var(--txt);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:.3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-.training-help-card{background:rgba(255,140,66,.06);border:1px solid rgba(255,140,66,.2);border-radius:12px;padding:14px 16px;margin:12px 16px;display:flex;align-items:center;gap:12px}
-#training-help-card{display:none!important}
-.thc-text{flex:1;font-size:.8rem;color:#aaa;line-height:1.4}
-.thc-text strong{color:var(--amber);display:block;margin-bottom:2px}
-.thc-btns{display:flex;flex-direction:column;gap:6px}
-.thc-btn{border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap}
-.thc-btn.p{background:rgba(255,140,66,.15);color:var(--amber);border:1px solid rgba(255,140,66,.3)}
-.thc-btn.d{background:transparent;color:#666;border:1px solid #333}
 </style>
 <!-- Supabase Auth Guard -->
 <script>
@@ -419,17 +410,6 @@ body{padding-top:44px!important;min-height:100svh!important}
 
 <!-- ========================= HOME ========================= -->
 <section class="screen" id="home">
-<div id="training-help-card" class="training-help-card" style="display:none">
-  <div class="thc-text">
-    <strong>Como funciona?</strong>
-    Registre suas cargas após cada série. O app ajusta sua progressão automaticamente semana a semana.
-  </div>
-  <div class="thc-btns">
-    <button class="thc-btn p" onclick="showTrainingTutorial()">Como usar</button>
-    <button class="thc-btn d" onclick="dismissTrainingHelp()">Já sei</button>
-  </div>
-</div>
-
   <div class="topbar">
     <div class="logo-topbar">
       <div class="logo-fox" id="homeLogo"></div>
@@ -604,11 +584,6 @@ body{padding-top:44px!important;min-height:100svh!important}
     </div>
 
     <div class="section-label">Contato</div>
-    <a class="menu-item" id="linkNutri" href="#" target="_blank">
-      <div class="menu-ico nutri">🥗</div>
-      <div class="menu-info"><div class="mi-title">NutriTracker</div><div class="mi-sub">Acompanhe sua alimentação</div></div>
-      <div class="menu-chev">›</div>
-    </a>
     <a class="menu-item" id="linkWpp" href="#" target="_blank">
       <div class="menu-ico wpp">💬</div>
       <div class="menu-info"><div class="mi-title">Falar com o Giovani</div><div class="mi-sub">Dúvidas e feedback</div></div>
@@ -723,7 +698,6 @@ const CLIENT = {
   cycleWeeks: 8,                    // duração do ciclo (padrão Fox: 8 semanas)
 
   /* ---- LINKS ---- */
-  nutriUrl: "https://giovanifpc.github.io/foxperformance-app/",
   whatsappNumber: "5511943503379",  // internacional, só números
 
   /* ---- PROGRESSÃO POR SEMANA (definida UMA VEZ, vale para todos os treinos) ----
@@ -935,23 +909,6 @@ function handleBack(){
 
 /* ---- INIT ---- */
 
-function showTrainingHelp(){
-  if(!localStorage.getItem('t_help_done')){
-    var c=document.getElementById('training-help-card');
-    if(c) c.style.display='flex';
-  }
-}
-function dismissTrainingHelp(){
-  localStorage.setItem('t_help_done','1');
-  var c=document.getElementById('training-help-card');
-  if(c) c.style.display='none';
-}
-function showTrainingTutorial(){
-  dismissTrainingHelp();
-  toast('Selecione um treino, registre o peso em cada série e toque em concluir.');
-}
-
-
 // Receber perfil do Supabase quando carregar
 document.addEventListener('fox-profile-ready', function(e){
   var p = e.detail;
@@ -977,8 +934,6 @@ function refreshTrainingShell(){
   if(pn) pn.textContent = CLIENT.nome;
   var pc = document.getElementById('profileCycle');
   if(pc) pc.textContent = 'Ciclo ' + CLIENT.cycleNumber + ' - Semana ' + currentWeek();
-  var linkNutri = document.getElementById('linkNutri');
-  if(linkNutri) linkNutri.href = CLIENT.nutriUrl;
   var linkWpp = document.getElementById('linkWpp');
   if(linkWpp){
     linkWpp.href = 'https://wa.me/' + CLIENT.whatsappNumber + '?text=' +
@@ -1006,7 +961,6 @@ function applyTrainingProtocol(row){
   CLIENT.progressao = protocol.progressao;
   CLIENT.workouts = protocol.workouts;
   if(Array.isArray(protocol.quotes) && protocol.quotes.length) CLIENT.quotes = protocol.quotes;
-  if(protocol.nutriUrl) CLIENT.nutriUrl = protocol.nutriUrl;
   if(protocol.whatsappNumber) CLIENT.whatsappNumber = String(protocol.whatsappNumber).replace(/\D/g,'');
   window.FOX_ACTIVE_TRAINING_PROTOCOL = row || protocol;
   refreshTrainingShell();
@@ -1037,7 +991,6 @@ function init(){
   document.getElementById("welcomeCycle").textContent =
     `Ciclo ${CLIENT.cycleNumber} — ${CLIENT.cycleWeeks} semanas`;
 
-  document.getElementById("linkNutri").href = CLIENT.nutriUrl;
   document.getElementById("linkWpp").href = `https://wa.me/${CLIENT.whatsappNumber}?text=`+
     encodeURIComponent(`Olá Giovani! Sou ${CLIENT.nome}, quero falar sobre meu treino.`);
 
@@ -1194,7 +1147,7 @@ function updateExecProgress(){
 
 
 // ── Sistema de GIFs via exercises.json ──────────────────────────────────────
-const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/data/exercises.json';
+const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/exercises.json';
 let EXERCISES_DB = null;
 
 async function loadExercisesDB(){

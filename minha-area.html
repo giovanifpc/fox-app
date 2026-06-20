@@ -1929,12 +1929,12 @@ function animateRings(){
     return;
   }
   const C = 188.5;
-  // TODO: substituir valores estáticos por dados do Supabase
+  // Fallback neutro enquanto metas/progresso reais ainda nao chegaram.
   const rings = [
-    {id:'ring-treinos', pct:1.0},
-    {id:'ring-hidrat',  pct:0.714},
-    {id:'ring-nutri',   pct:0.571},
-    {id:'ring-sono',    pct:0.571},
+    {id:'ring-treinos', pct:0},
+    {id:'ring-hidrat',  pct:0},
+    {id:'ring-nutri',   pct:0},
+    {id:'ring-sono',    pct:0},
   ];
   rings.forEach(r=>{
     const el = document.getElementById(r.id);
