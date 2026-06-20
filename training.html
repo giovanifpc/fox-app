@@ -1147,17 +1147,36 @@ function updateExecProgress(){
 
 
 // ── Sistema de GIFs via exercises.json ──────────────────────────────────────
-const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/exercises.json';
+const EXERCISES_JSON_URLS = [
+  'exercises.json?v=20260620',
+  './exercises.json?v=20260620',
+  'https://giovanifpc.github.io/fox-app/exercises.json?v=20260620'
+];
 let EXERCISES_DB = null;
 
 async function loadExercisesDB(){
   if(EXERCISES_DB) return EXERCISES_DB;
-  try{
-    const r = await fetch(EXERCISES_JSON_URL);
-    if(!r.ok) return null;
-    EXERCISES_DB = await r.json();
-    return EXERCISES_DB;
-  }catch(e){ return null; }
+  for(const url of EXERCISES_JSON_URLS){
+    try{
+      const r = await fetch(url, {cache:'no-store'});
+      if(!r.ok) continue;
+      const raw = await r.json();
+      EXERCISES_DB = normalizeExercisesDB(raw);
+      if(EXERCISES_DB && Object.keys(EXERCISES_DB).length) return EXERCISES_DB;
+    }catch(e){}
+  }
+  return null;
+}
+
+function normalizeExercisesDB(raw){
+  if(!raw) return null;
+  if(!Array.isArray(raw)) return raw;
+  return raw.reduce(function(acc,item){
+    if(!item) return acc;
+    const id = item.exercise_id || item.id;
+    if(id) acc[String(id)] = item;
+    return acc;
+  }, {});
 }
 
 // Busca por exercise_id (primário) ou nome (fallback)
