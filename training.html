@@ -951,8 +951,37 @@ function validateDynamicProtocol(p){
     Array.isArray(p.progressao) && p.progressao.length;
 }
 
+function normalizeProtocolExercise(ex){
+  ex = ex && typeof ex === 'object' ? Object.assign({}, ex) : {};
+  ex.nome = ex.nome || ex.name || ex.titulo || ex.title || 'Exercicio';
+  ex.exercise_id = ex.exercise_id || ex.exerciseId || ex.exerciseID || ex.id || null;
+  ex.media = ex.media || ex.gif_url || ex.gifUrl || ex.media_url || ex.mediaUrl || '';
+  if(ex.media) ex.media = normalizeExerciseMediaUrl(ex.media);
+  ex.mediaType = ex.mediaType || ex.media_type || (ex.youtubeId || ex.youtube_id ? 'yt' : 'img');
+  if(!ex.media && (ex.youtubeId || ex.youtube_id)){
+    ex.media = ex.youtubeId || ex.youtube_id;
+    ex.mediaType = 'yt';
+  }
+  ex.rest = Number(ex.rest || ex.descanso || ex.intervalo || 60);
+  ex.note = ex.note || ex.obs || ex.observacao || ex.instructions || ex.instrucao || '';
+  return ex;
+}
+
+function normalizeTrainingProtocol(protocol){
+  if(!protocol || !Array.isArray(protocol.workouts)) return protocol;
+  protocol = Object.assign({}, protocol);
+  protocol.workouts = protocol.workouts.map(function(w,idx){
+    w = w && typeof w === 'object' ? Object.assign({}, w) : {};
+    w.id = w.id || w.codigo || String.fromCharCode(65 + idx);
+    w.name = w.name || w.nome || w.titulo || ('Treino ' + w.id);
+    w.exercises = Array.isArray(w.exercises) ? w.exercises.map(normalizeProtocolExercise) : [];
+    return w;
+  });
+  return protocol;
+}
+
 function applyTrainingProtocol(row){
-  var protocol = row && row.protocol_json ? row.protocol_json : row;
+  var protocol = normalizeTrainingProtocol(row && row.protocol_json ? row.protocol_json : row);
   if(!validateDynamicProtocol(protocol)) return;
 
   CLIENT.cycleNumber = Number(protocol.cycleNumber || (row && row.ciclo) || CLIENT.cycleNumber);
