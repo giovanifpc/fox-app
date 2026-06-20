@@ -1099,7 +1099,7 @@ function openOverview(idx){
 }
 function mediaThumb(ex){
   if(ex.mediaType==="img" && ex.media)
-    return `<img src="${ex.media}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<span class=ph>🏋️</span>'">`;
+    return mediaImgMarkup(ex.media, "", "<span class=ph>🏋️</span>");
   return `<span class="ph">🏋️</span>`;
 }
 
@@ -1229,9 +1229,54 @@ async function loadExerciseMedia(ex){
   if(ex.media) return;
   const gif = await findExerciseGif(ex);
   if(gif){
-    ex.media = gif;
+    ex.media = normalizeExerciseMediaUrl(gif);
     ex.mediaType = 'img';
   }
+}
+
+function escapeAttr(value){
+  return String(value || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function driveFileId(url){
+  const text = String(url || '');
+  let m = text.match(/[?&]id=([^&]+)/);
+  if(m) return decodeURIComponent(m[1]);
+  m = text.match(/\/file\/d\/([^/]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+function exerciseMediaCandidates(url){
+  const id = driveFileId(url);
+  if(!id) return [url];
+  return [
+    'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(id),
+    'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(id),
+    'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w900'
+  ];
+}
+
+function normalizeExerciseMediaUrl(url){
+  return exerciseMediaCandidates(url)[0] || url;
+}
+
+function mediaImgMarkup(src, alt, fallbackHtml){
+  const candidates = exerciseMediaCandidates(src);
+  return `<img src="${escapeAttr(candidates[0])}" alt="${escapeAttr(alt)}" loading="lazy" data-src-list="${encodeURIComponent(JSON.stringify(candidates))}" data-src-idx="0" data-fallback-html="${encodeURIComponent(fallbackHtml)}" onerror="swapExerciseImage(this)">`;
+}
+
+function swapExerciseImage(img){
+  try{
+    const list = JSON.parse(decodeURIComponent(img.getAttribute('data-src-list') || '[]'));
+    const idx = Number(img.getAttribute('data-src-idx') || 0) + 1;
+    if(list[idx]){
+      img.setAttribute('data-src-idx', String(idx));
+      img.src = list[idx];
+      return;
+    }
+  }catch(e){}
+  const fallback = decodeURIComponent(img.getAttribute('data-fallback-html') || '');
+  if(img.parentNode) img.parentNode.innerHTML = fallback || '<span class=ph>🏋️</span>';
 }
 
 // Pré-carregar o DB ao iniciar o app
@@ -1258,8 +1303,8 @@ function renderExercise(){
   if(ex.mediaType==="yt" && ex.media){
     media=`<iframe src="https://www.youtube.com/embed/${ex.media}?rel=0&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
   } else if(ex.mediaType==="img" && ex.media){
-    media=`<img src="${ex.media}" alt="${ex.nome}" onerror="this.parentNode.innerHTML='<div class=media-ph><span class=ph-ico>🏋️</span>Vídeo de execução indisponível.<br>Peça orientação ao instrutor da academia ou consulte o Giovani.</div>'">
-           <span class="media-badge">Execução</span>`;
+    media=mediaImgMarkup(ex.media, ex.nome, "<div class=media-ph><span class=ph-ico>🏋️</span>Vídeo de execução indisponível.<br>Peça orientação ao Giovani.</div>")+
+           `<span class="media-badge">Execução</span>`;
   } else {
     media=`<div class="media-ph"><span class="ph-ico">🏋️</span>Vídeo em breve.<br>Consulte o Giovani sobre a execução.</div>`;
   }
