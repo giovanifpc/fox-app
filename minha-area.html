@@ -459,6 +459,7 @@ canvas{display:block;width:100%}
 
     // Buscar metas da semana atual
     loadWeeklyGoals(supa, session.user.email, profile.ciclo_atual, profile.semana_atual);
+    loadRemoteProgress(supa, session.user.email);
     loadProfileContext(supa, session.user.email);
   }
 })();
@@ -680,6 +681,79 @@ function foxReadLocalSleepData(){
     }
     return {days:days};
   }catch(e){ return null; }
+}
+
+function foxMapRemoteTrainingRow(row){
+  var raw = row && row.raw_data && typeof row.raw_data === 'object' ? row.raw_data : {};
+  var detail = Array.isArray(row.detail) ? row.detail : (Array.isArray(raw.detail) ? raw.detail : []);
+  return Object.assign({}, raw, {
+    sessionUid: row.session_uid || raw.sessionUid || row.id,
+    date: row.completed_at || raw.date,
+    workoutId: row.workout_id || raw.workoutId || null,
+    workoutName: row.workout_name || raw.workoutName || '',
+    cycle: row.ciclo || raw.cycle || null,
+    week: row.semana || raw.week || null,
+    minutes: row.minutes || raw.minutes || 0,
+    setsDone: row.sets_done || raw.setsDone || 0,
+    exDone: row.exercises_done || raw.exDone || 0,
+    incomplete: !!row.incomplete,
+    protocolTitle: row.protocol_title || raw.protocolTitle || null,
+    protocolVersion: row.protocol_version || raw.protocolVersion || null,
+    detail: detail
+  });
+}
+
+function foxMapRemoteNutriRow(row){
+  var raw = row && row.raw_data && typeof row.raw_data === 'object' ? row.raw_data : {};
+  var day = Object.assign({}, raw);
+  day.meals = row.meals && typeof row.meals === 'object' ? row.meals : (raw.meals || {});
+  day.water = Number(row.water_ml || raw.water || 0);
+  return day;
+}
+
+async function loadRemoteProgress(supaClient,email){
+  var client = supaClient || window.FOX_SUPA;
+  var userEmail = email || window.FOX_EMAIL || window.FOX_USER_EMAIL;
+  if(!client || !userEmail) return;
+  try{
+    var tr = await client.from('training_history')
+      .select('id,session_uid,completed_at,workout_id,workout_name,ciclo,semana,minutes,sets_done,exercises_done,incomplete,protocol_title,protocol_version,detail,raw_data')
+      .eq('client_email', userEmail)
+      .order('completed_at', {ascending:false})
+      .limit(200);
+    if(!tr.error && Array.isArray(tr.data)){
+      window.FOX_TRAINING_DATA = {
+        history: tr.data.map(foxMapRemoteTrainingRow),
+        badges: [],
+        weekStreak: 0,
+        loopPos: 0,
+        lastCarga: {},
+        source: 'supabase'
+      };
+    }
+  }catch(e){}
+  try{
+    var nu = await client.from('nutri_history')
+      .select('date_key,water_ml,meals,profile,raw_data,logged_at')
+      .eq('client_email', userEmail)
+      .order('date_key', {ascending:true})
+      .limit(365);
+    if(!nu.error && Array.isArray(nu.data)){
+      var days = {}, keys = [];
+      nu.data.forEach(function(row){
+        if(!row.date_key) return;
+        keys.push(row.date_key);
+        days[row.date_key] = foxMapRemoteNutriRow(row);
+      });
+      window.FOX_NUTRI_DATA = {
+        profile: (nu.data[nu.data.length-1] && nu.data[nu.data.length-1].profile) || null,
+        days: days,
+        dayKeys: keys,
+        source: 'supabase'
+      };
+    }
+  }catch(e){}
+  foxRefreshDashboardProgress();
 }
 
 function foxSyncLocalProgress(){

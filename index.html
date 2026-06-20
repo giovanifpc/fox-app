@@ -478,6 +478,7 @@ async function boot(){
     return;
   }
   await loadWeeklyGoals();
+  await loadRemoteProgress();
   initBanner();
 
   setTimeout(function(){
@@ -626,6 +627,77 @@ function readLocalSleepData(){
     }
     return {days:days};
   }catch(e){ return null; }
+}
+
+function mapRemoteTrainingRow(row){
+  var raw = row && row.raw_data && typeof row.raw_data === 'object' ? row.raw_data : {};
+  var detail = Array.isArray(row.detail) ? row.detail : (Array.isArray(raw.detail) ? raw.detail : []);
+  return Object.assign({}, raw, {
+    sessionUid: row.session_uid || raw.sessionUid || row.id,
+    date: row.completed_at || raw.date,
+    workoutId: row.workout_id || raw.workoutId || null,
+    workoutName: row.workout_name || raw.workoutName || '',
+    cycle: row.ciclo || raw.cycle || null,
+    week: row.semana || raw.week || null,
+    minutes: row.minutes || raw.minutes || 0,
+    setsDone: row.sets_done || raw.setsDone || 0,
+    exDone: row.exercises_done || raw.exDone || 0,
+    incomplete: !!row.incomplete,
+    protocolTitle: row.protocol_title || raw.protocolTitle || null,
+    protocolVersion: row.protocol_version || raw.protocolVersion || null,
+    detail: detail
+  });
+}
+
+function mapRemoteNutriRow(row){
+  var raw = row && row.raw_data && typeof row.raw_data === 'object' ? row.raw_data : {};
+  var day = Object.assign({}, raw);
+  day.meals = row.meals && typeof row.meals === 'object' ? row.meals : (raw.meals || {});
+  day.water = Number(row.water_ml || raw.water || 0);
+  return day;
+}
+
+async function loadRemoteProgress(){
+  if(!window.FOX_USER_EMAIL || !supa) return;
+  try{
+    var tr = await supa.from('training_history')
+      .select('id,session_uid,completed_at,workout_id,workout_name,ciclo,semana,minutes,sets_done,exercises_done,incomplete,protocol_title,protocol_version,detail,raw_data')
+      .eq('client_email', window.FOX_USER_EMAIL)
+      .order('completed_at', {ascending:false})
+      .limit(200);
+    if(!tr.error && Array.isArray(tr.data)){
+      latestTrainingData = {
+        history: tr.data.map(mapRemoteTrainingRow),
+        badges: [],
+        weekStreak: 0,
+        loopPos: 0,
+        lastCarga: {},
+        source: 'supabase'
+      };
+    }
+  }catch(e){}
+  try{
+    var nu = await supa.from('nutri_history')
+      .select('date_key,water_ml,meals,profile,raw_data,logged_at')
+      .eq('client_email', window.FOX_USER_EMAIL)
+      .order('date_key', {ascending:true})
+      .limit(365);
+    if(!nu.error && Array.isArray(nu.data)){
+      var days = {}, keys = [];
+      nu.data.forEach(function(row){
+        if(!row.date_key) return;
+        keys.push(row.date_key);
+        days[row.date_key] = mapRemoteNutriRow(row);
+      });
+      latestNutriData = {
+        profile: (nu.data[nu.data.length-1] && nu.data[nu.data.length-1].profile) || null,
+        days: days,
+        dayKeys: keys,
+        source: 'supabase'
+      };
+    }
+  }catch(e){}
+  refreshSummaryWithLiveData();
 }
 
 function syncLocalProgress(){
@@ -789,7 +861,16 @@ function requestModuleData(){
     var nF = document.getElementById('frame-nutri');
     if(tF && tF.contentWindow) tF.contentWindow.postMessage({type:'fox-get-training-data'}, '*');
     if(nF && nF.contentWindow) nF.contentWindow.postMessage({type:'fox-get-nutri-data'}, '*');
+    sendCachedDataToModules();
   }, 1200);
+}
+
+function sendCachedDataToModules(){
+  syncLocalProgress();
+  var tF = document.getElementById('frame-training');
+  var nF = document.getElementById('frame-nutri');
+  if(tF && tF.contentWindow && latestTrainingData) tF.contentWindow.postMessage({type:'fox-restore-training-data', data:latestTrainingData}, '*');
+  if(nF && nF.contentWindow && latestNutriData) nF.contentWindow.postMessage({type:'fox-restore-nutri-data', data:latestNutriData}, '*');
 }
 
 function sendCachedDataToDrive(){
@@ -817,6 +898,9 @@ function openModule(which){
     requestModuleData();
     setTimeout(sendCachedDataToDrive, 700);
     setTimeout(sendCachedDataToDrive, 1600);
+  } else if(which === 'training' || which === 'nutri'){
+    setTimeout(sendCachedDataToModules, 700);
+    setTimeout(sendCachedDataToModules, 1600);
   }
   try{ history.pushState({m:which}, '', location.href); }catch(e){}
 }

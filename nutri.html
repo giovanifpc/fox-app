@@ -1490,6 +1490,7 @@ let searchTimeout = null;
 let modalSearchTimeout = null;
 let currentCatFilter = '';
 let onlineFoodCache = {};
+let openFoodSearchCache = {};
 let onlineSearchToken = 0;
 // Anamnese state
 let anamData = { sex:'', activity:'', goal:'' };
@@ -2024,8 +2025,68 @@ async function searchOnlineFoods(q,cat=''){
     return [];
   }
 }
+function openFoodCategory(tags){
+  tags = Array.isArray(tags) ? tags.join(' ') : String(tags || '');
+  tags = normalize(tags);
+  if(tags.includes('meat')||tags.includes('fish')||tags.includes('egg')||tags.includes('frango')||tags.includes('carne')) return 'carnes';
+  if(tags.includes('fruit')||tags.includes('fruta')) return 'frutas';
+  if(tags.includes('vegetable')||tags.includes('legume')||tags.includes('verdura')) return 'vegetais';
+  if(tags.includes('dairy')||tags.includes('milk')||tags.includes('leite')||tags.includes('queijo')||tags.includes('iogurte')) return 'laticinios';
+  if(tags.includes('cereal')||tags.includes('rice')||tags.includes('bread')||tags.includes('pasta')||tags.includes('grao')) return 'graos';
+  if(tags.includes('oil')||tags.includes('nuts')||tags.includes('azeite')||tags.includes('castanha')) return 'gorduras';
+  return 'outros';
+}
+function normalizeOpenFoodProduct(p){
+  if(!p) return null;
+  var name = p.product_name_pt || p.product_name || p.generic_name_pt || p.generic_name || '';
+  if(!name) return null;
+  var n = p.nutriments || {};
+  var code = p.code || p.id || name;
+  return {
+    id:'off_'+String(code).replace(/[^a-zA-Z0-9_-]/g,''),
+    remoteId:code,
+    name:String(name).trim(),
+    portion:100,
+    unit:'g',
+    kcal:Number(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
+    prot:Number(n.proteins_100g || n.proteins || 0),
+    carb:Number(n.carbohydrates_100g || n.carbohydrates || 0),
+    fat:Number(n.fat_100g || n.fat || 0),
+    cat:openFoodCategory(p.categories_tags || p.categories || ''),
+    source:'Open Food Facts'
+  };
+}
+async function fetchOpenFoodSearch(q){
+  var term = String(q || '').trim();
+  if(term.length < 3) return [];
+  var key = normalize(term);
+  if(openFoodSearchCache[key]) return openFoodSearchCache[key];
+  var fields = 'code,product_name,product_name_pt,generic_name,generic_name_pt,nutriments,categories,categories_tags';
+  var urls = [
+    'https://br.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(term)+'&search_simple=1&action=process&json=1&page_size=25&fields='+encodeURIComponent(fields),
+    'https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(term)+'&search_simple=1&action=process&json=1&page_size=25&fields='+encodeURIComponent(fields)
+  ];
+  for(var i=0;i<urls.length;i++){
+    try{
+      var res = await fetch(urls[i], {headers:{'Accept':'application/json'}});
+      if(!res.ok) continue;
+      var json = await res.json();
+      var list = (json.products || []).map(normalizeOpenFoodProduct).filter(function(f){
+        return f && (Number(f.kcal)||Number(f.prot)||Number(f.carb)||Number(f.fat));
+      });
+      if(list.length){
+        openFoodSearchCache[key] = rememberOnlineFoods(list);
+        return openFoodSearchCache[key];
+      }
+    }catch(e){}
+  }
+  openFoodSearchCache[key] = [];
+  return [];
+}
 async function searchFoodsSmart(q,cat=''){
   const local=searchFoods(q,cat);
+  const openFoods=(await fetchOpenFoodSearch(q)).filter(f=>!cat||f.cat===cat);
+  if(openFoods.length) return mergeFoodResults(openFoods,local);
   const online=await searchOnlineFoods(q,cat);
   return mergeFoodResults(online,local);
 }
@@ -2811,8 +2872,24 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 document.getElementById('toast').style.cssText+='position:fixed;bottom:95px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent2);color:#fff;padding:10px 20px;border-radius:30px;font-size:.82rem;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none;';
 
 function getNutriData(){var profile=JSON.parse(localStorage.getItem("fp_profile")||"null");var days=getAllDayKeys().sort();var dayData={};days.forEach(function(k){var d=localStorage.getItem("fp_day_"+k);if(d)dayData[k]=JSON.parse(d);});return{profile:profile,days:dayData,dayKeys:days};}
+function restoreNutriData(data){
+  if(!data||!data.days) return;
+  var localCount=getAllDayKeys().length;
+  var remoteKeys=Array.isArray(data.dayKeys)?data.dayKeys:Object.keys(data.days||{});
+  if(localCount>=remoteKeys.length) return;
+  remoteKeys.forEach(function(k){
+    if(k&&data.days[k]) safeSet('fp_day_'+k,JSON.stringify(data.days[k]));
+  });
+  if(data.profile&&!safeGet('fp_profile')) safeSet('fp_profile',JSON.stringify(data.profile));
+  try{
+    profile=JSON.parse(safeGet('fp_profile')||'null');
+    renderToday();
+    renderHistory();
+    renderReportDays();
+  }catch(e){}
+}
 function foxNotifyNutriData(){try{parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}catch(e){}}
-window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-nutri-data"){parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}});
+window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-nutri-data"){parent.postMessage({type:"fox-nutri-data",data:getNutriData()},"*");}if(e.data&&e.data.type==="fox-restore-nutri-data"){restoreNutriData(e.data.data);}});
 </script>
 
 

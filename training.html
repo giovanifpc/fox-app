@@ -1713,7 +1713,18 @@ function fireConfetti(){
 init();
 
 function getTrainingData(){var store=loadStore();var proto=window.FOX_ACTIVE_TRAINING_PROTOCOL||null;return{clientName:CLIENT.nome,cycleNumber:CLIENT.cycleNumber,startDate:CLIENT.startDate,cycleWeeks:CLIENT.cycleWeeks,currentWeek:currentWeek(),currentDay:Math.min(currentDayNumber(),totalDays()),totalDays:totalDays(),protocolTitle:proto&&proto.titulo?proto.titulo:null,protocolVersion:proto&&proto.versao?proto.versao:null,history:store.history,badges:store.badges,weekStreak:store.weekStreak,loopPos:store.loopPos,lastCarga:store.lastCarga};}
-window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-training-data"){parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*");}if(e.data&&e.data.type==="fox-set-client-name"&&e.data.nome){
+function restoreTrainingData(data){
+  if(!data||!Array.isArray(data.history)||!data.history.length) return;
+  var store=loadStore();
+  if(Array.isArray(store.history)&&store.history.length>=data.history.length) return;
+  store.history=data.history;
+  store.badges=Array.isArray(data.badges)?data.badges:(store.badges||[]);
+  store.weekStreak=data.weekStreak||store.weekStreak||0;
+  store.loopPos=data.loopPos||store.loopPos||0;
+  store.lastCarga=data.lastCarga||store.lastCarga||{};
+  saveStore(store);
+}
+window.addEventListener("message",function(e){if(e.data&&e.data.type==="fox-get-training-data"){parent.postMessage({type:"fox-training-data",data:getTrainingData()},"*");}if(e.data&&e.data.type==="fox-restore-training-data"){restoreTrainingData(e.data.data);}if(e.data&&e.data.type==="fox-set-client-name"&&e.data.nome){
   CLIENT.nome=e.data.nome;
   var wn=document.getElementById("welcomeName");
   if(wn) wn.textContent="Ola, "+e.data.nome;
