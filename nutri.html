@@ -2032,6 +2032,44 @@ function mergeFoodResults(primary,fallback){
     return true;
   }).slice(0,40);
 }
+function foodQueryWords(q){
+  return normalize(q).split(/\s+/).filter(function(w){
+    return w.length >= 3 && ['com','sem','para','das','dos'].indexOf(w) < 0;
+  });
+}
+function foodMatchesQueryName(food,q){
+  var words=foodQueryWords(q);
+  if(!words.length) return true;
+  var name=normalize(food&&food.name);
+  return words.every(function(w){
+    return name.indexOf(w) >= 0 || (w.endsWith('o') && name.indexOf(w+'s') >= 0);
+  });
+}
+function sortFoodsByQuery(list,q){
+  var words=foodQueryWords(q);
+  if(!words.length) return list;
+  return list.slice().sort(function(a,b){
+    function score(f){
+      var name=normalize(f.name);
+      var s=0;
+      words.forEach(function(w){
+        if(name===w) s+=80;
+        if(name.split(/\s+/).indexOf(w)>=0) s+=40;
+        if(name.indexOf(w)===0) s+=25;
+        if(name.indexOf(w)>=0) s+=10;
+      });
+      if(f.source==='Open Food Facts') s+=2;
+      return s;
+    }
+    return score(b)-score(a);
+  });
+}
+function fmtFoodNumber(n,dec){
+  n=Number(n)||0;
+  var d=dec==null?(Math.abs(n)<10&&n%1?1:0):dec;
+  var v=Number(n.toFixed(d));
+  return String(v).replace('.', ',');
+}
 async function searchOnlineFoods(q,cat=''){
   if(!window.FOX_SUPA||!q||String(q).trim().length<2) return [];
   try{
@@ -2043,7 +2081,7 @@ async function searchOnlineFoods(q,cat=''){
     if(cat) query=query.eq('cat',cat);
     const res=await query;
     if(res.error) return [];
-    return rememberOnlineFoods((res.data||[]).map(normalizeOnlineFood).filter(Boolean));
+    return rememberOnlineFoods((res.data||[]).map(normalizeOnlineFood).filter(Boolean).filter(function(f){return foodMatchesQueryName(f,q);}));
   }catch(e){
     return [];
   }
@@ -2103,10 +2141,10 @@ async function fetchOpenFoodSearch(q){
       if(!res.ok) continue;
       var json = await res.json();
       var list = (json.products || []).map(normalizeOpenFoodProduct).filter(function(f){
-        return f && (Number(f.kcal)||Number(f.prot)||Number(f.carb)||Number(f.fat));
+        return f && (Number(f.kcal)||Number(f.prot)||Number(f.carb)||Number(f.fat)) && foodMatchesQueryName(f, term);
       });
       if(list.length){
-        openFoodSearchCache[key] = rememberOnlineFoods(list);
+        openFoodSearchCache[key] = rememberOnlineFoods(sortFoodsByQuery(list, term));
         return openFoodSearchCache[key];
       }
     }catch(e){}
@@ -2117,9 +2155,9 @@ async function fetchOpenFoodSearch(q){
 async function searchFoodsSmart(q,cat=''){
   const local=searchFoods(q,cat);
   const openFoods=(await fetchOpenFoodSearch(q)).filter(f=>!cat||f.cat===cat);
-  if(openFoods.length) return mergeFoodResults(openFoods,local);
+  if(openFoods.length) return mergeFoodResults(sortFoodsByQuery(openFoods,q),sortFoodsByQuery(local,q));
   const online=await searchOnlineFoods(q,cat);
-  return mergeFoodResults(online,local);
+  return mergeFoodResults(sortFoodsByQuery(online,q),sortFoodsByQuery(local,q));
 }
 function parseServingText(txt){
   txt=String(txt||'').toLowerCase().replace(',', '.');
@@ -2201,7 +2239,7 @@ function foodCard(f){
   return `<div class="search-result" onclick="selectFood('${f.id}')"><div class="sr-name">${f.name}</div><div class="sr-detail">Porção: ${f.portion}${f.unit}</div><div class="sr-macros"><span class="sr-macro k">${f.kcal} kcal</span><span class="sr-macro p">P ${f.prot}g</span><span class="sr-macro c">C ${f.carb}g</span><span class="sr-macro f">G ${f.fat}g</span></div></div>`;
 }
 function foodCard(f){
-  return `<div class="search-result" onclick="selectFood('${f.id}')"><div class="sr-name">${f.name}</div><div class="sr-detail">Porcao: ${displayServingLabel(f)}</div><div class="sr-macros"><span class="sr-macro k">${f.kcal} kcal</span><span class="sr-macro p">P ${f.prot}g</span><span class="sr-macro c">C ${f.carb}g</span><span class="sr-macro f">G ${f.fat}g</span></div></div>`;
+  return `<div class="search-result" onclick="selectFood('${f.id}')"><div class="sr-name">${f.name}</div><div class="sr-detail">Porcao: ${displayServingLabel(f)}</div><div class="sr-macros"><span class="sr-macro k">${fmtFoodNumber(f.kcal)} kcal</span><span class="sr-macro p">P ${fmtFoodNumber(f.prot)}g</span><span class="sr-macro c">C ${fmtFoodNumber(f.carb)}g</span><span class="sr-macro f">G ${fmtFoodNumber(f.fat)}g</span></div></div>`;
 }
 function selectFood(id){
   const all=[...LOCAL_FOODS,...getCustomFoods()];
