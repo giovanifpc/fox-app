@@ -358,7 +358,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 const SUPA_URL = 'https://jxwodkpssivmcnbrsukm.supabase.co';
 const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
 const ADMIN_EMAIL = 'giovani.work@hotmail.com';
-const EXERCISES_JSON_URL = 'https://giovanifpc.github.io/fox-app/exercises.json';
+const EXERCISES_JSON_URLS = [
+  new URL('exercises.json', location.href).href,
+  './exercises.json',
+  'exercises.json',
+  'https://giovanifpc.github.io/fox-app/exercises.json'
+];
 const META_DEFS = [
   {nome:'Treinos', unidade:'sessoes', meta_valor:3, realizado:0},
   {nome:'Hidratação', unidade:'dias', meta_valor:7, realizado:0},
@@ -490,10 +495,17 @@ function errorText(err){
 
 async function loadExercisesDb(){
   if(exercisesDb) return exercisesDb;
-  const r = await fetch(EXERCISES_JSON_URL);
-  if(!r.ok) throw new Error('Nao foi possivel carregar exercises.json.');
-  exercisesDb = await r.json();
-  return exercisesDb;
+  const tried = [];
+  for(const url of EXERCISES_JSON_URLS){
+    try{
+      tried.push(url);
+      const r = await fetch(url, {cache:'no-store'});
+      if(!r.ok) continue;
+      exercisesDb = await r.json();
+      return exercisesDb;
+    }catch(e){}
+  }
+  throw new Error('Nao foi possivel carregar exercises.json. Confirme se o arquivo exercises.json foi enviado para a mesma pasta publica do admin.html. Tentativas: ' + tried.join(' | '));
 }
 
 async function boot(){
