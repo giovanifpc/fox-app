@@ -1263,6 +1263,10 @@ async function findExerciseCatalogItem(ex){
     }
   }
 
+  return findExerciseCatalogItemByIdOrName(db, ex);
+}
+
+function findExerciseCatalogItemByIdOrName(db, ex){
   if(ex.exercise_id && db[String(ex.exercise_id)]){
     const item = db[String(ex.exercise_id)];
     if(!ex.nome || exerciseNamesMatch(item.name, ex.nome)) return item;

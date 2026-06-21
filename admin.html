@@ -776,13 +776,14 @@ function resolveExerciseMedia(db, ex){
   if(ex.exercise_ref){
     const ref = String(ex.exercise_ref).trim();
     const found = findExerciseByRef(db, ref);
+    const fallback = found || findExerciseByIdOrName(db, ex);
     return {
-      status: found ? 'ok' : 'warn',
+      status: fallback ? 'ok' : 'warn',
       method: 'ref',
-      item: found,
-      url: ex.media || (found && found.gif_url) || '',
+      item: fallback,
+      url: ex.media || (fallback && fallback.gif_url) || '',
       ref: ref,
-      message: found ? 'Referencia oficial preenchida no JSON.' : 'Referencia preenchida; nao encontrei no catalogo, mas o Training tentara a midia local.'
+      message: fallback ? 'Referencia oficial preenchida; fallback encontrado no catalogo.' : 'Referencia preenchida; ainda sem midia local ou fallback no catalogo.'
     };
   }
 
@@ -827,6 +828,14 @@ function findExerciseByRef(db, ref){
     if(exerciseRefFromItem(item, item.name) === wanted) return item;
   }
   return null;
+}
+
+function findExerciseByIdOrName(db, ex){
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    const item = db[String(ex.exercise_id)];
+    if(!ex.nome || namesMatch(item.name, ex.nome)) return item;
+  }
+  return findExerciseByName(db, ex.nome);
 }
 
 function findExerciseByName(db, nome){
