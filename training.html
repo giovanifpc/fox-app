@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="fox-logo-sem-fundo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="fox-logo-sem-fundo.svg">
 <title>Fox Training — Fox Performance · Training</title>
 <style>
 :root{
@@ -902,6 +905,9 @@ function hideNav(){ document.getElementById("bottomNav").style.display="none"; }
 function pushNav(screen){
   try{ history.pushState({screen}, "", location.href); }catch(e){}
 }
+function isInsideHub(){
+  try{ return window.parent && window.parent !== window; }catch(e){ return false; }
+}
 function handleBack(){
   const active = document.querySelector(".screen.active");
   const id = active ? active.id : "home";
@@ -913,6 +919,22 @@ function handleBack(){
     goTab("home");
   } else {
     // já na home — empurra de volta pra não fechar; segunda vez deixa sair
+    pushNav("home");
+  }
+}
+
+function handleBack(){
+  const active = document.querySelector(".screen.active");
+  const id = active ? active.id : "home";
+  if(id==="exec"){
+    confirmExit();
+    pushNav("exec");
+  } else if(id==="overview"||id==="history"||id==="achievements"||id==="profile"||id==="finish"){
+    goTab("home");
+  } else if(isInsideHub()){
+    try{ parent.postMessage('fox-back','*'); }catch(e){}
+    pushNav("home");
+  } else {
     pushNav("home");
   }
 }

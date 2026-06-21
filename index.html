@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="fox-logo-sem-fundo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="fox-logo-sem-fundo.svg">
 <title>Fox Performance</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600;700&display=swap');
@@ -451,6 +457,8 @@ var latestSleepData = null;
 var reportDataRequested = false;
 var reportRequestTimer = null;
 var SLEEP_MODAL_MIN_HOUR = 6;
+var hubBackArmed = false;
+var hubBackTimer = null;
 
 var supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 window.FOX_SUPA = supa;
@@ -465,6 +473,7 @@ function setWidth(id, pct){ var el = document.getElementById(id); if(el) el.styl
 async function boot(){
   applyDate();
   bindSleepChoices();
+  armHubHistory();
 
   var res = await supa.auth.getSession();
   var session = res.data && res.data.session;
@@ -886,6 +895,7 @@ function sendCachedDataToDrive(){
 }
 
 function openModule(which){
+  hubBackArmed = false;
   var frames = document.querySelectorAll('.module-frame');
   for(var i=0;i<frames.length;i++) frames[i].classList.remove('active');
   var f = document.getElementById('frame-' + which);
@@ -911,6 +921,41 @@ function backToHub(){
   var frames = document.querySelectorAll('.module-frame');
   for(var i=0;i<frames.length;i++) frames[i].classList.remove('active');
   document.body.classList.remove('in-module');
+  hubBackArmed = false;
+  try{ history.replaceState({hub:true}, '', location.href); }catch(e){}
+}
+
+function armHubHistory(){
+  try{ history.replaceState({hub:true}, '', location.href); history.pushState({hub:true}, '', location.href); }catch(e){}
+}
+function showHubBackToast(){
+  var el = document.getElementById('hubBackToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'hubBackToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5000;background:#171922;border:1px solid rgba(123,143,212,.75);color:#fff;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;text-align:center;max-width:calc(100% - 32px);box-shadow:0 16px 40px rgba(0,0,0,.55);opacity:0;transition:opacity .18s ease';
+    document.body.appendChild(el);
+  }
+  el.textContent = 'clique em voltar novamente para fechar';
+  el.style.opacity = '1';
+  clearTimeout(hubBackTimer);
+  hubBackTimer = setTimeout(function(){ el.style.opacity = '0'; hubBackArmed = false; }, 2200);
+}
+function handleHubBack(){
+  if(document.body.classList.contains('in-module')){
+    backToHub();
+    try{ history.pushState({hub:true}, '', location.href); }catch(e){}
+    return;
+  }
+  if(!hubBackArmed){
+    hubBackArmed = true;
+    showHubBackToast();
+    try{ history.pushState({hub:true}, '', location.href); }catch(e){}
+    return;
+  }
+  clearTimeout(hubBackTimer);
+  hubBackArmed = false;
+  history.back();
 }
 
 function finKey(){ var d = new Date(); return 'foxPay_' + FIN_CK + '_' + d.getFullYear() + '-' + pad(d.getMonth()+1); }
@@ -1067,7 +1112,7 @@ window.addEventListener('message', function(e){
   }
   if(e.data.type === 'fox-open-module' && e.data.module) openModule(e.data.module);
 });
-window.addEventListener('popstate', function(){ if(document.body.classList.contains('in-module')) backToHub(); });
+window.addEventListener('popstate', handleHubBack);
 var driveFrame = document.getElementById('frame-drive');
 if(driveFrame) driveFrame.addEventListener('load', function(){
   setTimeout(sendCachedDataToDrive, 300);

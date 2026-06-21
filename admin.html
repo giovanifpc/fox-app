@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="fox-logo-sem-fundo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="fox-logo-sem-fundo.svg">
 <title>Fox Performance - Admin</title>
 <style>
 :root{
@@ -34,6 +37,16 @@ h1{font-size:22px;line-height:1.1;letter-spacing:.3px}
 .grid{display:grid;grid-template-columns:minmax(250px,.75fr) minmax(0,1.25fr);gap:14px}
 .panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:15px}
 .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin-bottom:12px}
+.flow-stack{display:grid;gap:10px}
+.flow-section{background:#101116;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.flow-section[open]{border-color:rgba(123,143,212,.38);box-shadow:0 0 0 1px rgba(123,143,212,.12)}
+.flow-section summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text);font-weight:900}
+.flow-section summary::-webkit-details-marker{display:none}
+.flow-section summary::after{content:"+";width:24px;height:24px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;letter-spacing:0;flex-shrink:0}
+.flow-section[open] summary::after{content:"-";color:var(--purple)}
+.flow-section .flow-body{padding:0 14px 14px}
+.flow-section .protocol-box{margin-top:0}
+.flow-kicker{display:block;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0;font-weight:600;margin-top:4px;line-height:1.35}
 .clients{display:flex;flex-direction:column;gap:8px;max-height:600px;overflow:auto;padding-right:3px}
 .client-btn{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#101116;color:var(--text);padding:11px;cursor:pointer}
 .client-btn.active{border-color:var(--purple);box-shadow:0 0 0 1px rgba(123,143,212,.35)}
@@ -149,6 +162,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
     <h2>Metas da semana</h2>
     <div id="emptyForm" class="state">Selecione um cliente para editar as metas.</div>
     <form id="goalForm" class="hidden">
+      <div class="flow-stack">
+      <details class="flow-section" open>
+        <summary>Cadastro e metas<span class="flow-kicker">Dados do cliente, ciclo, semana e metas publicadas no dashboard.</span></summary>
+        <div class="flow-body">
       <div class="row">
         <div class="field">
           <label for="nome">Cliente</label>
@@ -210,7 +227,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
       </div>
 
-      <div class="block-title">Contexto do cliente</div>
+        </div>
+      </details>
+
+      <details class="flow-section">
+        <summary>Contexto do cliente<span class="flow-kicker">Memoria fixa, anamnese e nota semanal usadas na devolutiva.</span></summary>
+        <div class="flow-body">
       <div class="protocol-box">
         <div class="protocol-hint">
           Memoria fixa e nota semanal que entram na devolutiva automatica. Use a nota semanal para incluir o que veio de conversas no WhatsApp ou ajustes pessoais.
@@ -262,8 +284,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <button class="btn secondary" type="button" id="reloadContextBtn">Recarregar contexto</button>
         </div>
       </div>
+        </div>
+      </details>
 
-      <div class="block-title">Treino do ciclo</div>
+      <details class="flow-section">
+        <summary>Treino do ciclo<span class="flow-kicker">Publicacao do protocolo, validacao de GIFs e aviso ao cliente.</span></summary>
+        <div class="flow-body">
       <div class="protocol-box">
         <div class="protocol-hint">
           Cole um protocolo em JSON ou importe um arquivo .json. O Training do cliente sempre usa o ultimo treino publicado; se nada estiver publicado, usa o treino padrao do app.
@@ -296,8 +322,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         </div>
         <div id="mediaAudit" class="media-audit hidden"></div>
       </div>
+        </div>
+      </details>
 
-      <div class="block-title">Relatorios semanais</div>
+      <details class="flow-section">
+        <summary>Relatorios semanais<span class="flow-kicker">Rascunho da IA, revisao, PDF, publicacao e WhatsApp.</span></summary>
+        <div class="flow-body">
       <div class="protocol-box">
         <div class="protocol-hint">
           Rascunhos consolidados pela automacao semanal. Revise os dados, adicione sua leitura e deixe pronto para a etapa de devolutiva/publicacao.
@@ -351,6 +381,9 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
           </div>
         </div>
+      </div>
+        </div>
+      </details>
       </div>
     </form>
   </section>

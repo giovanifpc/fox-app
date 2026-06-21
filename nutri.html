@@ -6,6 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="fox-logo-sem-fundo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="fox-logo-sem-fundo.svg">
 <title>Fox Performance — NutriTracker</title>
 
 <!-- PWA Manifest inline -->
@@ -1616,6 +1620,9 @@ function scrollResultsTop(){
 // == CONTROLE DO BOTAO VOLTAR ==
 let backPressCount = 0;
 let backPressTimer = null;
+function isInsideHub(){
+  try{ return window.parent && window.parent !== window; }catch(e){ return false; }
+}
 
 window.addEventListener('popstate', function(e) {
   // Always push state back so we stay in the app
@@ -1633,6 +1640,11 @@ window.addEventListener('popstate', function(e) {
   if (!document.getElementById('page-hoje').classList.contains('active')) {
     showPage('hoje', hojeBtn);
     hojeBtn.classList.add('active');
+    return;
+  }
+
+  if (isInsideHub()) {
+    try{ parent.postMessage('fox-back','*'); }catch(err){}
     return;
   }
 

@@ -5,6 +5,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="fox-logo-sem-fundo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="fox-logo-sem-fundo.svg">
 <style>
 :root{
   --bg:#0a0a0a;--surface:#141414;--card:#171717;--border:#262626;
@@ -2087,5 +2093,22 @@ async function loadLatestDevolutiva(){
 
   <div class="fin-toast" id="fin-toast"></div>
 </div>
+<script>
+(function(){
+  function isInsideHub(){
+    try{ return window.parent && window.parent !== window; }catch(e){ return false; }
+  }
+  try{
+    history.replaceState({area:true}, '', location.href);
+    history.pushState({area:true}, '', location.href);
+    window.addEventListener('popstate', function(){
+      if(isInsideHub()){
+        try{ parent.postMessage('fox-back','*'); }catch(e){}
+        history.pushState({area:true}, '', location.href);
+      }
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
