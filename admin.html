@@ -69,6 +69,17 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .file-input{padding:9px;background:#101116}
 .context-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .context-grid .field{margin-bottom:0}
+.context-section{border:1px solid var(--line);border-radius:12px;background:#0c0d12;padding:12px;margin-bottom:12px}
+.context-section.client{border-color:rgba(79,195,247,.32);background:rgba(79,195,247,.055)}
+.context-section.internal{border-color:rgba(255,140,66,.34);background:rgba(255,140,66,.045)}
+.context-section.weekly{border-color:rgba(123,143,212,.36);background:rgba(123,143,212,.055)}
+.context-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:950;margin-bottom:6px}
+.context-section.client .context-title{color:var(--cyan)}
+.context-section.internal .context-title{color:var(--amber)}
+.context-section.weekly .context-title{color:var(--purple)}
+.context-tag{font-size:10px;letter-spacing:.8px;border:1px solid currentColor;border-radius:999px;padding:4px 7px;opacity:.9;white-space:nowrap}
+.context-note{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:10px}
+.readonly-box{background:#08090d;color:#d9e7ef}
 .media-audit{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
 .media-row{display:grid;grid-template-columns:74px 1fr;gap:10px;align-items:center;background:#0c0d12;border:1px solid var(--line);border-radius:12px;padding:9px}
 .media-row.ok{border-color:rgba(82,183,136,.42)}
@@ -229,55 +240,66 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 
         </div>
       </details>
-
       <details class="flow-section">
-        <summary>Contexto do cliente<span class="flow-kicker">Memoria fixa, anamnese e nota semanal usadas na devolutiva.</span></summary>
+        <summary>Contexto e notas internas<span class="flow-kicker">Separa memoria privada, anamnese do cliente e ajustes semanais.</span></summary>
         <div class="flow-body">
       <div class="protocol-box">
         <div class="protocol-hint">
-          Memoria fixa e nota semanal que entram na devolutiva automatica. Use a nota semanal para incluir o que veio de conversas no WhatsApp ou ajustes pessoais.
+          Esta area organiza informacoes usadas pela IA. O cliente nao ve estas notas internas no Minha Area; ele so ve a devolutiva depois que voce publica.
         </div>
-        <div class="context-grid">
+        <div class="context-section client">
+          <div class="context-title">Anamnese declarada pelo cliente <span class="context-tag">vem do app</span></div>
+          <div class="context-note">Resumo do que o cliente preencheu na Minha Area. Campo somente leitura no Admin, para voce conferir a origem sem misturar com suas notas.</div>
           <div class="field">
-            <label for="ctxGoal">Objetivo principal</label>
-            <textarea id="ctxGoal" placeholder="Ex.: perder gordura mantendo massa magra."></textarea>
-          </div>
-          <div class="field">
-            <label for="ctxLimitations">Limitacoes / rotina</label>
-            <textarea id="ctxLimitations" placeholder="Ex.: trabalha viajando, treina a noite, pouco tempo para cozinhar."></textarea>
-          </div>
-          <div class="field">
-            <label for="ctxInjuries">Dores / lesoes</label>
-            <textarea id="ctxInjuries" placeholder="Ex.: dor no joelho direito em agachamentos profundos."></textarea>
-          </div>
-          <div class="field">
-            <label for="ctxFood">Restricoes alimentares</label>
-            <textarea id="ctxFood" placeholder="Ex.: evita lactose, nao gosta de peixe."></textarea>
-          </div>
-          <div class="field">
-            <label for="ctxMotivation">Motivadores</label>
-            <textarea id="ctxMotivation" placeholder="Ex.: responde bem a reconhecimento e metas curtas."></textarea>
-          </div>
-          <div class="field">
-            <label for="ctxCommunication">Estilo de comunicacao</label>
-            <textarea id="ctxCommunication" placeholder="Ex.: direto, acolhedor, sem tom de cobranca."></textarea>
+            <label for="ctxAnamnesis">Respostas do cliente na anamnese</label>
+            <textarea id="ctxAnamnesis" class="readonly-box" readonly placeholder="Quando o cliente preencher a anamnese inicial, o resumo aparece aqui."></textarea>
           </div>
         </div>
-        <div class="field" style="margin-top:12px">
-          <label for="ctxAttention">Pontos de atencao fixos</label>
-          <textarea id="ctxAttention" placeholder="Pontos que a IA deve sempre considerar antes de escrever."></textarea>
+        <div class="context-section internal">
+          <div class="context-title">Memoria interna fixa do Giovani <span class="context-tag">cliente nao ve</span></div>
+          <div class="context-note">Sua leitura profissional e criterios permanentes para este cliente. Entra como contexto da IA, mas nao aparece diretamente no app do cliente.</div>
+          <div class="context-grid">
+            <div class="field">
+              <label for="ctxGoal">Objetivo interpretado por voce</label>
+              <textarea id="ctxGoal" placeholder="Ex.: perder gordura mantendo massa magra."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxLimitations">Rotina / limitacoes observadas</label>
+              <textarea id="ctxLimitations" placeholder="Ex.: trabalha viajando, treina a noite, pouco tempo para cozinhar."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxInjuries">Dores / lesoes a considerar</label>
+              <textarea id="ctxInjuries" placeholder="Ex.: dor no joelho direito em agachamentos profundos."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxFood">Restricoes e preferencias alimentares</label>
+              <textarea id="ctxFood" placeholder="Ex.: evita lactose, nao gosta de peixe."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxMotivation">Motivadores pessoais</label>
+              <textarea id="ctxMotivation" placeholder="Ex.: responde bem a reconhecimento e metas curtas."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxCommunication">Tom de comunicacao preferido</label>
+              <textarea id="ctxCommunication" placeholder="Ex.: direto, acolhedor, sem tom de cobranca."></textarea>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label for="ctxAttention">Pontos fixos que a IA deve considerar</label>
+            <textarea id="ctxAttention" placeholder="Ex.: nao comparar com outros clientes; sempre reforcar autonomia; evitar foco em peso."></textarea>
+          </div>
         </div>
-        <div class="field">
-          <label for="ctxAnamnesis">Anamnese preenchida no app</label>
-          <textarea id="ctxAnamnesis" readonly placeholder="Quando o cliente preencher a anamnese inicial, o resumo aparece aqui."></textarea>
-        </div>
-        <div class="field">
-          <label for="weeklyNote">Nota semanal do Giovani</label>
-          <textarea id="weeklyNote" placeholder="Ex.: cliente relatou cansaço, teve viagem, pediu para focar em constancia."></textarea>
-        </div>
-        <div class="field">
-          <label for="weeklyInstruction">Instrucao para a devolutiva desta semana</label>
-          <textarea id="weeklyInstruction" placeholder="Ex.: reforcar progresso sem pesar no tom; nao mencionar balanca."></textarea>
+        <div class="context-section weekly">
+          <div class="context-title">Notas internas desta semana <span class="context-tag">cliente nao ve</span></div>
+          <div class="context-note">Acontecimentos recentes, conversas no WhatsApp e direcao da proxima devolutiva. So a devolutiva publicada aparece para o cliente.</div>
+          <div class="field">
+            <label for="weeklyNote">Nota privada da semana</label>
+            <textarea id="weeklyNote" placeholder="Ex.: cliente relatou cansaco, teve viagem, pediu para focar em constancia."></textarea>
+          </div>
+          <div class="field">
+            <label for="weeklyInstruction">Instrucao interna para a IA nesta devolutiva</label>
+            <textarea id="weeklyInstruction" placeholder="Ex.: reforcar progresso sem pesar no tom; nao mencionar balanca."></textarea>
+          </div>
         </div>
         <div class="actions">
           <button class="btn primary" type="button" id="saveContextBtn">Salvar contexto</button>
@@ -359,12 +381,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             </div>
           </div>
           <div class="field">
-            <label for="reportAiDraft">Rascunho IA / Devolutiva</label>
-            <textarea id="reportAiDraft" placeholder="Na proxima etapa a Claude API preenche este campo automaticamente."></textarea>
+            <label for="reportAiDraft">Devolutiva que sera publicada para o cliente</label>
+            <textarea id="reportAiDraft" placeholder="Texto que o cliente vera no Minha Area depois da publicacao. Revise antes de publicar."></textarea>
           </div>
           <div class="field">
-            <label for="reportCoachNotes">Ajustes do Giovani</label>
-            <textarea id="reportCoachNotes" placeholder="Sua leitura final, correcoes e pontos para falar com o cliente."></textarea>
+            <label for="reportCoachNotes">Ajustes internos do Giovani</label>
+            <textarea id="reportCoachNotes" placeholder="Cliente nao ve este campo. Use para pedir mudancas no botao Reescrever com ajustes ou guardar sua leitura final."></textarea>
           </div>
           <div class="field">
             <label for="reportDriveLink">Link do PDF no Drive</label>
