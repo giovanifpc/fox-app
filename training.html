@@ -1346,7 +1346,9 @@ async function loadExerciseMedia(ex){
   const ref = ex.exercise_ref || exerciseRefFromItem(item, ex.nome);
   const candidates = localExerciseMediaCandidates(ref);
   const fallbackGif = item && item.gif_url ? item.gif_url : await findExerciseGif(ex);
-  if(fallbackGif) candidates.push(normalizeExerciseMediaUrl(fallbackGif));
+  if(fallbackGif) exerciseMediaCandidates(fallbackGif).forEach(function(url){
+    if(candidates.indexOf(url) < 0) candidates.push(url);
+  });
   if(candidates.length){
     ex.exercise_ref = ref;
     ex.mediaCandidates = candidates;
