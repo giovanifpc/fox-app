@@ -951,17 +951,34 @@ function validateDynamicProtocol(p){
     Array.isArray(p.progressao) && p.progressao.length;
 }
 
+function cleanExerciseMedia(value){
+  var text = String(value || '').trim();
+  var lower = text.toLowerCase();
+  if(!text) return '';
+  if(['null','undefined','false','na','n/a','sem gif','sem midia','sem mídia'].indexOf(lower) >= 0) return '';
+  return text;
+}
+
+function hasUsableExerciseMedia(ex){
+  if(!ex) return false;
+  var media = cleanExerciseMedia(ex.media);
+  if(!media) return false;
+  if((ex.mediaType || 'img') === 'yt') return true;
+  return /^https?:\/\//i.test(media) || /^(\.\/|\/|gifs\/|assets\/)/i.test(media);
+}
+
 function normalizeProtocolExercise(ex){
   ex = ex && typeof ex === 'object' ? Object.assign({}, ex) : {};
   ex.nome = ex.nome || ex.name || ex.titulo || ex.title || 'Exercicio';
   ex.exercise_id = ex.exercise_id || ex.exerciseId || ex.exerciseID || ex.id || null;
-  ex.media = ex.media || ex.gif_url || ex.gifUrl || ex.media_url || ex.mediaUrl || '';
-  if(ex.media) ex.media = normalizeExerciseMediaUrl(ex.media);
   ex.mediaType = ex.mediaType || ex.media_type || (ex.youtubeId || ex.youtube_id ? 'yt' : 'img');
+  ex.media = cleanExerciseMedia(ex.media || ex.gif_url || ex.gifUrl || ex.media_url || ex.mediaUrl || '');
+  if(ex.media && ex.mediaType !== 'yt') ex.media = normalizeExerciseMediaUrl(ex.media);
   if(!ex.media && (ex.youtubeId || ex.youtube_id)){
     ex.media = ex.youtubeId || ex.youtube_id;
     ex.mediaType = 'yt';
   }
+  if(!hasUsableExerciseMedia(ex)) ex.media = '';
   ex.rest = Number(ex.rest || ex.descanso || ex.intervalo || 60);
   ex.note = ex.note || ex.obs || ex.observacao || ex.instructions || ex.instrucao || '';
   return ex;
@@ -1117,17 +1134,18 @@ function openOverview(idx){
         <div class="eli-sets">${prog.sets} × ${prog.reps}</div>
       </div>`;
     listEl.appendChild(item);
-    if(!ex.media){
+    if(!hasUsableExerciseMedia(ex)){
       const thumb = item.querySelector(".ex-thumb");
       loadExerciseMedia(ex).then(function(){
-        if(ex.media && thumb) thumb.innerHTML = mediaThumb(ex);
+        if(hasUsableExerciseMedia(ex) && thumb) thumb.innerHTML = mediaThumb(ex);
       });
     }
   });
   showScreen("overview");
 }
 function mediaThumb(ex){
-  if(ex.mediaType==="img" && ex.media)
+  if(ex.mediaType==="yt" && hasUsableExerciseMedia(ex)) return `<span class="ph">▶</span>`;
+  if(ex.mediaType==="img" && hasUsableExerciseMedia(ex))
     return mediaImgMarkup(ex.media, "", "<span class=ph>🏋️</span>");
   return `<span class="ph">🏋️</span>`;
 }
@@ -1236,6 +1254,16 @@ async function findExerciseGif(ex){
     }
   }
 
+  const normalizedName = normalizeExerciseName(ex.nome);
+  if(normalizedName){
+    for(const key of Object.keys(db)){
+      const dbName = normalizeExerciseName(db[key].name);
+      if(dbName === normalizedName || dbName.includes(normalizedName) || normalizedName.includes(dbName)){
+        return db[key].gif_url;
+      }
+    }
+  }
+
   // Fallback: busca por nome normalizado
   const nome = (ex.nome||'').toLowerCase()
     .replace(/[áàãâ]/g,'a').replace(/[éê]/g,'e')
@@ -1255,7 +1283,8 @@ async function findExerciseGif(ex){
 }
 
 async function loadExerciseMedia(ex){
-  if(ex.media) return;
+  if(hasUsableExerciseMedia(ex)) return;
+  ex.media = '';
   const gif = await findExerciseGif(ex);
   if(gif){
     ex.media = normalizeExerciseMediaUrl(gif);
@@ -1318,9 +1347,9 @@ function renderExercise(){
   const i = state.currentExercise;
   const ex = w.exercises[i];
   // Carregar GIF se não tiver — re-renderiza quando chegar
-  if(!ex.media){
+  if(!hasUsableExerciseMedia(ex)){
     loadExerciseMedia(ex).then(function(){
-      if(ex.media) renderExercise();
+      if(hasUsableExerciseMedia(ex)) renderExercise();
     });
   }
   const sd = state.sessionData[i];
@@ -1329,9 +1358,9 @@ function renderExercise(){
 
   // media
   let media="";
-  if(ex.mediaType==="yt" && ex.media){
+  if(ex.mediaType==="yt" && hasUsableExerciseMedia(ex)){
     media=`<iframe src="https://www.youtube.com/embed/${ex.media}?rel=0&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  } else if(ex.mediaType==="img" && ex.media){
+  } else if(ex.mediaType==="img" && hasUsableExerciseMedia(ex)){
     media=mediaImgMarkup(ex.media, ex.nome, "<div class=media-ph><span class=ph-ico>🏋️</span>Vídeo de execução indisponível.<br>Peça orientação ao Giovani.</div>")+
            `<span class="media-badge">Execução</span>`;
   } else {
