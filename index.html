@@ -922,7 +922,7 @@ function backToHub(){
   for(var i=0;i<frames.length;i++) frames[i].classList.remove('active');
   document.body.classList.remove('in-module');
   hubBackArmed = false;
-  try{ history.replaceState({hub:true}, '', location.href); }catch(e){}
+  armHubHistory();
 }
 
 function armHubHistory(){
@@ -1113,6 +1113,9 @@ window.addEventListener('message', function(e){
   if(e.data.type === 'fox-open-module' && e.data.module) openModule(e.data.module);
 });
 window.addEventListener('popstate', handleHubBack);
+window.addEventListener('pageshow', function(){
+  if(!document.body.classList.contains('in-module')) armHubHistory();
+});
 var driveFrame = document.getElementById('frame-drive');
 if(driveFrame) driveFrame.addEventListener('load', function(){
   setTimeout(sendCachedDataToDrive, 300);
