@@ -291,7 +291,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           <button class="btn secondary" type="button" id="loadProtocolBtn">Carregar publicado</button>
           <button class="btn secondary" type="button" id="sampleProtocolBtn">Modelo JSON</button>
           <button class="btn secondary" type="button" id="auditMediaBtn">Validar GIFs</button>
-          <button class="btn secondary hidden" type="button" id="applyMediaBtn">Preencher GIFs</button>
+          <button class="btn secondary hidden" type="button" id="applyMediaBtn">Preencher refs</button>
           <button class="btn secondary" type="button" id="notifyTrainingBtn">Avisar no WhatsApp</button>
         </div>
         <div id="mediaAudit" class="media-audit hidden"></div>
@@ -472,6 +472,13 @@ function extractDriveFolderId(value){
 }
 function normExercise(s){
   return norm(s).replace(/[^a-z0-9]+/g,' ').trim();
+}
+function exerciseRefFromName(s){
+  return normExercise(s).replace(/\s+/g,'-').replace(/^-+|-+$/g,'');
+}
+function exerciseRefFromItem(item, fallbackName){
+  if(!item) return exerciseRefFromName(fallbackName);
+  return item.exercise_ref || item.ref || item.slug || exerciseRefFromName(item.name || fallbackName);
 }
 function namesMatch(a,b){
   const na = normExercise(a);
@@ -722,7 +729,7 @@ function sampleProtocol(){
         id:'A',
         name:'Treino A - Corpo inteiro',
         exercises:[
-          {nome:'Agachamento livre', exercise_id:143, rest:60, media:'', mediaType:'img', note:'Controle a descida e mantenha coluna neutra.'}
+          {nome:'Agachamento livre', exercise_ref:'agachamento-livre', exercise_id:143, rest:60, media:'', mediaType:'img', note:'Controle a descida e mantenha coluna neutra.'}
         ]
       }
     ],
@@ -745,6 +752,7 @@ function validateProtocol(p){
       if(!ex.rest) ex.rest = 60;
       if(!ex.mediaType) ex.mediaType = 'img';
       if(ex.media === undefined) ex.media = '';
+      if(ex.exercise_ref === undefined) ex.exercise_ref = ex.exerciseRef || ex.ref || '';
       if(ex.note === undefined) ex.note = '';
     });
   });
@@ -765,14 +773,27 @@ function resetMediaAudit(){
 }
 
 function resolveExerciseMedia(db, ex){
+  if(ex.exercise_ref){
+    const ref = String(ex.exercise_ref).trim();
+    const found = findExerciseByRef(db, ref);
+    return {
+      status: found ? 'ok' : 'warn',
+      method: 'ref',
+      item: found,
+      url: ex.media || (found && found.gif_url) || '',
+      ref: ref,
+      message: found ? 'Referencia oficial preenchida no JSON.' : 'Referencia preenchida; nao encontrei no catalogo, mas o Training tentara a midia local.'
+    };
+  }
+
   if(ex.media){
-    return {status:'ok', method:'manual', item:null, url:ex.media, message:'GIF/manual ja preenchido no JSON.'};
+    return {status:'ok', method:'manual', item:null, url:ex.media, ref: exerciseRefFromName(ex.nome), message:'GIF/manual ja preenchido no JSON. Recomendo preencher tambem a referencia.'};
   }
 
   if(ex.exercise_id && db[String(ex.exercise_id)]){
     const item = db[String(ex.exercise_id)];
     if(namesMatch(item.name, ex.nome)){
-      return {status:'ok', method:'id', item, url:item.gif_url, message:'ID confirmado pelo nome do exercicio.'};
+      return {status:'ok', method:'id', item, url:item.gif_url, ref: exerciseRefFromItem(item, ex.nome), message:'ID confirmado pelo nome do exercicio.'};
     }
 
     const byNameAfterMismatch = findExerciseByName(db, ex.nome);
@@ -782,19 +803,30 @@ function resolveExerciseMedia(db, ex){
         method:'name',
         item:byNameAfterMismatch,
         url:byNameAfterMismatch.gif_url,
+        ref: exerciseRefFromItem(byNameAfterMismatch, ex.nome),
         message:'ID aponta para "' + item.name + '", mas o nome encontrou "' + byNameAfterMismatch.name + '".'
       };
     }
 
-    return {status:'miss', method:'id_mismatch', item, url:null, message:'ID aponta para "' + item.name + '" e nao achei alternativa por nome.'};
+    return {status:'miss', method:'id_mismatch', item, url:null, ref: exerciseRefFromName(ex.nome), message:'ID aponta para "' + item.name + '" e nao achei alternativa por nome.'};
   }
 
   const byName = findExerciseByName(db, ex.nome);
   if(byName){
-    return {status:'warn', method:'name', item:byName, url:byName.gif_url, message:'Sem ID confiavel; encontrado por nome.'};
+    return {status:'warn', method:'name', item:byName, url:byName.gif_url, ref: exerciseRefFromItem(byName, ex.nome), message:'Sem ID confiavel; encontrado por nome.'};
   }
 
-  return {status:'miss', method:'none', item:null, url:null, message:'Sem GIF encontrado. Preencha media manualmente.'};
+  return {status:'miss', method:'none', item:null, url:null, ref: exerciseRefFromName(ex.nome), message:'Sem match no catalogo. O Training tentara a referencia gerada pelo nome.'};
+}
+
+function findExerciseByRef(db, ref){
+  const wanted = String(ref || '').trim();
+  if(!wanted) return null;
+  for(const key of Object.keys(db)){
+    const item = db[key];
+    if(exerciseRefFromItem(item, item.name) === wanted) return item;
+  }
+  return null;
 }
 
 function findExerciseByName(db, nome){
@@ -828,7 +860,7 @@ async function auditProtocolMedia(){
     });
     lastMediaAudit = rows;
     renderMediaAudit(rows);
-    if(rows.some(r => r.resolved.url && !r.exercise.media)){
+    if(rows.some(r => (r.resolved.ref && !r.exercise.exercise_ref) || (r.resolved.url && !r.exercise.media))){
       applyBtn.classList.remove('hidden');
     }
   }catch(err){
@@ -855,7 +887,7 @@ function renderMediaAudit(rows){
       '<div class="media-thumb">'+img+'</div>' +
       '<div>' +
         '<div class="media-title">'+escapeHtml(r.workout.id)+' · '+escapeHtml(r.exercise.nome)+'</div>' +
-        '<div class="media-meta">JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
+        '<div class="media-meta">REF: '+escapeHtml(r.exercise.exercise_ref || res.ref || 'sem ref')+'<br>JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
         '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
       '</div>' +
     '</div>';
@@ -903,7 +935,7 @@ function renderMediaAudit(rows){
       '<div class="media-thumb">'+mediaPreviewHtml(currentUrl)+'</div>' +
       '<div class="media-content">' +
         '<div class="media-title">'+escapeHtml(r.workout.id)+' - '+escapeHtml(r.exercise.nome)+'</div>' +
-        '<div class="media-meta">JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
+        '<div class="media-meta">REF: '+escapeHtml(r.exercise.exercise_ref || res.ref || 'sem ref')+'<br>JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
         '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
         '<div class="media-controls">' +
           '<input id="mediaManual'+idx+'" value="'+escapeAttr(currentUrl)+'" placeholder="Cole aqui outro link/ID de GIF para este exercicio">' +
@@ -933,9 +965,11 @@ function updateProtocolMediaAt(rowIndex, mode){
     if(!value){ toast('Cole um link ou ID antes de usar manual.'); return false; }
     ex.media = normalizeMediaUrl(value);
     ex.mediaType = 'img';
+    ex.exercise_ref = ex.exercise_ref || row.resolved.ref || exerciseRefFromName(ex.nome);
   }else{
-    if(!row.resolved.url){ toast('Este exercicio nao tem sugestao para aplicar.'); return false; }
-    ex.media = normalizeMediaUrl(row.resolved.url);
+    if(!row.resolved.ref && !row.resolved.url){ toast('Este exercicio nao tem sugestao para aplicar.'); return false; }
+    ex.exercise_ref = row.resolved.ref || exerciseRefFromName(ex.nome);
+    ex.media = '';
     ex.mediaType = 'img';
     if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
   }
@@ -978,8 +1012,9 @@ function applyResolvedMedia(){
     let applied = 0;
     lastMediaAudit.forEach(row=>{
       const ex = protocol.workouts[row.workoutIndex].exercises[row.exerciseIndex];
-      if(row.resolved.url && !ex.media){
-        ex.media = normalizeMediaUrl(row.resolved.url);
+      if((row.resolved.ref && !ex.exercise_ref) || (row.resolved.item && row.resolved.item.exercise_id && !ex.exercise_id)){
+        ex.exercise_ref = row.resolved.ref || exerciseRefFromName(ex.nome);
+        ex.media = '';
         ex.mediaType = 'img';
         if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
         applied++;

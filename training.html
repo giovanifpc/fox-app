@@ -959,18 +959,23 @@ function cleanExerciseMedia(value){
   return text;
 }
 
+function exerciseRefFromName(value){
+  return normalizeExerciseName(value).replace(/\s+/g,'-').replace(/^-+|-+$/g,'');
+}
+
 function hasUsableExerciseMedia(ex){
   if(!ex) return false;
   var media = cleanExerciseMedia(ex.media);
   if(!media) return false;
   if((ex.mediaType || 'img') === 'yt') return true;
-  return /^https?:\/\//i.test(media) || /^(\.\/|\/|gifs\/|assets\/)/i.test(media);
+  return /^https?:\/\//i.test(media) || /^(\.\/|\/|gifs\/|assets\/|media\/)/i.test(media);
 }
 
 function normalizeProtocolExercise(ex){
   ex = ex && typeof ex === 'object' ? Object.assign({}, ex) : {};
   ex.nome = ex.nome || ex.name || ex.titulo || ex.title || 'Exercicio';
   ex.exercise_id = ex.exercise_id || ex.exerciseId || ex.exerciseID || ex.id || null;
+  ex.exercise_ref = ex.exercise_ref || ex.exerciseRef || ex.ref || exerciseRefFromName(ex.nome);
   ex.mediaType = ex.mediaType || ex.media_type || (ex.youtubeId || ex.youtube_id ? 'yt' : 'img');
   ex.media = cleanExerciseMedia(ex.media || ex.gif_url || ex.gifUrl || ex.media_url || ex.mediaUrl || '');
   if(ex.media && ex.mediaType !== 'yt') ex.media = normalizeExerciseMediaUrl(ex.media);
@@ -1201,6 +1206,7 @@ const EXERCISES_JSON_URLS = [
   'https://giovanifpc.github.io/fox-app/exercises.json?v=20260620'
 ];
 let EXERCISES_DB = null;
+const EXERCISE_MEDIA_CANDIDATES = {};
 
 async function loadExercisesDB(){
   if(EXERCISES_DB) return EXERCISES_DB;
@@ -1228,6 +1234,52 @@ function normalizeExercisesDB(raw){
 }
 
 // Busca por exercise_id (primário) ou nome (fallback)
+function exerciseRefFromItem(item, fallbackName){
+  if(!item) return exerciseRefFromName(fallbackName);
+  return item.exercise_ref || item.ref || item.slug || exerciseRefFromName(item.name || fallbackName);
+}
+
+function localExerciseMediaCandidates(ref){
+  ref = String(ref || '').trim();
+  if(!ref) return [];
+  const base = 'media/exercises/' + encodeURIComponent(ref);
+  return [
+    new URL(base + '.webp?v=20260620', location.href).href,
+    new URL(base + '.gif?v=20260620', location.href).href,
+    new URL(base + '.jpg?v=20260620', location.href).href,
+    new URL(base + '.png?v=20260620', location.href).href
+  ];
+}
+
+async function findExerciseCatalogItem(ex){
+  const db = await loadExercisesDB();
+  if(!db) return null;
+
+  if(ex.exercise_ref){
+    const ref = String(ex.exercise_ref).trim();
+    for(const key of Object.keys(db)){
+      const item = db[key];
+      if(exerciseRefFromItem(item, item.name) === ref) return item;
+    }
+  }
+
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    const item = db[String(ex.exercise_id)];
+    if(!ex.nome || exerciseNamesMatch(item.name, ex.nome)) return item;
+  }
+
+  const normalizedName = normalizeExerciseName(ex.nome);
+  if(normalizedName){
+    for(const key of Object.keys(db)){
+      const item = db[key];
+      const dbName = normalizeExerciseName(item.name);
+      if(dbName === normalizedName || dbName.includes(normalizedName) || normalizedName.includes(dbName)) return item;
+    }
+  }
+
+  return null;
+}
+
 function normalizeExerciseName(value){
   return String(value || '')
     .toLowerCase()
@@ -1286,9 +1338,16 @@ async function findExerciseGif(ex){
 async function loadExerciseMedia(ex){
   if(hasUsableExerciseMedia(ex)) return;
   ex.media = '';
-  const gif = await findExerciseGif(ex);
-  if(gif){
-    ex.media = normalizeExerciseMediaUrl(gif);
+  const item = await findExerciseCatalogItem(ex);
+  const ref = ex.exercise_ref || exerciseRefFromItem(item, ex.nome);
+  const candidates = localExerciseMediaCandidates(ref);
+  const fallbackGif = item && item.gif_url ? item.gif_url : await findExerciseGif(ex);
+  if(fallbackGif) candidates.push(normalizeExerciseMediaUrl(fallbackGif));
+  if(candidates.length){
+    ex.exercise_ref = ref;
+    ex.mediaCandidates = candidates;
+    ex.media = candidates[0];
+    EXERCISE_MEDIA_CANDIDATES[ex.media] = candidates;
     ex.mediaType = 'img';
   }
 }
@@ -1306,6 +1365,7 @@ function driveFileId(url){
 }
 
 function exerciseMediaCandidates(url){
+  if(EXERCISE_MEDIA_CANDIDATES[url]) return EXERCISE_MEDIA_CANDIDATES[url];
   const id = driveFileId(url);
   if(!id) return [url];
   return [
@@ -1319,8 +1379,8 @@ function normalizeExerciseMediaUrl(url){
   return exerciseMediaCandidates(url)[0] || url;
 }
 
-function mediaImgMarkup(src, alt, fallbackHtml){
-  const candidates = exerciseMediaCandidates(src);
+function mediaImgMarkup(src, alt, fallbackHtml, candidatesOverride){
+  const candidates = Array.isArray(candidatesOverride) && candidatesOverride.length ? candidatesOverride : exerciseMediaCandidates(src);
   return `<img src="${escapeAttr(candidates[0])}" alt="${escapeAttr(alt)}" loading="lazy" data-src-list="${encodeURIComponent(JSON.stringify(candidates))}" data-src-idx="0" data-fallback-html="${encodeURIComponent(fallbackHtml)}" onerror="swapExerciseImage(this)">`;
 }
 
