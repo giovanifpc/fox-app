@@ -450,6 +450,7 @@ var latestNutriData = null;
 var latestSleepData = null;
 var reportDataRequested = false;
 var reportRequestTimer = null;
+var SLEEP_MODAL_MIN_HOUR = 6;
 
 var supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 window.FOX_SUPA = supa;
@@ -811,6 +812,8 @@ function markSelected(sel, el){
 }
 function updateSleepButton(){ document.getElementById('sleepConfirm').disabled = !(sleepQuality && sleepDuration); }
 function maybeShowSleepModal(){
+  var now = new Date();
+  if(now.getHours() < SLEEP_MODAL_MIN_HOUR) return;
   var key = 'foxSleep_' + todayKey();
   var has = false;
   try{ has = !!localStorage.getItem(key); }catch(e){}
