@@ -1000,10 +1000,7 @@ function openPublishedReport(rep){
     window.open(driveLink, '_blank');
     return;
   }
-  const text = [
-    rep.ai_draft || '',
-    rep.coach_notes ? '\n\nAjustes do Giovani:\n' + rep.coach_notes : ''
-  ].join('').trim() || 'Devolutiva publicada.';
+  const text = String(rep.ai_draft || '').trim() || 'Devolutiva publicada.';
   const win = window.open('', '_blank');
   if(!win){
     toast('Permita pop-ups para abrir a devolutiva.');

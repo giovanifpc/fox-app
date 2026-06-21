@@ -1634,10 +1634,10 @@ function buildReportText(){
     'Contexto e nota semanal:',
     contextTextForReport() || '(sem contexto salvo)',
     '',
-    'Rascunho:',
+    'Devolutiva:',
     $('reportAiDraft').value.trim() || '(sem rascunho)',
     '',
-    'Notas do Giovani:',
+    'Ajustes internos do Giovani (nao publicar):',
     $('reportCoachNotes').value.trim() || '(sem notas)'
   ].join('\n');
 }
@@ -1647,10 +1647,7 @@ function openReportPdfView(){
     toast('Selecione um relatorio primeiro.');
     return;
   }
-  const text = [
-    $('reportAiDraft').value.trim(),
-    $('reportCoachNotes').value.trim() ? '\n\nAjustes do Giovani:\n' + $('reportCoachNotes').value.trim() : ''
-  ].join('').trim();
+  const text = $('reportAiDraft').value.trim();
   if(!text){
     toast('Preencha ou revise a devolutiva antes de gerar PDF.');
     return;
