@@ -67,6 +67,17 @@ function performedTraining(row: Json) {
   return numberValue(row.sets_done) > 0 || numberValue(row.exercises_done) > 0;
 }
 
+function trainingCardioMinutes(row: Json) {
+  const raw = row.raw_data && typeof row.raw_data === "object" ? row.raw_data as Json : {};
+  const fromRaw = numberValue(raw.cardioMinutes) || numberValue(raw.cardio_minutes);
+  if (fromRaw > 0) return fromRaw;
+  const detail = Array.isArray(row.detail) ? row.detail as Json[] : (Array.isArray(raw.detail) ? raw.detail as Json[] : []);
+  return detail.reduce((sum, item) => {
+    if (String(item.type || "") !== "cardio_check") return sum;
+    return sum + numberValue(item.minutesDone);
+  }, 0);
+}
+
 function summarizeTraining(rows: Json[]) {
   const sessions = rows.filter(performedTraining);
   const complete = sessions.filter((row) => row.incomplete !== true);
@@ -77,11 +88,13 @@ function summarizeTraining(rows: Json[]) {
     sets_done: sessions.reduce((sum, row) => sum + numberValue(row.sets_done), 0),
     exercises_done: sessions.reduce((sum, row) => sum + numberValue(row.exercises_done), 0),
     minutes: sessions.reduce((sum, row) => sum + numberValue(row.minutes), 0),
+    cardio_minutes: sessions.reduce((sum, row) => sum + trainingCardioMinutes(row), 0),
     workouts: sessions.map((row) => ({
       date: String(row.completed_at || "").slice(0, 10),
       workout_name: row.workout_name || null,
       sets_done: row.sets_done || 0,
       exercises_done: row.exercises_done || 0,
+      cardio_minutes: trainingCardioMinutes(row),
       incomplete: row.incomplete === true,
     })),
   };
@@ -184,6 +197,7 @@ function fallbackDraft(reportData: Json, training: Json, nutri: Json, goals: Jso
     "Resumo objetivo:",
     `- Treinos realizados: ${training.sessions || 0}, sendo ${training.complete_sessions || 0} completos.`,
     `- Series registradas: ${training.sets_done || 0}.`,
+    `- Caminhada/cardio registrado: ${training.cardio_minutes || 0} min.`,
     `- Dias com alimentacao registrada: ${nutri.food_days || 0}.`,
     `- Dias com hidratacao registrada: ${nutri.water_days || 0}.`,
     "",
