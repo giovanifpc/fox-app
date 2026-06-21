@@ -383,6 +383,7 @@ let selectedClient = null;
 let currentGoal = null;
 let currentProtocol = null;
 let exercisesDb = null;
+let exerciseLibrary = null;
 let lastMediaAudit = [];
 let creatingClient = false;
 let weeklyReports = [];
@@ -558,6 +559,41 @@ async function loadExercisesDb(){
     }catch(e){}
   }
   throw new Error('Nao foi possivel carregar exercises.json. Confirme se o arquivo exercises.json foi enviado para a mesma pasta publica do admin.html. Tentativas: ' + tried.join(' | '));
+}
+
+async function loadExerciseLibrary(){
+  if(exerciseLibrary) return exerciseLibrary;
+  const {data, error} = await supa.from('exercise_library')
+    .select('exercise_ref,name,exercise_id,media_url,media_type,local_path,source,notes,updated_at');
+  if(error){
+    exerciseLibrary = {};
+    return exerciseLibrary;
+  }
+  exerciseLibrary = {};
+  (data || []).forEach(item=>{
+    if(item && item.exercise_ref) exerciseLibrary[item.exercise_ref] = item;
+  });
+  return exerciseLibrary;
+}
+
+async function saveExerciseLibraryItem(ex, mediaUrl, row){
+  const ref = ex.exercise_ref || (row && row.resolved && row.resolved.ref) || exerciseRefFromName(ex.nome);
+  const item = row && row.resolved && row.resolved.item;
+  const payload = {
+    exercise_ref: ref,
+    name: ex.nome || (item && item.name) || ref,
+    exercise_id: ex.exercise_id || (item && item.exercise_id) || null,
+    media_url: mediaUrl || ex.media || '',
+    media_type: 'img',
+    local_path: 'media/exercises/' + ref + '.webp',
+    source: mediaUrl ? 'manual' : 'ref',
+    updated_by: ADMIN_EMAIL
+  };
+  const {error} = await supa.from('exercise_library')
+    .upsert(payload, {onConflict:'exercise_ref'});
+  if(error) throw error;
+  exerciseLibrary = null;
+  return ref;
 }
 
 async function boot(){
@@ -773,6 +809,20 @@ function resetMediaAudit(){
 }
 
 function resolveExerciseMedia(db, ex){
+  const lib = exerciseLibrary || {};
+  const refCandidate = ex.exercise_ref || exerciseRefFromName(ex.nome);
+  if(lib[refCandidate] && lib[refCandidate].media_url){
+    const item = findExerciseByIdOrName(db, ex);
+    return {
+      status:'ok',
+      method:'library',
+      item: item,
+      url: lib[refCandidate].media_url,
+      ref: refCandidate,
+      message:'Midia encontrada na biblioteca oficial.'
+    };
+  }
+
   if(ex.exercise_ref){
     const ref = String(ex.exercise_ref).trim();
     const found = findExerciseByRef(db, ref);
@@ -860,6 +910,7 @@ async function auditProtocolMedia(){
   try{
     const protocol = readProtocolJson();
     const db = await loadExercisesDb();
+    await loadExerciseLibrary();
     const rows = [];
     protocol.workouts.forEach((w, wi)=>{
       w.exercises.forEach((ex, ei)=>{
@@ -959,7 +1010,7 @@ function renderMediaAudit(rows){
   }).join('');
 }
 
-function updateProtocolMediaAt(rowIndex, mode){
+async function updateProtocolMediaAt(rowIndex, mode){
   if(!lastMediaAudit[rowIndex]){ toast('Valide os GIFs novamente.'); return false; }
   const row = lastMediaAudit[rowIndex];
   const protocol = readProtocolJson();
@@ -975,31 +1026,33 @@ function updateProtocolMediaAt(rowIndex, mode){
     ex.media = normalizeMediaUrl(value);
     ex.mediaType = 'img';
     ex.exercise_ref = ex.exercise_ref || row.resolved.ref || exerciseRefFromName(ex.nome);
+    await saveExerciseLibraryItem(ex, ex.media, row);
   }else{
     if(!row.resolved.ref && !row.resolved.url){ toast('Este exercicio nao tem sugestao para aplicar.'); return false; }
     ex.exercise_ref = row.resolved.ref || exerciseRefFromName(ex.nome);
     ex.media = '';
     ex.mediaType = 'img';
     if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
+    if(row.resolved.url) await saveExerciseLibraryItem(ex, normalizeMediaUrl(row.resolved.url), row);
   }
 
   $('protocolJson').value = JSON.stringify(protocol, null, 2);
   return true;
 }
 
-function applyOneResolvedMedia(rowIndex){
+async function applyOneResolvedMedia(rowIndex){
   try{
-    if(updateProtocolMediaAt(rowIndex, 'suggested')){
+    if(await updateProtocolMediaAt(rowIndex, 'suggested')){
       toast('GIF aplicado neste exercicio.');
       auditProtocolMedia();
     }
   }catch(err){ toast('Erro ao aplicar GIF: ' + errorText(err)); }
 }
 
-function applyManualMedia(rowIndex){
+async function applyManualMedia(rowIndex){
   try{
-    if(updateProtocolMediaAt(rowIndex, 'manual')){
-      toast('GIF manual aplicado neste exercicio.');
+    if(await updateProtocolMediaAt(rowIndex, 'manual')){
+      toast('GIF manual salvo na biblioteca.');
       auditProtocolMedia();
     }
   }catch(err){ toast('Erro ao aplicar GIF manual: ' + errorText(err)); }

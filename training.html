@@ -373,6 +373,16 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
           }
         })
         .catch(function(){});
+
+      supa.from('exercise_library')
+        .select('exercise_ref,name,exercise_id,media_url,media_type,local_path,updated_at')
+        .then(function(r){
+          if(r && r.data){
+            window.FOX_EXERCISE_LIBRARY = r.data;
+            document.dispatchEvent(new CustomEvent('fox-exercise-library-ready', {detail: r.data}));
+          }
+        })
+        .catch(function(){});
     });
   };
   document.head.appendChild(sdk);
@@ -1207,6 +1217,21 @@ const EXERCISES_JSON_URLS = [
 ];
 let EXERCISES_DB = null;
 const EXERCISE_MEDIA_CANDIDATES = {};
+let EXERCISE_LIBRARY = {};
+
+function normalizeExerciseLibrary(raw){
+  const out = {};
+  (raw || []).forEach(function(item){
+    if(item && item.exercise_ref) out[item.exercise_ref] = item;
+  });
+  return out;
+}
+
+document.addEventListener('fox-exercise-library-ready', function(e){
+  EXERCISE_LIBRARY = normalizeExerciseLibrary(e.detail);
+});
+
+if(window.FOX_EXERCISE_LIBRARY) EXERCISE_LIBRARY = normalizeExerciseLibrary(window.FOX_EXERCISE_LIBRARY);
 
 async function loadExercisesDB(){
   if(EXERCISES_DB) return EXERCISES_DB;
@@ -1345,6 +1370,12 @@ async function loadExerciseMedia(ex){
   const item = await findExerciseCatalogItem(ex);
   const ref = ex.exercise_ref || exerciseRefFromItem(item, ex.nome);
   const candidates = localExerciseMediaCandidates(ref);
+  const libraryItem = EXERCISE_LIBRARY && EXERCISE_LIBRARY[ref];
+  if(libraryItem && libraryItem.media_url){
+    exerciseMediaCandidates(libraryItem.media_url).forEach(function(url){
+      if(candidates.indexOf(url) < 0) candidates.push(url);
+    });
+  }
   const fallbackGif = item && item.gif_url ? item.gif_url : await findExerciseGif(ex);
   if(fallbackGif) exerciseMediaCandidates(fallbackGif).forEach(function(url){
     if(candidates.indexOf(url) < 0) candidates.push(url);
