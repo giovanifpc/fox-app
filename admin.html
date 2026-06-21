@@ -233,6 +233,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
       <div class="actions">
         <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
         <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
+        <button class="btn danger hidden" type="button" id="deleteClientBtn">Excluir cliente</button>
         <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
         <button class="btn secondary" type="button" id="useCurrentWeekBtn">Usar essa semana</button>
         <button class="btn danger" type="button" id="logoutBtn">Sair</button>
@@ -724,6 +725,7 @@ function fillClientForm(){
   $('nome').disabled = false;
   $('email').disabled = !creatingClient;
   $('saveClientBtn').classList.toggle('hidden', !creatingClient);
+  $('deleteClientBtn').classList.toggle('hidden', creatingClient || !selectedClient.email);
   $('publishBtn').disabled = creatingClient;
   $('reloadGoalBtn').disabled = creatingClient;
   $('nome').value = selectedClient.nome || '';
@@ -1969,10 +1971,52 @@ async function saveClient(){
   }
 }
 
+async function deleteSelectedClient(){
+  if(!selectedClient || creatingClient || !selectedClient.email) return;
+  const email = String(selectedClient.email || '').toLowerCase();
+  const nome = selectedClient.nome || email;
+  const typed = prompt('Para excluir o acesso de ' + nome + ', digite o email completo do cliente:');
+  if(typed === null) return;
+  if(String(typed).trim().toLowerCase() !== email){
+    toast('Email diferente. Exclusao cancelada.');
+    return;
+  }
+  if(!confirm('Confirmar exclusao do cliente ' + email + '? O acesso sera removido, mas historicos e relatorios ja salvos ficam preservados.')) return;
+  const btn = $('deleteClientBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Excluindo...';
+  try{
+    const {error} = await supa.from('clients')
+      .delete()
+      .eq('email', email);
+    if(error) throw error;
+    clients = clients.filter(c => String(c.email || '').toLowerCase() !== email);
+    selectedClient = null;
+    creatingClient = false;
+    currentGoal = null;
+    weeklyReports = [];
+    selectedReport = null;
+    clientContext = null;
+    clientWeeklyNote = null;
+    renderClients();
+    $('goalForm').classList.add('hidden');
+    $('emptyForm').classList.remove('hidden');
+    $('emptyForm').textContent = 'Cliente excluido. Selecione outro cliente ou cadastre um novo.';
+    toast('Cliente excluido do acesso ao app.');
+  }catch(err){
+    toast('Erro ao excluir cliente: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
 $('clientSearch').addEventListener('input', renderClients);
 $('goalForm').addEventListener('submit', publishGoals);
 $('newClientBtn').addEventListener('click', startNewClient);
 $('saveClientBtn').addEventListener('click', saveClient);
+$('deleteClientBtn').addEventListener('click', deleteSelectedClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
 $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
 $('useCurrentWeekReportBtn').addEventListener('click', useCurrentWeek);
