@@ -637,6 +637,7 @@ function foxTrainingPerformed(h){
   if(Number(h.setsDone || 0) > 0 || Number(h.exDone || 0) > 0) return true;
   var detail = Array.isArray(h.detail) ? h.detail : [];
   return detail.some(function(ex){
+    if(ex && ex.type === 'cardio_check') return !!ex.done || Number(ex.minutesDone || 0) > 0;
     var sets = Array.isArray(ex.sets) ? ex.sets : [];
     return sets.some(function(s){ return !!s.done; });
   });

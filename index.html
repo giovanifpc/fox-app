@@ -738,6 +738,7 @@ function isTrainingPerformed(h){
   if(Number(h.setsDone || 0) > 0 || Number(h.exDone || 0) > 0) return true;
   var detail = Array.isArray(h.detail) ? h.detail : [];
   return detail.some(function(ex){
+    if(ex && ex.type === 'cardio_check') return !!ex.done || Number(ex.minutesDone || 0) > 0;
     var sets = Array.isArray(ex.sets) ? ex.sets : [];
     return sets.some(function(s){ return !!s.done; });
   });
@@ -1014,9 +1015,14 @@ async function foxSaveTrainingSession(record){
       return total + sets.filter(function(s){ return !!s.done; }).length;
     }, 0);
     var exercisesDone = detail.filter(function(ex){
+      if(ex && ex.type === 'cardio_check') return !!ex.done || Number(ex.minutesDone || 0) > 0;
       var sets = Array.isArray(ex.sets) ? ex.sets : [];
       return sets.some(function(s){ return !!s.done; });
     }).length;
+    var cardioMinutes = detail.reduce(function(total, ex){
+      if(!ex || ex.type !== 'cardio_check') return total;
+      return total + Math.max(0, Math.round(Number(ex.minutesDone || 0)));
+    }, 0);
     var payload = {
       client_email: String(window.FOX_USER_EMAIL).toLowerCase(),
       session_uid: record.sessionUid || ('tr_' + Date.now()),
@@ -1025,7 +1031,7 @@ async function foxSaveTrainingSession(record){
       workout_name: record.workoutName || null,
       ciclo: record.cycle || null,
       semana: record.week || null,
-      minutes: record.minutes || 0,
+      minutes: Math.max(Number(record.minutes || 0), cardioMinutes),
       sets_done: setsDone || record.setsDone || 0,
       exercises_done: exercisesDone || record.exDone || 0,
       incomplete: !!record.incomplete,
