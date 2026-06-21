@@ -1509,6 +1509,7 @@ let currentCatFilter = '';
 let onlineFoodCache = {};
 let openFoodSearchCache = {};
 let onlineSearchToken = 0;
+let remoteNutriProfileLoaded = false;
 // Anamnese state
 let anamData = { sex:'', activity:'', goal:'' };
 let computedGoals = null;
@@ -1662,6 +1663,52 @@ function safeRemove(key){
   try{ localStorage.removeItem(key); }catch(e){}
 }
 
+function getClientEmail(){
+  return String(window.FOX_EMAIL || (window.FOX_SESSION && window.FOX_SESSION.user && window.FOX_SESSION.user.email) || '').toLowerCase();
+}
+
+function isValidNutriProfile(p){
+  return !!(p && p.name && p.goals && p.goals.kcal && p.goals.prot && p.goals.carb && p.goals.fat);
+}
+
+async function loadRemoteNutriProfile(){
+  if(remoteNutriProfileLoaded) return null;
+  remoteNutriProfileLoaded = true;
+  var supa = window.FOX_SUPA;
+  var email = getClientEmail();
+  if(!supa || !email) return null;
+  try{
+    var r = await supa.from('client_context')
+      .select('anamnesis')
+      .eq('client_email', email)
+      .maybeSingle();
+    var p = r && r.data && r.data.anamnesis && r.data.anamnesis.nutri_profile;
+    if(isValidNutriProfile(p)){
+      profile = p;
+      safeSet('fp_profile', JSON.stringify(profile));
+      return profile;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function saveRemoteNutriProfile(){
+  var supa = window.FOX_SUPA;
+  var email = getClientEmail();
+  if(!supa || !email || !isValidNutriProfile(profile)) return;
+  try{
+    var current = {};
+    var r = await supa.from('client_context')
+      .select('anamnesis')
+      .eq('client_email', email)
+      .maybeSingle();
+    if(r && r.data && r.data.anamnesis) current = r.data.anamnesis;
+    current.nutri_profile = profile;
+    await supa.from('client_context')
+      .upsert({client_email: email, anamnesis: current}, {onConflict:'client_email'});
+  }catch(e){}
+}
+
 function initApp(){
   setupKeyboardHandling();
   const splash = document.getElementById('splash');
@@ -1669,14 +1716,16 @@ function initApp(){
   splash.classList.add('hide');
   setTimeout(()=>{ splash.classList.add('gone'); }, 450);
   // Tenta ler perfil
-  setTimeout(()=>{
+  setTimeout(async ()=>{
     let s = null;
     try { s = safeGet('fp_profile'); } catch(e){}
     if(s){
       try { profile = JSON.parse(s); startApp(); }
       catch(e){ document.getElementById('setup').classList.add('active'); }
     } else {
-      document.getElementById('setup').classList.add('active');
+      const remoteProfile = await loadRemoteNutriProfile();
+      if(remoteProfile) startApp();
+      else document.getElementById('setup').classList.add('active');
     }
   }, 300);
 }
@@ -1688,14 +1737,18 @@ if(document.readyState === 'loading'){
   initApp();
 }
 // Segurança extra: se em 3s ainda não saiu do splash, força
-setTimeout(()=>{
+setTimeout(async ()=>{
   const splash = document.getElementById('splash');
   if(splash && !splash.classList.contains('gone')){
     splash.classList.add('hide');
     setTimeout(()=>{ splash.classList.add('gone'); }, 450);
     const s = safeGet('fp_profile');
     if(s){ try{ profile=JSON.parse(s); startApp(); }catch(e){} }
-    else { document.getElementById('setup').classList.add('active'); }
+    else {
+      const remoteProfile = await loadRemoteNutriProfile();
+      if(remoteProfile) startApp();
+      else document.getElementById('setup').classList.add('active');
+    }
   }
 }, 3000);
 
@@ -1837,6 +1890,7 @@ function finishSetup(){
     tmb:computedGoals.tmb, tdee:computedGoals.tdee
   };
   safeSet('fp_profile',JSON.stringify(profile));
+  saveRemoteNutriProfile();
   document.getElementById('setup').classList.remove('active');
   showWelcome(profile.name);
 }
@@ -1854,6 +1908,7 @@ function closeWelcome(){
 
 function startApp(){
   if(!profile){ document.getElementById('setup').classList.add('active'); return; }
+  saveRemoteNutriProfile();
   // Push history state so back button can be intercepted
   try{ history.pushState({app:true}, '', window.location.href); }catch(e){}
   document.getElementById('app').classList.add('active');
@@ -2522,6 +2577,7 @@ function saveEditedGoals(){
     fat:parseInt(document.getElementById('me-fat').value)||profile.goals.fat,
   };
   safeSet('fp_profile',JSON.stringify(profile));
+  saveRemoteNutriProfile();
   closeModal('modal-goals');
   renderProfile();
   renderToday();
@@ -2535,6 +2591,7 @@ function openEditBio(){
   profile.weight=parseFloat(w)||profile.weight;
   profile.height=parseInt(h)||profile.height;
   safeSet('fp_profile',JSON.stringify(profile));
+  saveRemoteNutriProfile();
   renderProfile();
   showToast('OK Dados atualizados!');
 }
@@ -3044,6 +3101,7 @@ function restoreNutriData(data){
   if(data.profile&&!safeGet('fp_profile')) safeSet('fp_profile',JSON.stringify(data.profile));
   try{
     profile=JSON.parse(safeGet('fp_profile')||'null');
+    if(isValidNutriProfile(profile)) saveRemoteNutriProfile();
     renderToday();
     renderHistory();
     renderReportDays();
