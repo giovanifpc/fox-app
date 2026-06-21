@@ -373,6 +373,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
           </div>
           <div class="actions">
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
+            <button class="btn secondary" type="button" id="rewriteReportBtn">Reescrever com ajustes</button>
             <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
             <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
             <button class="btn secondary" type="button" id="printReportBtn">Gerar PDF</button>
@@ -1424,6 +1425,10 @@ function renderAiStatus(report){
     el.classList.add('claude');
     title = 'Origem do rascunho: Claude API';
     detail = 'Modelo: ' + (meta.model || 'nao informado') + '. Revise antes de publicar.';
+  }else if(meta.status === 'claude_max_tokens'){
+    el.classList.add('error');
+    title = 'Origem do rascunho: Claude API, possivel corte por limite';
+    detail = 'Modelo: ' + (meta.model || 'nao informado') + '. Gere novamente ou use Reescrever com ajustes.';
   }else if(meta.status === 'fallback_no_key'){
     el.classList.add('fallback');
     title = 'Origem do rascunho: fallback sem Claude API';
@@ -1677,6 +1682,36 @@ async function saveReportReview(status){
     toast(status ? 'Relatorio marcado como pronto.' : 'Revisao salva.');
   }catch(err){
     toast('Erro ao salvar relatorio: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function rewriteReportWithAdjustments(){
+  if(!selectedReport) return;
+  const notes = $('reportCoachNotes').value.trim();
+  if(!notes){
+    toast('Escreva os ajustes do Giovani antes de reescrever.');
+    return;
+  }
+  const btn = $('rewriteReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Reescrevendo...';
+  try{
+    const data = await invokeWeeklyReport({
+      action: 'rewrite',
+      report_id: selectedReport.id,
+      current_draft: $('reportAiDraft').value.trim(),
+      coach_notes: notes
+    });
+    if(!data || data.ok === false) throw {source:'weekly-report-rewrite', response:data || null, error:data && data.error ? data.error : 'Funcao nao retornou ok.'};
+    toast('Rascunho reescrito com seus ajustes.');
+    await loadWeeklyReports();
+    if(data.report && data.report.id) selectReport(data.report.id);
+  }catch(err){
+    toast('Erro ao reescrever: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
@@ -1938,6 +1973,7 @@ $('generateReportBtn').addEventListener('click', generateWeeklyReportDraft);
 $('loadReportsBtn').addEventListener('click', function(){ loadWeeklyReports(true); });
 $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
+$('rewriteReportBtn').addEventListener('click', rewriteReportWithAdjustments);
 $('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('publishReportBtn').addEventListener('click', publishReportToApp);
 $('printReportBtn').addEventListener('click', openReportPdfView);
