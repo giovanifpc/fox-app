@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 type Json = Record<string, unknown>;
 type DraftResult = {
   text: string;
-  status: "claude" | "fallback_no_key" | "fallback_empty_response";
+  status: "claude" | "claude_max_tokens" | "fallback_no_key" | "fallback_empty_response";
   model: string;
 };
 
@@ -251,7 +251,7 @@ async function generateClaudeDraft(input: {
     },
     body: JSON.stringify({
       model: anthropicModel,
-      max_tokens: 1200,
+      max_tokens: 3200,
       temperature: 0.4,
       messages: [
         {
@@ -268,6 +268,7 @@ async function generateClaudeDraft(input: {
   }
 
   const data = await res.json();
+  const stopReason = typeof data.stop_reason === "string" ? data.stop_reason : "";
   const blocks = Array.isArray(data.content) ? data.content : [];
   const text = blocks
     .filter((block: Json) => block.type === "text" && typeof block.text === "string")
@@ -285,9 +286,138 @@ async function generateClaudeDraft(input: {
 
   return {
     text,
-    status: "claude",
+    status: stopReason === "max_tokens" ? "claude_max_tokens" : "claude",
     model: anthropicModel,
   };
+}
+
+async function rewriteClaudeDraft(input: {
+  report: Json;
+  currentDraft: string;
+  coachNotes: string;
+}): Promise<DraftResult> {
+  if (!anthropicApiKey) {
+    return {
+      text: input.currentDraft,
+      status: "fallback_no_key",
+      model: "fallback",
+    };
+  }
+
+  const prompt = [
+    "Voce e assistente do Giovani, treinador da Fox Performance.",
+    "Reescreva a devolutiva semanal considerando obrigatoriamente os ajustes do Giovani.",
+    "Nao invente dados. Use o relatorio original, o rascunho atual e os ajustes fornecidos.",
+    "Preserve o que estiver correto, corrija o que Giovani apontar e entregue uma versao final revisavel.",
+    "Nao mencione JSON, banco de dados, automacao, IA, Supabase, Claude ou campos tecnicos.",
+    "Escreva em portugues do Brasil.",
+    "",
+    "Relatorio original:",
+    compactForPrompt({
+      report_data: input.report.report_data,
+      training_summary: input.report.training_summary,
+      nutri_summary: input.report.nutri_summary,
+      goals_snapshot: input.report.goals_snapshot,
+    }),
+    "",
+    "Rascunho atual:",
+    input.currentDraft,
+    "",
+    "Ajustes do Giovani:",
+    input.coachNotes,
+  ].join("\n");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": anthropicApiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: anthropicModel,
+      max_tokens: 3200,
+      temperature: 0.35,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Claude API falhou: ${res.status} ${text.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const stopReason = typeof data.stop_reason === "string" ? data.stop_reason : "";
+  const blocks = Array.isArray(data.content) ? data.content : [];
+  const text = blocks
+    .filter((block: Json) => block.type === "text" && typeof block.text === "string")
+    .map((block: Json) => block.text)
+    .join("\n\n")
+    .trim();
+
+  if (!text) {
+    return {
+      text: input.currentDraft,
+      status: "fallback_empty_response",
+      model: anthropicModel,
+    };
+  }
+
+  return {
+    text,
+    status: stopReason === "max_tokens" ? "claude_max_tokens" : "claude",
+    model: anthropicModel,
+  };
+}
+
+async function rewriteReport(reportId: string, coachNotes: string, currentDraft: string) {
+  const { data: report, error } = await supa
+    .from("weekly_reports")
+    .select("*")
+    .eq("id", reportId)
+    .single();
+  if (error) throw error;
+  if (!report) throw new Error("Relatorio nao encontrado.");
+
+  const draftResult = await rewriteClaudeDraft({
+    report: report as Json,
+    currentDraft: currentDraft || String(report.ai_draft || ""),
+    coachNotes,
+  });
+
+  const rawData = report.raw_data && typeof report.raw_data === "object" ? report.raw_data as Json : {};
+  const reportData = report.report_data && typeof report.report_data === "object" ? report.report_data as Json : {};
+  reportData["ai_status"] = draftResult.status;
+  reportData["ai_model"] = draftResult.model;
+  reportData["ai_rewritten_at"] = new Date().toISOString();
+
+  const { data, error: updateError } = await supa
+    .from("weekly_reports")
+    .update({
+      ai_draft: draftResult.text,
+      coach_notes: coachNotes || null,
+      status: "draft",
+      published: false,
+      report_data: reportData,
+      raw_data: {
+        ...rawData,
+        ai_status: draftResult.status,
+        ai_model: draftResult.model,
+        ai_rewritten_at: reportData["ai_rewritten_at"],
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", reportId)
+    .select("id,client_email,period_start,period_end,status")
+    .single();
+  if (updateError) throw updateError;
+  return data;
 }
 
 async function buildReportForClient(client: Json, start: string, end: string) {
@@ -431,6 +561,19 @@ serve(async (req) => {
     }
 
     const body = (req.method === "POST" ? await req.json().catch(() => ({})) : {}) as Record<string, unknown>;
+    if (body.action === "rewrite") {
+      const reportId = String(body.report_id || "");
+      if (!reportId) throw new Error("report_id obrigatorio para reescrever.");
+      const rewritten = await rewriteReport(
+        reportId,
+        String(body.coach_notes || ""),
+        String(body.current_draft || ""),
+      );
+      return new Response(JSON.stringify({ ok: true, report: rewritten }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const period = {
       start: String(body.period_start || body.start || defaultPreviousWeek().start),
       end: String(body.period_end || body.end || defaultPreviousWeek().end),
