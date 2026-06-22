@@ -568,17 +568,16 @@ body{padding-top:44px!important;min-height:100svh!important}
     <div class="finish-stat"><div class="fs-num" id="fsSets">0</div><div class="fs-lbl">séries</div></div>
     <div class="finish-stat"><div class="fs-num" id="fsTime">0</div><div class="fs-lbl">minutos</div></div>
   </div>
-  <div id="finishRating" style="margin:20px 0 4px">
-    <div style="font-size:13px;color:var(--txt-dim);margin-bottom:12px;text-align:center">Como foi o treino de hoje?</div>
-    <div style="display:flex;justify-content:center;gap:12px">
-      <button class="rating-btn" data-val="cansado"  onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">😴<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Cansado</div></button>
-      <button class="rating-btn" data-val="normal"   onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">😐<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Normal</div></button>
-      <button class="rating-btn" data-val="otimo"    onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">💪<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Ótimo</div></button>
+  <div id="finishRating" style="margin:20px 0 8px">
+    <div style="font-size:13px;color:var(--txt-dim);margin-bottom:14px;text-align:center;letter-spacing:.3px">Como foi o treino de hoje?</div>
+    <div style="display:flex;justify-content:center;gap:14px">
+      <button class="rating-btn" data-val="cansado" onclick="rateWorkout(this)" style="flex:1;max-width:96px;padding:16px 4px;border-radius:16px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:28px;cursor:pointer;transition:.2s">😴<div style="font-size:11px;margin-top:6px;color:var(--txt-dim);font-weight:600">Cansado</div></button>
+      <button class="rating-btn" data-val="normal"  onclick="rateWorkout(this)" style="flex:1;max-width:96px;padding:16px 4px;border-radius:16px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:28px;cursor:pointer;transition:.2s">😐<div style="font-size:11px;margin-top:6px;color:var(--txt-dim);font-weight:600">Normal</div></button>
+      <button class="rating-btn" data-val="otimo"   onclick="rateWorkout(this)" style="flex:1;max-width:96px;padding:16px 4px;border-radius:16px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:28px;cursor:pointer;transition:.2s">💪<div style="font-size:11px;margin-top:6px;color:var(--txt-dim);font-weight:600">Ótimo</div></button>
     </div>
   </div>
   <div class="finish-actions">
-    <button class="btn btn-primary" onclick="shareWorkout()">📲 Enviar feedback ao Giovani</button>
-    <button class="btn btn-ghost" onclick="goTab('home')">Voltar ao início</button>
+    <button class="btn btn-primary" id="finishHomeBtn" onclick="goTab('home')" style="display:none">Ir para o início</button>
   </div>
 </section>
 
@@ -1818,7 +1817,11 @@ function finishWorkout(incomplete){
   document.querySelectorAll('.rating-btn').forEach(b=>{
     b.style.borderColor='var(--border)';
     b.style.background='var(--card)';
+    b.style.transform='scale(1)';
+    b.style.boxShadow='none';
   });
+  const homeBtn = document.getElementById('finishHomeBtn');
+  if(homeBtn) homeBtn.style.display='none';
   state.workoutRating = null;
 
   hideNav();
@@ -1828,16 +1831,23 @@ function rateWorkout(btn){
   document.querySelectorAll('.rating-btn').forEach(b=>{
     b.style.borderColor='var(--border)';
     b.style.background='var(--card)';
+    b.style.transform='scale(1)';
+    b.style.boxShadow='none';
+    b.querySelector('div').style.color='var(--txt-dim)';
   });
-  btn.style.borderColor='var(--gold)';
-  btn.style.background='rgba(212,175,55,.12)';
+  btn.style.borderColor='#f59e0b';
+  btn.style.background='rgba(245,158,11,.18)';
+  btn.style.transform='scale(1.08)';
+  btn.style.boxShadow='0 0 0 3px rgba(245,158,11,.35)';
+  btn.querySelector('div').style.color='#f59e0b';
   state.workoutRating = btn.dataset.val;
-  // persiste no último registro do histórico
   const store = loadStore();
   if(store.history && store.history.length){
     store.history[0].rating = state.workoutRating;
     saveStore(store);
   }
+  const homeBtn = document.getElementById('finishHomeBtn');
+  if(homeBtn) homeBtn.style.display='';
 }
 function updateWeekStreak(store, wk){
   const key=CLIENT.cycleNumber+"-"+wk;
