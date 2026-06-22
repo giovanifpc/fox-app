@@ -302,6 +302,31 @@ body{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:r
 .evo-card .evo-lbl{font-size:10px;color:var(--ok);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
 .evo-card .evo-txt{font-size:14px;line-height:1.6}
 .evo-card .evo-txt b{color:var(--gold-soft)}
+/* PROGRESSO DO CICLO */
+.cycle-grid-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.cgc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cgc-title{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold)}
+.cgc-count{font-size:12px;color:var(--txt-dim)}
+.cgc-bar-wrap{height:5px;background:var(--line);border-radius:3px;margin-bottom:14px;overflow:hidden}
+.cgc-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));transition:.4s}
+.cgc-weeks{display:flex;flex-direction:column;gap:6px}
+.cgc-week-row{display:flex;align-items:center;gap:8px}
+.cgc-wlabel{font-size:10px;color:var(--txt-dim);width:22px;flex-shrink:0;font-weight:700}
+.cgc-dots{display:flex;gap:5px}
+.cgc-dot{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.cgc-dot.done{background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:#0a0a0a}
+.cgc-dot.incomplete{background:rgba(168,80,74,.25);border:1px solid var(--danger);color:var(--danger)}
+.cgc-dot.future{background:var(--bg-elev);color:var(--txt-dim);border:1px dashed var(--line)}
+/* GRÁFICO DE CARGA */
+.load-chart-card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:18px}
+.lcc-title{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.lcc-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none}
+.lcc-tabs::-webkit-scrollbar{display:none}
+.lcc-tab{white-space:nowrap;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--bg-elev);color:var(--txt-dim);transition:.15s;flex-shrink:0}
+.lcc-tab.active{background:var(--gold);color:#0a0a0a;border-color:var(--gold)}
+.lcc-chart{overflow-x:auto;scrollbar-width:none}
+.lcc-chart::-webkit-scrollbar{display:none}
+.lcc-empty{font-size:13px;color:var(--txt-dim);text-align:center;padding:12px 0}
 .badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .badge-item{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 8px;text-align:center}
 .badge-item.locked{opacity:.4}
@@ -1900,8 +1925,10 @@ function shareWorkout(){
 /* ---- HISTÓRICO ---- */
 function buildHistory(){
   const store=loadStore();
-  const evo=computeEvolution(store);
-  document.getElementById("evoBox").innerHTML = evo?`<div class="evo-card"><div class="evo-lbl">Sua evolução</div><div class="evo-txt">${evo}</div></div>`:"";
+  const evoBox=document.getElementById("evoBox");
+  evoBox.innerHTML="";
+  buildCycleGrid(store, evoBox);
+  buildLoadChart(store, evoBox);
   const listEl=document.getElementById("histList");
   if(!store.history.length){
     listEl.innerHTML=`<div class="empty-state"><div class="es-ico">${foxIcon(48)}</div><div class="es-txt">Seus treinos aparecerão aqui.<br>Comece o primeiro quando estiver pronto.</div></div>`;
@@ -1910,13 +1937,115 @@ function buildHistory(){
   listEl.innerHTML="";
   store.history.forEach(h=>{
     const d=new Date(h.date);
+    const ratingMap={cansado:"😴",normal:"😐",otimo:"💪"};
+    const ratingBadge=h.rating?` <span style="font-size:13px">${ratingMap[h.rating]||""}</span>`:"";
     const item=document.createElement("div"); item.className="hist-item"+(h.incomplete?" hist-incomplete":"");
     item.innerHTML=`
       <div class="hist-top"><span class="hist-date">Treino ${h.workoutId} · ${h.workoutName.replace(/^Treino [A-Z] — /,"")}</span>
       <span class="hist-badge">${h.incomplete?"Incompleto":`Sem ${h.week}`}</span></div>
-      <div class="hist-meta"><span>📅 ${formatDate(d)}</span><span>${h.incomplete?"⚠️":"✓"} ${h.setsDone} séries</span><span>⏱ ${h.minutes} min</span></div>`;
+      <div class="hist-meta"><span>📅 ${formatDate(d)}</span><span>${h.incomplete?"⚠️":"✓"} ${h.setsDone} séries</span><span>⏱ ${h.minutes} min</span>${ratingBadge}</div>`;
     listEl.appendChild(item);
   });
+}
+
+function buildCycleGrid(store, container){
+  const totalWorkouts=CLIENT.workouts.length;
+  const totalWeeks=CLIENT.cycleWeeks||8;
+  const done=store.history||[];
+  const totalExpected=totalWorkouts*totalWeeks;
+  const totalDoneCount=done.filter(h=>!h.incomplete).length;
+  const pct=Math.round(totalDoneCount/totalExpected*100);
+
+  // índice de treinos feitos por semana+id
+  const doneMap={};
+  done.forEach(h=>{ doneMap[h.week+"-"+h.workoutId]=(h.incomplete?"incomplete":"done"); });
+
+  const wk=currentWeek();
+  let weeksHtml="";
+  for(let w=1;w<=totalWeeks;w++){
+    const dots=CLIENT.workouts.map(wo=>{
+      const key=w+"-"+wo.id;
+      const st=doneMap[key];
+      if(st==="done") return `<div class="cgc-dot done" title="${wo.name}">${wo.id}</div>`;
+      if(st==="incomplete") return `<div class="cgc-dot incomplete" title="Incompleto">!</div>`;
+      if(w<wk) return `<div class="cgc-dot future" style="opacity:.4">·</div>`;
+      if(w===wk) return `<div class="cgc-dot future">${wo.id}</div>`;
+      return `<div class="cgc-dot future" style="opacity:.25">·</div>`;
+    }).join("");
+    const isCurrent=w===wk;
+    weeksHtml+=`<div class="cgc-week-row"><div class="cgc-wlabel" style="${isCurrent?"color:var(--gold)":""}">S${w}</div><div class="cgc-dots">${dots}</div></div>`;
+  }
+
+  const card=document.createElement("div"); card.className="cycle-grid-card";
+  card.innerHTML=`
+    <div class="cgc-header">
+      <span class="cgc-title">Progresso do ciclo</span>
+      <span class="cgc-count">${totalDoneCount} de ${totalExpected} treinos · ${pct}%</span>
+    </div>
+    <div class="cgc-bar-wrap"><div class="cgc-bar-fill" style="width:${pct}%"></div></div>
+    <div class="cgc-weeks">${weeksHtml}</div>`;
+  container.appendChild(card);
+}
+
+function buildLoadChart(store, container){
+  // agrupa carga máxima por exercício e sessão
+  const byEx={};
+  [...(store.history||[])].reverse().forEach((h,idx)=>{
+    (h.detail||[]).forEach(d=>{
+      const mx=Math.max(0,...(d.sets||[]).filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
+      if(mx>0){
+        if(!byEx[d.nome]) byEx[d.nome]=[];
+        byEx[d.nome].push({session:idx+1, carga:mx, date:h.date});
+      }
+    });
+  });
+  const exNames=Object.keys(byEx).filter(n=>byEx[n].length>=2);
+  if(!exNames.length) return;
+
+  const card=document.createElement("div"); card.className="load-chart-card";
+  card.innerHTML=`<div class="lcc-title">Evolução de carga</div><div class="lcc-tabs" id="lccTabs"></div><div class="lcc-chart" id="lccChart"></div>`;
+  container.appendChild(card);
+
+  function renderChart(nome){
+    const data=byEx[nome];
+    const vals=data.map(p=>p.carga);
+    const maxV=Math.max(...vals)||1;
+    const minV=Math.min(...vals);
+    const W=Math.max(data.length*48, 200);
+    const H=110; const PB=28; const PT=10; const PL=4; const PR=4;
+    const barW=32; const gap=(W-PL-PR-data.length*barW)/(data.length+1);
+    let bars="",labels="",values="";
+    data.forEach((p,i)=>{
+      const x=PL+gap*(i+1)+barW*i;
+      const barH=Math.max(6,Math.round((p.carga/maxV)*(H-PB-PT)));
+      const y=H-PB-barH;
+      const isMax=p.carga===Math.max(...vals);
+      bars+=`<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="${isMax?"var(--gold)":"rgba(255,140,66,.45)"}"/>`;
+      values+=`<text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--txt)">${p.carga}kg</text>`;
+      const d=new Date(p.date); const lbl=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+      labels+=`<text x="${x+barW/2}" y="${H-8}" text-anchor="middle" font-size="9" fill="var(--txt-dim)">${lbl}</text>`;
+    });
+    const trend=vals[vals.length-1]>vals[0]?`▲ +${(vals[vals.length-1]-vals[0]).toFixed(1).replace(".0","")}kg`:(vals[vals.length-1]<vals[0]?`▼ ${(vals[vals.length-1]-vals[0]).toFixed(1)}kg`:"= estável");
+    const trendColor=vals[vals.length-1]>vals[0]?"var(--ok)":vals[vals.length-1]<vals[0]?"var(--danger)":"var(--txt-dim)";
+    document.getElementById("lccChart").innerHTML=`
+      <div style="font-size:11px;color:${trendColor};font-weight:700;margin-bottom:6px">${trend}</div>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${W}px;display:block">${bars}${values}${labels}</svg>`;
+  }
+
+  const tabsEl=document.getElementById("lccTabs");
+  exNames.forEach((nome,i)=>{
+    const t=document.createElement("button");
+    t.className="lcc-tab"+(i===0?" active":"");
+    t.textContent=nome.replace(/com |no |na |de /gi,"").slice(0,22);
+    t.title=nome;
+    t.onclick=()=>{
+      tabsEl.querySelectorAll(".lcc-tab").forEach(b=>b.classList.remove("active"));
+      t.classList.add("active");
+      renderChart(nome);
+    };
+    tabsEl.appendChild(t);
+  });
+  renderChart(exNames[0]);
 }
 
 /* ---- CONQUISTAS ---- */
