@@ -317,6 +317,64 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
         <div class="protocol-hint">
           Cole um protocolo em JSON ou importe um arquivo .json. O Training do cliente sempre usa o ultimo treino publicado; se nada estiver publicado, usa o treino padrao do app.
         </div>
+
+        <!-- FORMATTER: montar treino por lista -->
+        <details class="flow-section" id="formatterSection" style="margin-bottom:14px">
+          <summary style="font-size:11px;letter-spacing:1px">Montar treino pela lista<span class="flow-kicker">Digite os exercicios e gere o JSON automaticamente.</span></summary>
+          <div class="flow-body" style="padding-top:10px">
+            <div class="row" style="margin-bottom:10px">
+              <div class="field">
+                <label for="fmtNome">Nome do cliente</label>
+                <input id="fmtNome" type="text" placeholder="Ex: Fox">
+              </div>
+              <div class="field">
+                <label for="fmtStart">Data de inicio</label>
+                <input id="fmtStart" type="date">
+              </div>
+              <div class="field">
+                <label for="fmtCycle">Numero do ciclo</label>
+                <input id="fmtCycle" type="number" min="1" value="1">
+              </div>
+            </div>
+            <div class="row two" style="margin-bottom:10px">
+              <div class="field">
+                <label for="fmtWeeks">Semanas do ciclo</label>
+                <select id="fmtWeeks">
+                  <option value="8" selected>8 semanas (padrao)</option>
+                  <option value="4">4 semanas</option>
+                  <option value="12">12 semanas</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="fmtProg">Progressao</label>
+                <select id="fmtProg">
+                  <option value="standard" selected>Padrao (12-10-8-6/8-12)</option>
+                  <option value="linear">Linear (3x12 o ciclo todo)</option>
+                  <option value="strength">Forca (5x5)</option>
+                </select>
+              </div>
+            </div>
+            <div id="fmtWorkouts">
+              <div class="fmt-workout" data-wid="A">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);font-weight:900">Treino A</span>
+                  <input class="fmt-wname" type="text" placeholder="Nome descritivo (ex: Membros inferiores)" style="flex:1;font-size:13px;background:#101116;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px">
+                </div>
+                <textarea class="fmt-exlist" spellcheck="false" rows="5" style="width:100%;background:#101116;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:13px;font-family:ui-monospace,monospace;resize:vertical" placeholder="Um exercicio por linha:
+Agachamento livre | mantenha coluna neutra | 90s
+Supino com halteres | nao trave os cotovelos | 75s
+Caminhada | ritmo leve a moderado | 30min cardio"></textarea>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn secondary" type="button" id="fmtAddWorkout">+ Treino B / C / D</button>
+              <button class="btn primary" type="button" id="fmtGenerate">Gerar JSON</button>
+            </div>
+            <div id="fmtFeedback" style="margin-top:8px;font-size:12px;color:var(--green);display:none"></div>
+          </div>
+        </details>
+        <!-- fim formatter -->
+
         <div class="row">
           <div class="field">
             <label for="protocolTitle">Titulo do treino</label>
@@ -2019,6 +2077,164 @@ $('saveClientBtn').addEventListener('click', saveClient);
 $('deleteClientBtn').addEventListener('click', deleteSelectedClient);
 $('reloadGoalBtn').addEventListener('click', loadGoal);
 $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
+// ---- FORMATTER ----
+(function(){
+  const WORKOUT_IDS = ['A','B','C','D','E','F'];
+  const PROGRESSIONS = {
+    standard:[
+      {semana:1,sets:3,reps:'12',cargaRec:''},
+      {semana:2,sets:3,reps:'12',cargaRec:''},
+      {semana:3,sets:3,reps:'10',cargaRec:'subir'},
+      {semana:4,sets:3,reps:'10',cargaRec:''},
+      {semana:5,sets:4,reps:'8',cargaRec:'subir'},
+      {semana:6,sets:4,reps:'8',cargaRec:''},
+      {semana:7,sets:4,reps:'6-8',cargaRec:'subir'},
+      {semana:8,sets:3,reps:'12',cargaRec:'descer'}
+    ],
+    linear: Array.from({length:8},(_,i)=>({semana:i+1,sets:3,reps:'12',cargaRec:''})),
+    strength: Array.from({length:8},(_,i)=>({semana:i+1,sets:5,reps:'5',cargaRec: i%2===1?'subir':''}))
+  };
+
+  function toSlug(str){
+    return str.normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+
+  let exerciseLib = null;
+  async function getLib(){
+    if(exerciseLib) return exerciseLib;
+    try{
+      const r = await fetch('exercises.json');
+      exerciseLib = await r.json();
+    }catch(e){ exerciseLib = {}; }
+    return exerciseLib;
+  }
+
+  function findExercise(lib, nome){
+    const slug = toSlug(nome);
+    for(const k of Object.keys(lib)){
+      const e = lib[k];
+      if(toSlug(e.name||'') === slug) return e;
+    }
+    // fuzzy: contains
+    for(const k of Object.keys(lib)){
+      const e = lib[k];
+      if(toSlug(e.name||'').includes(slug) || slug.includes(toSlug(e.name||'').split('-')[0]))
+        return e;
+    }
+    return null;
+  }
+
+  function parseExerciseLine(line, lib){
+    const parts = line.split('|').map(s=>s.trim());
+    const nome = parts[0] || '';
+    const note = parts[1] || '';
+    const restRaw = (parts[2]||'').toLowerCase();
+
+    // cardio: "30min cardio" or "cardio"
+    if(restRaw.includes('cardio') || restRaw.includes('min')){
+      const mins = parseInt(restRaw) || 30;
+      return {nome, tipo:'cardio_check', duracao_min:mins, intensidade:'leve a moderada', note, tips:[]};
+    }
+
+    const restSecs = parseInt(restRaw) || 75;
+    const match = findExercise(lib, nome);
+    return {
+      nome,
+      note,
+      rest: restSecs,
+      media: match ? (match.gif_url||'') : '',
+      mediaType: 'img',
+      exercise_id: match ? (match.exercise_id||0) : 0,
+      exercise_ref: match ? toSlug(match.name||nome) : toSlug(nome)
+    };
+  }
+
+  async function generateJson(){
+    const btn = $('fmtGenerate');
+    btn.disabled = true;
+    btn.textContent = 'Gerando...';
+    const feedback = $('fmtFeedback');
+    feedback.style.display = 'none';
+
+    try{
+      const lib = await getLib();
+      const nome = ($('fmtNome').value||'').trim() || 'Atleta';
+      const startDate = $('fmtStart').value || new Date().toISOString().slice(0,10);
+      const cycleNumber = parseInt($('fmtCycle').value)||1;
+      const cycleWeeks = parseInt($('fmtWeeks').value)||8;
+      const progKey = $('fmtProg').value||'standard';
+      const progressao = (PROGRESSIONS[progKey]||PROGRESSIONS.standard).slice(0,cycleWeeks);
+
+      const workoutDivs = document.querySelectorAll('.fmt-workout');
+      const workouts = [];
+      let warnings = [];
+
+      workoutDivs.forEach((div, idx)=>{
+        const wid = WORKOUT_IDS[idx]||String(idx+1);
+        const wname = (div.querySelector('.fmt-wname').value||'').trim() || ('Treino '+wid);
+        const lines = (div.querySelector('.fmt-exlist').value||'')
+          .split('\n').map(l=>l.trim()).filter(l=>l && !l.startsWith('#'));
+        const exercises = lines.map(line=>{
+          const ex = parseExerciseLine(line, lib);
+          if(!ex.tipo && ex.exercise_id===0) warnings.push(ex.nome);
+          return ex;
+        });
+        workouts.push({id:wid, name:'Treino '+wid+' - '+wname, exercises});
+      });
+
+      const protocol = {
+        nome, cycleNumber, startDate, cycleWeeks,
+        quotes:['Treino concluido. Habito reforcado.','Mais um passo guardado.'],
+        progressao, workouts
+      };
+
+      $('protocolJson').value = JSON.stringify(protocol, null, 2);
+      if(!$('protocolTitle').value) $('protocolTitle').value = 'Ciclo '+cycleNumber+' - '+nome;
+
+      let msg = 'JSON gerado! Revise abaixo e clique em Publicar treino.';
+      if(warnings.length) msg += ' Exercicios sem match na biblioteca (verifique exercise_id): '+warnings.join(', ');
+      feedback.textContent = msg;
+      feedback.style.color = warnings.length ? 'var(--amber)' : 'var(--green)';
+      feedback.style.display = 'block';
+    }catch(err){
+      $('fmtFeedback').textContent = 'Erro: '+err.message;
+      $('fmtFeedback').style.color = 'var(--danger)';
+      $('fmtFeedback').style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Gerar JSON';
+  }
+
+  function addWorkout(){
+    const existing = document.querySelectorAll('.fmt-workout').length;
+    if(existing >= WORKOUT_IDS.length) return;
+    const wid = WORKOUT_IDS[existing];
+    const div = document.createElement('div');
+    div.className = 'fmt-workout';
+    div.dataset.wid = wid;
+    div.style.marginTop = '12px';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);font-weight:900">Treino ${wid}</span>
+        <input class="fmt-wname" type="text" placeholder="Nome descritivo" style="flex:1;font-size:13px;background:#101116;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px">
+        <button type="button" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:4px" onclick="this.closest('.fmt-workout').remove()">✕</button>
+      </div>
+      <textarea class="fmt-exlist" spellcheck="false" rows="5" style="width:100%;background:#101116;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:13px;font-family:ui-monospace,monospace;resize:vertical" placeholder="Exercicio | nota tecnica | 75s"></textarea>
+    `;
+    $('fmtWorkouts').appendChild(div);
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    $('fmtGenerate').addEventListener('click', generateJson);
+    $('fmtAddWorkout').addEventListener('click', addWorkout);
+    // pre-fill today's date
+    const today = new Date().toISOString().slice(0,10);
+    if(!$('fmtStart').value) $('fmtStart').value = today;
+  });
+})();
+// ---- FIM FORMATTER ----
+
 $('useCurrentWeekReportBtn').addEventListener('click', useCurrentWeek);
 $('loadProtocolBtn').addEventListener('click', loadProtocol);
 $('publishProtocolBtn').addEventListener('click', publishProtocol);
