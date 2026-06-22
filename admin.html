@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -2411,7 +2411,7 @@ $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
   };
 
   function toSlug(str){
-    return str.normalize('NFD').replace(/[̀-ͯ]/g,'')
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
       .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   }
 
@@ -2555,7 +2555,7 @@ $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
       const q = input.value.trim();
       if(q.length < 2){ results.style.display='none'; return; }
       const lib = await getLib();
-      const norm = s => s.toLowerCase().normalize('NFD').replace(/[Ì€-Í¯]/g,'');
+      const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       const nq = norm(q);
       const matches = Object.values(lib)
         .filter(e => norm(e.name||'').includes(nq))
