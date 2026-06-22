@@ -1153,6 +1153,33 @@ if(driveFrame) driveFrame.addEventListener('load', function(){
   setTimeout(requestModuleData, 600);
 });
 window.addEventListener('load', boot);
+
+// Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+          // Nova versão disponível — mostra banner
+          const banner = document.createElement('div');
+          banner.id = 'sw-update-banner';
+          banner.innerHTML = '🔄 Nova versão disponível. <button onclick="swUpdate()">Atualizar agora</button>';
+          banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#FF8C42;color:#0a0a0a;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+          banner.querySelector('button').style.cssText = 'background:#0a0a0a;color:#FF8C42;border:none;border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer;margin-left:8px';
+          document.body.appendChild(banner);
+          window._pendingSW = newSW;
+        }
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+}
+function swUpdate(){
+  if(window._pendingSW){ window._pendingSW.postMessage('skipWaiting'); }
+  const b = document.getElementById('sw-update-banner');
+  if(b) b.remove();
+}
 </script>
 </body>
 </html>

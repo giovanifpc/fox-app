@@ -244,6 +244,7 @@ document.getElementById('emailInput').addEventListener('keydown', e=>{
   if(!isCallback) await checkSession();
   showAccessDeniedIfNeeded();
 })();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js'); }
 </script>
 </body>
 </html>
