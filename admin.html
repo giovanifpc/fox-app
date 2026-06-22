@@ -554,7 +554,11 @@ function updateDateAlerts(){
   const goalAlert = $('goalDateAlert');
   const reportAlert = $('reportPeriodAlert');
   let msg = '';
-  if(state.stale){
+  let isError = false;
+  if(state.start && state.end && state.end < state.start){
+    msg = 'Data de fim nao pode ser anterior ao inicio. Corrija antes de publicar.';
+    isError = true;
+  } else if(state.stale){
     msg = 'A semana ativa terminou em ' + fmtPeriod(state.start, state.end) + '. Treinos, nutri e agua registrados hoje nao entram nos rings nem no relatorio deste periodo. Use "Usar semana atual" e publique as metas para atualizar o cliente.';
   }else if(state.future){
     msg = 'Este periodo comeca no futuro. Dados de hoje ainda nao entram nos rings nem no relatorio.';
@@ -564,6 +568,7 @@ function updateDateAlerts(){
   [goalAlert, reportAlert].forEach(el=>{
     if(!el) return;
     el.classList.toggle('hidden', !msg);
+    el.style.color = isError ? 'var(--danger)' : '';
     if(msg) el.textContent = msg;
   });
 }
@@ -1938,6 +1943,13 @@ async function loadGoal(){
 async function publishGoals(e){
   e.preventDefault();
   if(!selectedClient) return;
+
+  const di = $('dataInicio').value;
+  const df = $('dataFim').value;
+  if(di && df && df < di){
+    toast('Data de fim nao pode ser anterior ao inicio.');
+    return;
+  }
 
   const btn = $('publishBtn');
   btn.disabled = true;
