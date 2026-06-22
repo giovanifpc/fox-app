@@ -507,10 +507,33 @@ body{padding-top:44px!important;min-height:100svh!important}
     </div>
     <div class="section-label">Exercícios de hoje</div>
     <div id="ovExList"></div>
-  </div>
-  <div class="prestart-actions">
-    <button class="btn btn-primary" onclick="startWorkout()">COMEÇAR TREINO</button>
-    <button class="btn btn-ghost" onclick="goTab('home')">Voltar</button>
+
+    <div class="section-label" style="margin-top:28px">Alongamento pré-treino</div>
+    <div class="warmup-card" style="margin-bottom:24px">
+      <div class="warmup-head">
+        <img src="fox-logo-sem-fundo.svg" alt="Fox">
+        <div>
+          <div class="warmup-brand">Fox Performance</div>
+          <div class="warmup-title">10 min de alongamento</div>
+        </div>
+      </div>
+      <div class="warmup-sub">Faça antes do treino para preparar articulações, quadril, coluna e respiração. Se o local não permitir, você pode pular e iniciar o treino.</div>
+      <div class="warmup-grid">
+        <div class="warmup-item"><div><div class="warmup-num">1</div><div class="warmup-name">Quadríceps em pé</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">2</div><div class="warmup-name">Flexão à frente</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">3</div><div class="warmup-name">Estocada lateral</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">4</div><div class="warmup-name">Flexor do quadril</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">5</div><div class="warmup-name">Joelho ao peito</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">6</div><div class="warmup-name">Glúteo deitado</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">7</div><div class="warmup-name">V invertido</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">8</div><div class="warmup-name">Postura da cobra</div></div><div class="warmup-time">30 seg</div></div>
+        <div class="warmup-item"><div><div class="warmup-num">9</div><div class="warmup-name">Postura da criança</div></div><div class="warmup-time">30 seg</div></div>
+      </div>
+      <div class="warmup-actions" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="startWorkout(true)">Fiz o alongamento — Iniciar</button>
+        <button class="btn btn-ghost" onclick="startWorkout(false)">Pular alongamento</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1259,7 +1282,7 @@ function mediaThumb(ex){
 }
 
 /* ---- INICIAR TREINO ---- */
-function startWorkout(){
+function startWorkout(warmupDone){
   hideNav();
   const w = CLIENT.workouts[state.workoutIndex];
   const wk = currentWeek();
@@ -1268,7 +1291,7 @@ function startWorkout(){
 
   state.currentExercise = 0;
   state.startTime = Date.now();
-  state.warmup = {shown:false, done:false, skipped:false};
+  state.warmup = {shown:true, done:!!warmupDone, skipped:!warmupDone};
   state.sessionData = w.exercises.map((ex)=>{
     if(isCardioExercise(ex)){
       return { type:"cardio_check", done:false, minutesDone:"", targetMinutes:exerciseTargetMinutes(ex) };
@@ -1282,31 +1305,10 @@ function startWorkout(){
   });
   document.getElementById("execWoName").textContent = w.name;
   buildExecProgress();
-  const card = getPreWorkoutCard();
-  if(card && card.enabled !== false){
-    state.warmup.shown = true;
-    openModal("modalWarmup");
-  } else {
-    renderExercise();
-    showScreen("exec");
-  }
-}
-function cargaKey(wid, nome){ return wid+"::"+nome; }
-
-function getPreWorkoutCard(){
-  const proto = window.FOX_ACTIVE_TRAINING_PROTOCOL && window.FOX_ACTIVE_TRAINING_PROTOCOL.protocol_json
-    ? window.FOX_ACTIVE_TRAINING_PROTOCOL.protocol_json
-    : (window.FOX_ACTIVE_TRAINING_PROTOCOL || CLIENT);
-  return proto && (proto.preWorkoutCard || proto.pre_workout_card || proto.alongamento);
-}
-function confirmWarmup(done){
-  if(!state.warmup) state.warmup = {shown:true, done:false, skipped:false};
-  state.warmup.done = !!done;
-  state.warmup.skipped = !done;
-  closeModal("modalWarmup");
   renderExercise();
   showScreen("exec");
 }
+function cargaKey(wid, nome){ return wid+"::"+nome; }
 
 function buildExecProgress(){
   const w = CLIENT.workouts[state.workoutIndex];
@@ -1843,7 +1845,7 @@ function completos(s){ return (s.history||[]).filter(h=>!h.incomplete).length; }
 function hasEvolution(s){
   const byEx={};
   [...(s.history||[])].reverse().forEach(h=>(h.detail||[]).forEach(d=>{
-    const mx=Math.max(0,...d.sets.filter(x=>x.done&&x.carga).map(x=>parseFloat(x.carga)||0));
+    const mx=Math.max(0,...(d.sets||[]).filter(x=>x.done&&x.carga).map(x=>parseFloat(x.carga)||0));
     if(mx>0){ if(!byEx[d.nome])byEx[d.nome]=[]; byEx[d.nome].push(mx); }
   }));
   return Object.values(byEx).some(a=>a.length>=2 && a[a.length-1]>a[0]);
@@ -1858,11 +1860,11 @@ function checkBadges(store){
 function shareWorkout(){
   const w=CLIENT.workouts[state.workoutIndex];
   const wk=currentWeek();
-  const setsDone=state.sessionData.reduce((a,sd)=>a+sd.sets.filter(s=>s.done).length,0);
+  const setsDone=state.sessionData.reduce((a,sd)=>a+(sd.sets||[]).filter(s=>s.done).length,0);
   let msg=`*FOX PERFORMANCE · training*\n_Feedback de treino_\n\n`;
   msg+=`Cliente: ${CLIENT.nome}\nTreino: ${w.name}\nCiclo ${CLIENT.cycleNumber} · Semana ${wk}\nSéries concluídas: ${setsDone}\n\n*Cargas:*\n`;
   state.sessionData.forEach((sd,i)=>{
-    const c=sd.sets.filter(s=>s.done&&s.carga).map(s=>s.carga+"kg");
+    const c=(sd.sets||[]).filter(s=>s.done&&s.carga).map(s=>s.carga+"kg");
     if(c.length) msg+=`• ${w.exercises[i].nome}: ${c.join(", ")}\n`;
   });
   msg+=`\nComo me senti: `;
@@ -1913,7 +1915,7 @@ function computeEvolution(store){
   const byEx={};
   [...store.history].reverse().forEach(h=>{
     (h.detail||[]).forEach(d=>{
-      const mx=Math.max(0,...d.sets.filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
+      const mx=Math.max(0,...(d.sets||[]).filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
       if(mx>0){ if(!byEx[d.nome])byEx[d.nome]=[]; byEx[d.nome].push(mx); }
     });
   });
@@ -1954,7 +1956,7 @@ function buildReportHTML(){
   const byEx={};
   [...store.history].reverse().forEach(h=>{
     (h.detail||[]).forEach(d=>{
-      const mx=Math.max(0,...d.sets.filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
+      const mx=Math.max(0,...(d.sets||[]).filter(s=>s.done&&s.carga).map(s=>parseFloat(s.carga)||0));
       if(mx>0){ if(!byEx[d.nome])byEx[d.nome]={ini:mx,fim:mx}; byEx[d.nome].fim=mx; }
     });
   });
