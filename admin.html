@@ -355,6 +355,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
               </div>
             </div>
             <div id="fmtWorkouts">
+              <!-- busca de exercicios global -->
+              <div style="position:relative;margin-bottom:10px">
+                <input id="fmtSearch" type="text" autocomplete="off" placeholder="🔍 Buscar exercicio na biblioteca e adicionar..." style="width:100%;background:#101116;border:1px solid var(--purple);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px">
+                <div id="fmtSearchResults" style="display:none;position:absolute;z-index:99;width:100%;background:#1a1d28;border:1px solid var(--line);border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
+              </div>
+
               <div class="fmt-workout" data-wid="A">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                   <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--amber);font-weight:900">Treino A</span>
@@ -2237,12 +2243,59 @@ $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
     $('fmtWorkouts').appendChild(div);
   }
 
+  function initSearch(){
+    const input = $('fmtSearch');
+    const results = $('fmtSearchResults');
+    if(!input) return;
+
+    // track which textarea was last focused inside the formatter
+    let lastFocusedTextarea = null;
+    document.addEventListener('focusin', e=>{
+      if(e.target.classList.contains('fmt-exlist')) lastFocusedTextarea = e.target;
+    });
+
+    input.addEventListener('input', async()=>{
+      const q = input.value.trim();
+      if(q.length < 2){ results.style.display='none'; return; }
+      const lib = await getLib();
+      const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const nq = norm(q);
+      const matches = Object.values(lib)
+        .filter(e => norm(e.name||'').includes(nq))
+        .slice(0, 12);
+      if(!matches.length){ results.style.display='none'; return; }
+      results.innerHTML = matches.map(e=>`
+        <div class="fmt-result" data-name="${e.name}" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line);color:var(--text)">
+          <span style="font-weight:600">${e.name}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">${e.grupo_muscular||''}</span>
+        </div>`).join('');
+      results.style.display = 'block';
+
+      results.querySelectorAll('.fmt-result').forEach(row=>{
+        row.addEventListener('mouseenter', ()=> row.style.background='rgba(123,143,212,.12)');
+        row.addEventListener('mouseleave', ()=> row.style.background='');
+        row.addEventListener('mousedown', e=>{ e.preventDefault();
+          const name = row.dataset.name;
+          const line = name + ' |  | 75s\n';
+          const target = lastFocusedTextarea || document.querySelector('.fmt-exlist');
+          if(target){ target.value += line; target.focus(); }
+          input.value = '';
+          results.style.display = 'none';
+        });
+      });
+    });
+
+    document.addEventListener('click', e=>{
+      if(!results.contains(e.target) && e.target !== input) results.style.display='none';
+    });
+  }
+
   document.addEventListener('DOMContentLoaded',()=>{
     $('fmtGenerate').addEventListener('click', generateJson);
     $('fmtAddWorkout').addEventListener('click', addWorkout);
-    // pre-fill today's date
     const today = new Date().toISOString().slice(0,10);
     if(!$('fmtStart').value) $('fmtStart').value = today;
+    initSearch();
   });
 })();
 // ---- FIM FORMATTER ----

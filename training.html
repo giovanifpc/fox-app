@@ -568,6 +568,14 @@ body{padding-top:44px!important;min-height:100svh!important}
     <div class="finish-stat"><div class="fs-num" id="fsSets">0</div><div class="fs-lbl">séries</div></div>
     <div class="finish-stat"><div class="fs-num" id="fsTime">0</div><div class="fs-lbl">minutos</div></div>
   </div>
+  <div id="finishRating" style="margin:20px 0 4px">
+    <div style="font-size:13px;color:var(--txt-dim);margin-bottom:12px;text-align:center">Como foi o treino de hoje?</div>
+    <div style="display:flex;justify-content:center;gap:12px">
+      <button class="rating-btn" data-val="cansado"  onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">😴<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Cansado</div></button>
+      <button class="rating-btn" data-val="normal"   onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">😐<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Normal</div></button>
+      <button class="rating-btn" data-val="otimo"    onclick="rateWorkout(this)" style="flex:1;max-width:90px;padding:12px 4px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;transition:.15s">💪<div style="font-size:10px;margin-top:4px;color:var(--txt-dim)">Ótimo</div></button>
+    </div>
+  </div>
   <div class="finish-actions">
     <button class="btn btn-primary" onclick="shareWorkout()">📲 Enviar feedback ao Giovani</button>
     <button class="btn btn-ghost" onclick="goTab('home')">Voltar ao início</button>
@@ -1806,8 +1814,30 @@ function finishWorkout(incomplete){
     quote.textContent='"'+CLIENT.quotes[Math.floor(Math.random()*CLIENT.quotes.length)]+'"';
     fireConfetti();
   }
+  // reset rating buttons
+  document.querySelectorAll('.rating-btn').forEach(b=>{
+    b.style.borderColor='var(--border)';
+    b.style.background='var(--card)';
+  });
+  state.workoutRating = null;
+
   hideNav();
   showScreen("finish");
+}
+function rateWorkout(btn){
+  document.querySelectorAll('.rating-btn').forEach(b=>{
+    b.style.borderColor='var(--border)';
+    b.style.background='var(--card)';
+  });
+  btn.style.borderColor='var(--gold)';
+  btn.style.background='rgba(212,175,55,.12)';
+  state.workoutRating = btn.dataset.val;
+  // persiste no último registro do histórico
+  const store = loadStore();
+  if(store.history && store.history.length){
+    store.history[0].rating = state.workoutRating;
+    saveStore(store);
+  }
 }
 function updateWeekStreak(store, wk){
   const key=CLIENT.cycleNumber+"-"+wk;
