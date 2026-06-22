@@ -20,6 +20,8 @@ const adminSecret = Deno.env.get("WEEKLY_REPORT_SECRET") || "";
 const adminEmail = (Deno.env.get("ADMIN_EMAIL") || "giovani.work@hotmail.com").toLowerCase();
 const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const anthropicModel = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
+const logEmail = (Deno.env.get("LOG_EMAIL") || "contatofoxperformance@gmail.com");
 
 const supa = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
@@ -568,6 +570,89 @@ async function buildReportForClient(client: Json, start: string, end: string) {
   return data;
 }
 
+type BatchEntry = {
+  nome: string;
+  email: string;
+  ciclo: number;
+  semana: number;
+  status: "ok" | "erro";
+  ai_status?: string;
+  error?: string;
+};
+
+async function sendBatchLog(period: { start: string; end: string }, entries: BatchEntry[]) {
+  if (!resendApiKey) {
+    console.warn("RESEND_API_KEY nao configurada — email de log nao enviado.");
+    return;
+  }
+
+  const ok = entries.filter((e) => e.status === "ok");
+  const err = entries.filter((e) => e.status === "erro");
+
+  const aiLabel: Record<string, string> = {
+    claude: "✅ Claude",
+    claude_max_tokens: "⚠️ Claude (tokens)",
+    fallback_no_key: "⚠️ Fallback (sem chave)",
+    fallback_empty_response: "⚠️ Fallback (resposta vazia)",
+    claude_error: "❌ Erro Claude",
+  };
+
+  const rows = entries.map((e) => {
+    const icon = e.status === "ok" ? "✅" : "❌";
+    const ai = e.ai_status ? (aiLabel[e.ai_status] || e.ai_status) : "";
+    const err = e.status === "erro" ? ` — ${e.error || "erro desconhecido"}` : "";
+    return `<tr style="border-bottom:1px solid #2a2a2a">
+      <td style="padding:8px 12px;font-weight:700">${icon} ${e.nome || e.email}</td>
+      <td style="padding:8px 12px;color:#888;font-size:12px">${e.email}</td>
+      <td style="padding:8px 12px;color:#888;font-size:12px">C${e.ciclo} S${e.semana}</td>
+      <td style="padding:8px 12px;font-size:12px">${ai}${err}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="background:#0a0a0a;color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding:32px 24px;max-width:640px;margin:0 auto">
+  <div style="margin-bottom:24px">
+    <div style="font-size:22px;font-weight:900;letter-spacing:1px">🦊 Fox Performance</div>
+    <div style="color:#9ca3af;font-size:13px;margin-top:4px">Log de geração automática — ${period.start} a ${period.end}</div>
+  </div>
+  <div style="background:#171922;border:1px solid #292c36;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:32px">
+    <div><div style="font-size:28px;font-weight:900;color:#52B788">${ok.length}</div><div style="font-size:12px;color:#9ca3af;margin-top:2px">Gerados com sucesso</div></div>
+    <div><div style="font-size:28px;font-weight:900;color:#e05555">${err.length}</div><div style="font-size:12px;color:#9ca3af;margin-top:2px">Com erro</div></div>
+    <div><div style="font-size:28px;font-weight:900;color:#f3f4f6">${entries.length}</div><div style="font-size:12px;color:#9ca3af;margin-top:2px">Total de clientes</div></div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;background:#171922;border:1px solid #292c36;border-radius:12px;overflow:hidden">
+    <thead>
+      <tr style="background:#101116">
+        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af">Cliente</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af">Email</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af">Ciclo/Sem</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af">IA</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  ${err.length > 0 ? `<div style="margin-top:16px;background:rgba(224,85,85,.1);border:1px solid rgba(224,85,85,.35);border-radius:10px;padding:12px 16px;font-size:13px;color:#ff8b8b">⚠️ ${err.length} cliente(s) com erro. Acesse o admin para verificar e gerar manualmente.</div>` : ""}
+  <div style="margin-top:24px;font-size:12px;color:#656b78">Gerado automaticamente toda sexta às 22h — Fox Performance Admin</div>
+</body>
+</html>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Fox Performance <onboarding@resend.dev>",
+      to: [logEmail],
+      subject: `📋 Log semanal Fox — ${ok.length}✅ ${err.length > 0 ? err.length + "❌" : ""} (${period.start} a ${period.end})`,
+      html,
+    }),
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -584,6 +669,7 @@ serve(async (req) => {
     }
 
     const body = (req.method === "POST" ? await req.json().catch(() => ({})) : {}) as Record<string, unknown>;
+
     if (body.action === "rewrite") {
       const reportId = String(body.report_id || "");
       if (!reportId) throw new Error("report_id obrigatorio para reescrever.");
@@ -602,6 +688,8 @@ serve(async (req) => {
       end: String(body.period_end || body.end || defaultPreviousWeek().end),
     };
 
+    const isBatch = body.action === "batch" || !body.client_email;
+
     let clientsQuery = supa
       .from("clients")
       .select("email,nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp")
@@ -614,9 +702,40 @@ serve(async (req) => {
     const { data: clients, error } = await clientsQuery;
     if (error) throw error;
 
+    // Batch: isola erro por cliente, nunca trava o loop inteiro
+    if (isBatch) {
+      const entries: BatchEntry[] = [];
+      const results = [];
+
+      for (const client of clients || []) {
+        const c = client as Json;
+        const nome = String(c.nome || c.email || "");
+        const email = String(c.email || "");
+        const ciclo = Number(c.ciclo_atual || 1);
+        const semana = Number(c.semana_atual || 1);
+        try {
+          const report = await buildReportForClient(c, period.start, period.end);
+          const reportData = (report as Json & { report_data?: Json }).report_data as Json | undefined;
+          entries.push({ nome, email, ciclo, semana, status: "ok", ai_status: String(reportData?.ai_status || "claude") });
+          results.push(report);
+        } catch (err) {
+          entries.push({ nome, email, ciclo, semana, status: "erro", error: errorMessage(err) });
+          console.error(`batch error for ${email}:`, errorMessage(err));
+        }
+      }
+
+      // Envia email de log (não bloqueia a resposta se falhar)
+      sendBatchLog(period, entries).catch((e) => console.error("sendBatchLog failed:", e));
+
+      return new Response(JSON.stringify({ ok: true, period, total: entries.length, success: entries.filter(e => e.status === "ok").length, errors: entries.filter(e => e.status === "erro").length, entries }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Chamada individual (manual pelo admin)
     const results = [];
     for (const client of clients || []) {
-      results.push(await buildReportForClient(client as Json, String(period.start), String(period.end)));
+      results.push(await buildReportForClient(client as Json, period.start, period.end));
     }
 
     return new Response(JSON.stringify({ ok: true, period, reports: results }), {

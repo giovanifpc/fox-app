@@ -1,0 +1,35 @@
+name: Weekly Report — Geração automática (sexta 22h BRT)
+
+on:
+  schedule:
+    # 01:00 UTC de sábado = 22:00 BRT de sexta (UTC-3)
+    - cron: '0 1 * * 6'
+  workflow_dispatch: # permite disparar manualmente pelo GitHub
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Disparar geração em batch
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/weekly-report" \
+            -H "Content-Type: application/json" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-weekly-report-secret: ${{ secrets.WEEKLY_REPORT_SECRET }}" \
+            -d '{"action":"batch"}' \
+            --max-time 120)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Falha na geração. HTTP $http_code"
+            exit 1
+          fi
+
+          echo "✅ Geração em batch concluída."
