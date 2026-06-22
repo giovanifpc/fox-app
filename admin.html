@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="app-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app-icon-192.png">
+<title>Fox Performance - Admin</title>
+<style>
+:root{
+  --bg:#0a0a0a;
+  --surface:#121318;
+  --card:#171922;
+  --line:#292c36;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --faint:#656b78;
+  --purple:#7B8FD4;
+  --cyan:#4FC3F7;
+  --amber:#FF8C42;
+  --green:#52B788;
+  --danger:#e05555;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{max-width:920px;margin:0 auto;padding:22px 18px 40px}
+button,input,select,textarea{font-family:var(--font)}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.mark{width:44px;height:44px;border:1px solid rgba(123,143,212,.45);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--purple);font-weight:900;letter-spacing:1px;background:rgba(123,143,212,.08)}
+h1{font-size:22px;line-height:1.1;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.pill{border:1px solid var(--line);border-radius:999px;padding:8px 11px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.025);white-space:nowrap}
+.grid{display:grid;grid-template-columns:minmax(250px,.75fr) minmax(0,1.25fr);gap:14px}
+.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:15px}
+.panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin-bottom:12px}
+.flow-stack{display:grid;gap:10px}
+.flow-section{background:#101116;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.flow-section[open]{border-color:rgba(123,143,212,.38);box-shadow:0 0 0 1px rgba(123,143,212,.12)}
+.flow-section summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text);font-weight:900}
+.flow-section summary::-webkit-details-marker{display:none}
+.flow-section summary::after{content:"+";width:24px;height:24px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;letter-spacing:0;flex-shrink:0}
+.flow-section[open] summary::after{content:"-";color:var(--purple)}
+.flow-section .flow-body{padding:0 14px 14px}
+.flow-section .protocol-box{margin-top:0}
+.flow-kicker{display:block;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0;font-weight:600;margin-top:4px;line-height:1.35}
+.clients{display:flex;flex-direction:column;gap:8px;max-height:600px;overflow:auto;padding-right:3px}
+.client-btn{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#101116;color:var(--text);padding:11px;cursor:pointer}
+.client-btn.active{border-color:var(--purple);box-shadow:0 0 0 1px rgba(123,143,212,.35)}
+.client-name{font-weight:800;font-size:14px}
+.client-email{font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.row.two{grid-template-columns:repeat(2,1fr)}
+.field{margin-bottom:12px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:800;margin-bottom:6px}
+input,textarea,select{width:100%;background:#101116;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;font-size:14px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--purple)}
+textarea{min-height:96px;resize:vertical;line-height:1.45}
+.metas{display:grid;grid-template-columns:1fr;gap:9px;margin:4px 0 14px}
+.meta{display:grid;grid-template-columns:1.1fr .55fr .55fr .8fr;gap:8px;align-items:end;background:#101116;border:1px solid var(--line);border-radius:12px;padding:10px}
+.meta label{font-size:10px;margin-bottom:5px}
+.block-title{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--amber);font-weight:900;margin:18px 0 10px}
+.protocol-box{background:#101116;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.protocol-box textarea{min-height:210px;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px;white-space:pre}
+.protocol-hint{font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 10px}
+.file-input{padding:9px;background:#101116}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.context-grid .field{margin-bottom:0}
+.context-section{border:1px solid var(--line);border-radius:12px;background:#0c0d12;padding:12px;margin-bottom:12px}
+.context-section.client{border-color:rgba(79,195,247,.32);background:rgba(79,195,247,.055)}
+.context-section.internal{border-color:rgba(255,140,66,.34);background:rgba(255,140,66,.045)}
+.context-section.weekly{border-color:rgba(123,143,212,.36);background:rgba(123,143,212,.055)}
+.context-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:950;margin-bottom:6px}
+.context-section.client .context-title{color:var(--cyan)}
+.context-section.internal .context-title{color:var(--amber)}
+.context-section.weekly .context-title{color:var(--purple)}
+.context-tag{font-size:10px;letter-spacing:.8px;border:1px solid currentColor;border-radius:999px;padding:4px 7px;opacity:.9;white-space:nowrap}
+.context-note{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:10px}
+.readonly-box{background:#08090d;color:#d9e7ef}
+.media-audit{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.media-row{display:grid;grid-template-columns:74px 1fr;gap:10px;align-items:center;background:#0c0d12;border:1px solid var(--line);border-radius:12px;padding:9px}
+.media-row.ok{border-color:rgba(82,183,136,.42)}
+.media-row.warn{border-color:rgba(255,140,66,.55)}
+.media-row.miss{border-color:rgba(224,85,85,.48)}
+.media-thumb{width:74px;height:58px;border-radius:9px;background:#151720;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--faint);font-size:11px;text-align:center}
+.media-thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.media-content{min-width:0}
+.media-title{font-size:13px;font-weight:850;line-height:1.25}
+.media-meta{font-size:11px;color:var(--muted);line-height:1.45;margin-top:3px}
+.media-status{font-size:11px;font-weight:900;margin-top:6px}
+.media-row.ok .media-status{color:var(--green)}
+.media-row.warn .media-status{color:var(--amber)}
+.media-row.miss .media-status{color:#ff8b8b}
+.media-controls{display:grid;grid-template-columns:1fr;gap:7px;margin-top:8px}
+.media-controls input{font-size:12px;padding:9px 10px}
+.media-actions{display:flex;gap:7px;flex-wrap:wrap}
+.btn.mini{border-radius:9px;padding:8px 10px;font-size:11px}
+.report-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.report-btn{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#0c0d12;color:var(--text);padding:11px;cursor:pointer}
+.report-btn.active{border-color:var(--green);box-shadow:0 0 0 1px rgba(82,183,136,.28)}
+.report-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.report-title{font-size:13px;font-weight:900}
+.report-period{font-size:11px;color:var(--muted);margin-top:3px}
+.report-status{font-size:10px;text-transform:uppercase;letter-spacing:.8px;border:1px solid var(--line);border-radius:999px;padding:4px 7px;color:var(--muted);white-space:nowrap}
+.report-status.draft{color:var(--amber);border-color:rgba(255,140,66,.38);background:rgba(255,140,66,.08)}
+.report-status.ready{color:var(--green);border-color:rgba(82,183,136,.38);background:rgba(82,183,136,.08)}
+.ai-status{border:1px solid var(--line);border-radius:12px;background:#101116;padding:10px 12px;margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
+.ai-status strong{color:var(--text)}
+.ai-status.claude{border-color:rgba(82,183,136,.42);background:rgba(82,183,136,.08)}
+.ai-status.fallback{border-color:rgba(255,140,66,.46);background:rgba(255,140,66,.08)}
+.ai-status.error{border-color:rgba(224,85,85,.48);background:rgba(224,85,85,.08)}
+.report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 12px}
+.summary-card{background:#101116;border:1px solid var(--line);border-radius:10px;padding:10px}
+.summary-k{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:800}
+.summary-v{font-size:18px;font-weight:900;margin-top:4px}
+.report-detail{margin-top:12px}
+.report-detail textarea{min-height:126px}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.btn{border:none;border-radius:11px;padding:12px 15px;font-weight:800;color:#fff;cursor:pointer}
+.btn.primary{background:linear-gradient(135deg,var(--purple),#5364b8)}
+.btn.secondary{background:#101116;border:1px solid var(--line);color:var(--text)}
+.btn.danger{background:rgba(224,85,85,.12);border:1px solid rgba(224,85,85,.45);color:#ff8b8b}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.state{border:1px solid var(--line);background:#101116;border-radius:12px;padding:13px;color:var(--muted);font-size:13px;line-height:1.45}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(18px);opacity:0;transition:.25s;background:#171922;border:1px solid var(--purple);border-radius:12px;color:#fff;padding:12px 16px;font-size:13px;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){
+  body{padding:18px 14px 34px}
+  .top{flex-direction:column}
+  .grid{grid-template-columns:1fr}
+  .context-grid{grid-template-columns:1fr}
+  .row,.row.two,.meta{grid-template-columns:1fr}
+  .pill{white-space:normal}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="mark">FX</div>
+    <div>
+      <h1>Painel Admin</h1>
+      <div class="sub">Publicacao de metas semanais para o app do cliente.</div>
+    </div>
+  </div>
+  <div class="pill" id="adminEmail">Validando acesso...</div>
+</header>
+
+<div id="blocked" class="state hidden">
+  Acesso restrito ao Giovani. Entre com o email autorizado e abra esta pagina novamente.
+</div>
+
+<main id="app" class="grid hidden">
+  <section class="panel">
+    <h2>Clientes</h2>
+    <div class="field">
+      <label for="clientSearch">Buscar</label>
+      <input id="clientSearch" type="search" placeholder="Nome ou email" autocomplete="off">
+    </div>
+    <div class="actions" style="margin:0 0 12px">
+      <button class="btn secondary" type="button" id="newClientBtn">Novo cliente</button>
+    </div>
+    <div class="clients" id="clientList">
+      <div class="state">Carregando clientes...</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Metas da semana</h2>
+    <div id="emptyForm" class="state">Selecione um cliente para editar as metas.</div>
+    <form id="goalForm" class="hidden">
+      <div class="flow-stack">
+      <details class="flow-section" open>
+        <summary>Cadastro e metas<span class="flow-kicker">Dados do cliente, ciclo, semana e metas publicadas no dashboard.</span></summary>
+        <div class="flow-body">
+      <div class="row">
+        <div class="field">
+          <label for="nome">Cliente</label>
+          <input id="nome" type="text" disabled>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" disabled>
+        </div>
+        <div class="field">
+          <label for="folderId">Pasta Drive</label>
+          <input id="folderId" type="text" placeholder="folder_id do Drive">
+        </div>
+        <div class="field">
+          <label for="whatsapp">WhatsApp</label>
+          <input id="whatsapp" type="tel" placeholder="5511999999999">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="ciclo">Ciclo</label>
+          <input id="ciclo" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="semana">Semana</label>
+          <input id="semana" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="field">
+          <label for="totalSemanas">Total semanas</label>
+          <input id="totalSemanas" type="number" min="1" step="1" value="8">
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label for="dataInicio">Inicio da semana</label>
+          <input id="dataInicio" type="date">
+        </div>
+        <div class="field">
+          <label for="dataFim">Fim da semana</label>
+          <input id="dataFim" type="date">
+        </div>
+      </div>
+      <div id="goalDateAlert" class="state hidden" style="margin:-2px 0 12px"></div>
+
+      <div class="field">
+        <label for="foco">Foco da semana</label>
+        <textarea id="foco" placeholder="Ex.: Priorizar sono, manter deficit calorico e concluir treino C."></textarea>
+      </div>
+
+      <div class="metas" id="metas"></div>
+
+      <div class="actions">
+        <button class="btn primary" id="publishBtn" type="submit">Publicar metas</button>
+        <button class="btn secondary hidden" type="button" id="saveClientBtn">Salvar cadastro</button>
+        <button class="btn danger hidden" type="button" id="deleteClientBtn">Excluir cliente</button>
+        <button class="btn secondary" type="button" id="reloadGoalBtn">Recarregar</button>
+        <button class="btn secondary" type="button" id="useCurrentWeekBtn">Usar essa semana</button>
+        <button class="btn danger" type="button" id="logoutBtn">Sair</button>
+      </div>
+
+        </div>
+      </details>
+      <details class="flow-section">
+        <summary>Contexto e notas internas<span class="flow-kicker">Separa memoria privada, anamnese do cliente e ajustes semanais.</span></summary>
+        <div class="flow-body">
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Esta area organiza informacoes usadas pela IA. O cliente nao ve estas notas internas no Minha Area; ele so ve a devolutiva depois que voce publica.
+        </div>
+        <div class="context-section client">
+          <div class="context-title">Anamnese declarada pelo cliente <span class="context-tag">vem do app</span></div>
+          <div class="context-note">Resumo do que o cliente preencheu na Minha Area. Campo somente leitura no Admin, para voce conferir a origem sem misturar com suas notas.</div>
+          <div class="field">
+            <label for="ctxAnamnesis">Respostas do cliente na anamnese</label>
+            <textarea id="ctxAnamnesis" class="readonly-box" readonly placeholder="Quando o cliente preencher a anamnese inicial, o resumo aparece aqui."></textarea>
+          </div>
+        </div>
+        <div class="context-section internal">
+          <div class="context-title">Memoria interna fixa do Giovani <span class="context-tag">cliente nao ve</span></div>
+          <div class="context-note">Sua leitura profissional e criterios permanentes para este cliente. Entra como contexto da IA, mas nao aparece diretamente no app do cliente.</div>
+          <div class="context-grid">
+            <div class="field">
+              <label for="ctxGoal">Objetivo interpretado por voce</label>
+              <textarea id="ctxGoal" placeholder="Ex.: perder gordura mantendo massa magra."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxLimitations">Rotina / limitacoes observadas</label>
+              <textarea id="ctxLimitations" placeholder="Ex.: trabalha viajando, treina a noite, pouco tempo para cozinhar."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxInjuries">Dores / lesoes a considerar</label>
+              <textarea id="ctxInjuries" placeholder="Ex.: dor no joelho direito em agachamentos profundos."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxFood">Restricoes e preferencias alimentares</label>
+              <textarea id="ctxFood" placeholder="Ex.: evita lactose, nao gosta de peixe."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxMotivation">Motivadores pessoais</label>
+              <textarea id="ctxMotivation" placeholder="Ex.: responde bem a reconhecimento e metas curtas."></textarea>
+            </div>
+            <div class="field">
+              <label for="ctxCommunication">Tom de comunicacao preferido</label>
+              <textarea id="ctxCommunication" placeholder="Ex.: direto, acolhedor, sem tom de cobranca."></textarea>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label for="ctxAttention">Pontos fixos que a IA deve considerar</label>
+            <textarea id="ctxAttention" placeholder="Ex.: nao comparar com outros clientes; sempre reforcar autonomia; evitar foco em peso."></textarea>
+          </div>
+        </div>
+        <div class="context-section weekly">
+          <div class="context-title">Notas internas desta semana <span class="context-tag">cliente nao ve</span></div>
+          <div class="context-note">Acontecimentos recentes, conversas no WhatsApp e direcao da proxima devolutiva. So a devolutiva publicada aparece para o cliente.</div>
+          <div class="field">
+            <label for="weeklyNote">Nota privada da semana</label>
+            <textarea id="weeklyNote" placeholder="Ex.: cliente relatou cansaco, teve viagem, pediu para focar em constancia."></textarea>
+          </div>
+          <div class="field">
+            <label for="weeklyInstruction">Instrucao interna para a IA nesta devolutiva</label>
+            <textarea id="weeklyInstruction" placeholder="Ex.: reforcar progresso sem pesar no tom; nao mencionar balanca."></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="saveContextBtn">Salvar contexto</button>
+          <button class="btn secondary" type="button" id="reloadContextBtn">Recarregar contexto</button>
+        </div>
+      </div>
+        </div>
+      </details>
+
+      <details class="flow-section">
+        <summary>Treino do ciclo<span class="flow-kicker">Publicacao do protocolo, validacao de GIFs e aviso ao cliente.</span></summary>
+        <div class="flow-body">
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Cole um protocolo em JSON ou importe um arquivo .json. O Training do cliente sempre usa o ultimo treino publicado; se nada estiver publicado, usa o treino padrao do app.
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="protocolTitle">Titulo do treino</label>
+            <input id="protocolTitle" type="text" placeholder="Ex.: Ciclo 2 - Hipertrofia base">
+          </div>
+          <div class="field">
+            <label for="protocolVersion">Versao</label>
+            <input id="protocolVersion" type="number" min="1" step="1" value="1">
+          </div>
+          <div class="field">
+            <label for="protocolFile">Importar JSON</label>
+            <input id="protocolFile" class="file-input" type="file" accept="application/json,.json">
+          </div>
+        </div>
+        <div class="field">
+          <label for="protocolJson">JSON do protocolo</label>
+          <textarea id="protocolJson" spellcheck="false" placeholder='{"nome":"Atleta","cycleNumber":1,"startDate":"2026-06-16","cycleWeeks":8,"progressao":[...],"workouts":[...]}'></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="publishProtocolBtn">Publicar treino</button>
+          <button class="btn secondary" type="button" id="loadProtocolBtn">Carregar publicado</button>
+          <button class="btn secondary" type="button" id="sampleProtocolBtn">Modelo JSON</button>
+          <button class="btn secondary" type="button" id="auditMediaBtn">Validar GIFs</button>
+          <button class="btn secondary hidden" type="button" id="applyMediaBtn">Preencher refs</button>
+          <button class="btn secondary" type="button" id="notifyTrainingBtn">Avisar no WhatsApp</button>
+        </div>
+        <div id="mediaAudit" class="media-audit hidden"></div>
+      </div>
+        </div>
+      </details>
+
+      <details class="flow-section">
+        <summary>Relatorios semanais<span class="flow-kicker">Rascunho da IA, revisao, PDF, publicacao e WhatsApp.</span></summary>
+        <div class="flow-body">
+      <div class="protocol-box">
+        <div class="protocol-hint">
+          Rascunhos consolidados pela automacao semanal. Revise os dados, adicione sua leitura e deixe pronto para a etapa de devolutiva/publicacao.
+        </div>
+        <div id="reportPeriodAlert" class="state hidden" style="margin-bottom:10px"></div>
+        <div class="actions" style="margin-bottom:10px">
+          <button class="btn primary" type="button" id="generateReportBtn">Gerar rascunho</button>
+          <button class="btn secondary" type="button" id="loadReportsBtn">Atualizar lista</button>
+          <button class="btn secondary" type="button" id="useCurrentWeekReportBtn">Usar essa semana</button>
+          <button class="btn secondary" type="button" id="copyReportBtn" disabled>Copiar resumo</button>
+        </div>
+        <div id="reportList" class="report-list">
+          <div class="state">Carregue os relatorios do cliente.</div>
+        </div>
+        <div id="reportDetail" class="report-detail hidden">
+          <div class="ai-status" id="reportAiStatus">Origem do rascunho: --</div>
+          <div class="report-summary">
+            <div class="summary-card">
+              <div class="summary-k">Treinos</div>
+              <div class="summary-v" id="repTrain">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-k">Nutri</div>
+              <div class="summary-v" id="repNutri">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-k">Agua</div>
+              <div class="summary-v" id="repWater">-</div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="reportAiDraft">Devolutiva que sera publicada para o cliente</label>
+            <textarea id="reportAiDraft" placeholder="Texto que o cliente vera no Minha Area depois da publicacao. Revise antes de publicar."></textarea>
+          </div>
+          <div class="field">
+            <label for="reportCoachNotes">Ajustes internos do Giovani</label>
+            <textarea id="reportCoachNotes" placeholder="Cliente nao ve este campo. Use para pedir mudancas no botao Reescrever com ajustes ou guardar sua leitura final."></textarea>
+          </div>
+          <div class="field">
+            <label for="reportDriveLink">Link do PDF no Drive</label>
+            <input id="reportDriveLink" type="url" placeholder="Cole aqui o link do PDF depois de subir no Drive">
+            <div class="protocol-hint" id="reportDriveStatus" style="margin-top:8px">PDF ainda nao vinculado.</div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
+            <button class="btn secondary" type="button" id="rewriteReportBtn">Reescrever com ajustes</button>
+            <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
+            <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
+            <button class="btn secondary" type="button" id="printReportBtn">Gerar PDF</button>
+            <button class="btn secondary" type="button" id="saveReportDriveBtn">Salvar link PDF</button>
+            <button class="btn secondary" type="button" id="notifyReportBtn">Avisar no WhatsApp</button>
+            <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
+          </div>
+        </div>
+      </div>
+        </div>
+      </details>
+      </div>
+    </form>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://jxwodkpssivmcnbrsukm.supabase.co';
+const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
+const ADMIN_EMAIL = 'giovani.work@hotmail.com';
+const EXERCISES_JSON_URLS = [
+  new URL('exercises.json', location.href).href,
+  './exercises.json',
+  'exercises.json',
+  'https://giovanifpc.github.io/fox-app/exercises.json'
+];
+const META_DEFS = [
+  {nome:'Treinos', unidade:'sessoes', meta_valor:3, realizado:0},
+  {nome:'Hidratação', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Diário Nutri', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Sono 7h+', unidade:'dias', meta_valor:7, realizado:0}
+];
+const REPORT_SELECT = 'id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,raw_data,ai_draft,coach_notes,published,published_at,drive_file_id';
+
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+let clients = [];
+let selectedClient = null;
+let currentGoal = null;
+let currentProtocol = null;
+let exercisesDb = null;
+let exerciseLibrary = null;
+let lastMediaAudit = [];
+let creatingClient = false;
+let weeklyReports = [];
+let selectedReport = null;
+let clientContext = null;
+let clientWeeklyNote = null;
+
+function $(id){ return document.getElementById(id); }
+function asNum(id, fallback){
+  const n = Number($(id).value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+function toast(msg){
+  const t = $('toast');
+  t.textContent = errorText(msg);
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function addDaysISO(iso, days){
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function currentWeekRangeISO(){
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  const start = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const end = addDaysISO(start, 6);
+  return {start, end};
+}
+function dateRangeState(){
+  const start = $('dataInicio') ? $('dataInicio').value : '';
+  const end = $('dataFim') ? $('dataFim').value : '';
+  const today = todayISO();
+  if(!start || !end) return {start, end, includesToday:false, stale:false, future:false};
+  return {
+    start,
+    end,
+    includesToday: start <= today && today <= end,
+    stale: end < today,
+    future: start > today
+  };
+}
+function updateDateAlerts(){
+  const state = dateRangeState();
+  const goalAlert = $('goalDateAlert');
+  const reportAlert = $('reportPeriodAlert');
+  let msg = '';
+  if(state.stale){
+    msg = 'A semana ativa terminou em ' + fmtPeriod(state.start, state.end) + '. Treinos, nutri e agua registrados hoje nao entram nos rings nem no relatorio deste periodo. Use "Usar semana atual" e publique as metas para atualizar o cliente.';
+  }else if(state.future){
+    msg = 'Este periodo comeca no futuro. Dados de hoje ainda nao entram nos rings nem no relatorio.';
+  }else if(state.start && state.end && !state.includesToday){
+    msg = 'Este periodo nao inclui hoje. Confira as datas antes de gerar rascunho.';
+  }
+  [goalAlert, reportAlert].forEach(el=>{
+    if(!el) return;
+    el.classList.toggle('hidden', !msg);
+    if(msg) el.textContent = msg;
+  });
+}
+function useCurrentWeek(){
+  const range = currentWeekRangeISO();
+  $('dataInicio').value = range.start;
+  $('dataFim').value = range.end;
+  updateDateAlerts();
+  toast('Semana atual aplicada. Clique em Publicar metas para atualizar o cliente.');
+}
+function norm(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function extractDriveFolderId(value){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const folderMatch = raw.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if(folderMatch) return folderMatch[1];
+  const idMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(idMatch) return idMatch[1];
+  return raw;
+}
+function normExercise(s){
+  return norm(s).replace(/[^a-z0-9]+/g,' ').trim();
+}
+function exerciseRefFromName(s){
+  return normExercise(s).replace(/\s+/g,'-').replace(/^-+|-+$/g,'');
+}
+function exerciseRefFromItem(item, fallbackName){
+  if(!item) return exerciseRefFromName(fallbackName);
+  return item.exercise_ref || item.ref || item.slug || exerciseRefFromName(item.name || fallbackName);
+}
+function namesMatch(a,b){
+  const na = normExercise(a);
+  const nb = normExercise(b);
+  return !!na && !!nb && (na === nb || na.includes(nb) || nb.includes(na));
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+function driveFileId(url){
+  const text = String(url || '');
+  let m = text.match(/[?&]id=([^&]+)/);
+  if(m) return decodeURIComponent(m[1]);
+  m = text.match(/\/file\/d\/([^/]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+function mediaCandidates(url){
+  const raw = String(url || '').trim();
+  if(!raw) return [];
+  const id = driveFileId(raw);
+  if(!id) return [raw];
+  return [
+    'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(id),
+    'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(id),
+    'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w900'
+  ];
+}
+function normalizeMediaUrl(url){
+  return mediaCandidates(url)[0] || String(url || '').trim();
+}
+function mediaPreviewHtml(url){
+  const candidates = mediaCandidates(url);
+  if(!candidates.length) return 'Sem GIF';
+  return '<img src="'+escapeAttr(candidates[0])+'" alt="" data-src-list="'+
+    encodeURIComponent(JSON.stringify(candidates))+'" data-src-idx="0" onerror="swapAuditImage(this)">';
+}
+function swapAuditImage(img){
+  try{
+    const list = JSON.parse(decodeURIComponent(img.getAttribute('data-src-list') || '[]'));
+    const idx = Number(img.getAttribute('data-src-idx') || 0) + 1;
+    if(list[idx]){
+      img.setAttribute('data-src-idx', String(idx));
+      img.src = list[idx];
+      return;
+    }
+  }catch(e){}
+  if(img.parentNode) img.parentNode.textContent = 'Preview indisponivel';
+}
+function errorText(err){
+  if(!err) return 'Erro desconhecido.';
+  if(typeof err === 'string') return err;
+  if(err.message && typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
+  if(err.error && typeof err.error === 'string') return err.error;
+  if(err.error && typeof err.error === 'object') return errorText(err.error);
+  if(err.response && typeof err.response === 'object') return errorText(err.response);
+  if(err.body && typeof err.body === 'object') return errorText(err.body);
+  if(err.context && typeof err.context === 'object') return errorText(err.context);
+  if(err.cause && typeof err.cause === 'object') return errorText(err.cause);
+  if(err.details && typeof err.details === 'string') return err.details;
+  if(err.hint && typeof err.hint === 'string') return err.hint;
+  if(err.code && typeof err.code === 'string') return err.code + ': ' + JSON.stringify(err);
+  try{ return JSON.stringify(err, Object.getOwnPropertyNames(err)); }
+  catch(e){ return String(err); }
+}
+
+async function loadExercisesDb(){
+  if(exercisesDb) return exercisesDb;
+  const tried = [];
+  for(const url of EXERCISES_JSON_URLS){
+    try{
+      tried.push(url);
+      const r = await fetch(url, {cache:'no-store'});
+      if(!r.ok) continue;
+      exercisesDb = await r.json();
+      return exercisesDb;
+    }catch(e){}
+  }
+  throw new Error('Nao foi possivel carregar exercises.json. Confirme se o arquivo exercises.json foi enviado para a mesma pasta publica do admin.html. Tentativas: ' + tried.join(' | '));
+}
+
+async function loadExerciseLibrary(){
+  if(exerciseLibrary) return exerciseLibrary;
+  const {data, error} = await supa.from('exercise_library')
+    .select('exercise_ref,name,exercise_id,media_url,media_type,local_path,source,notes,updated_at');
+  if(error){
+    exerciseLibrary = {};
+    return exerciseLibrary;
+  }
+  exerciseLibrary = {};
+  (data || []).forEach(item=>{
+    if(item && item.exercise_ref) exerciseLibrary[item.exercise_ref] = item;
+  });
+  return exerciseLibrary;
+}
+
+async function saveExerciseLibraryItem(ex, mediaUrl, row){
+  const ref = ex.exercise_ref || (row && row.resolved && row.resolved.ref) || exerciseRefFromName(ex.nome);
+  const item = row && row.resolved && row.resolved.item;
+  const payload = {
+    exercise_ref: ref,
+    name: ex.nome || (item && item.name) || ref,
+    exercise_id: ex.exercise_id || (item && item.exercise_id) || null,
+    media_url: mediaUrl || ex.media || '',
+    media_type: 'img',
+    local_path: 'media/exercises/' + ref + '.webp',
+    source: mediaUrl ? 'manual' : 'ref',
+    updated_by: ADMIN_EMAIL
+  };
+  const {error} = await supa.from('exercise_library')
+    .upsert(payload, {onConflict:'exercise_ref'});
+  if(error) throw error;
+  exerciseLibrary = null;
+  return ref;
+}
+
+async function boot(){
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session){
+    $('adminEmail').textContent = 'Sem sessao';
+    $('blocked').classList.remove('hidden');
+    return;
+  }
+
+  const email = (session.user.email || '').toLowerCase();
+  $('adminEmail').textContent = email;
+  if(email !== ADMIN_EMAIL){
+    $('blocked').classList.remove('hidden');
+    return;
+  }
+
+  $('app').classList.remove('hidden');
+  await loadClients();
+}
+
+async function loadClients(){
+  $('clientList').innerHTML = '<div class="state">Carregando clientes...</div>';
+  const {data, error} = await supa.from('clients')
+    .select('email,nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp')
+    .order('nome', {ascending:true});
+  if(error){
+    $('clientList').innerHTML = '<div class="state">Nao foi possivel carregar clientes: '+error.message+'</div>';
+    return;
+  }
+  clients = data || [];
+  renderClients();
+}
+
+function renderClients(){
+  const q = norm($('clientSearch').value);
+  const filtered = clients.filter(c => !q || norm(c.nome).includes(q) || norm(c.email).includes(q));
+  if(!filtered.length){
+    $('clientList').innerHTML = '<div class="state">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  $('clientList').innerHTML = filtered.map(c => `
+    <button class="client-btn ${selectedClient && selectedClient.email === c.email ? 'active' : ''}" type="button" data-email="${c.email}">
+      <div class="client-name">${c.nome || 'Cliente'}</div>
+      <div class="client-email">${c.email}</div>
+    </button>
+  `).join('');
+  document.querySelectorAll('.client-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectClient(btn.dataset.email));
+  });
+}
+
+async function selectClient(email){
+  creatingClient = false;
+  selectedClient = clients.find(c => c.email === email);
+  currentGoal = null;
+  weeklyReports = [];
+  selectedReport = null;
+  clientContext = null;
+  clientWeeklyNote = null;
+  renderClients();
+  fillClientForm();
+  await loadGoal();
+  await loadClientContext();
+  await loadProtocol();
+  await loadWeeklyReports();
+}
+
+function fillClientForm(){
+  $('emptyForm').classList.add('hidden');
+  $('goalForm').classList.remove('hidden');
+  $('nome').disabled = false;
+  $('email').disabled = !creatingClient;
+  $('saveClientBtn').classList.toggle('hidden', !creatingClient);
+  $('deleteClientBtn').classList.toggle('hidden', creatingClient || !selectedClient.email);
+  $('publishBtn').disabled = creatingClient;
+  $('reloadGoalBtn').disabled = creatingClient;
+  $('nome').value = selectedClient.nome || '';
+  $('email').value = selectedClient.email || '';
+  $('folderId').value = selectedClient.folder_id || '';
+  $('whatsapp').value = selectedClient.numero_whatsapp || '';
+  $('ciclo').value = selectedClient.ciclo_atual || 1;
+  $('semana').value = selectedClient.semana_atual || 1;
+  $('totalSemanas').value = selectedClient.total_semanas || 8;
+  $('dataInicio').value = todayISO();
+  $('dataFim').value = addDaysISO(todayISO(), 6);
+  $('foco').value = '';
+  renderMetas(META_DEFS);
+  clearContextForm();
+  updateDateAlerts();
+}
+
+function startNewClient(){
+  creatingClient = true;
+  selectedClient = {
+    nome:'',
+    email:'',
+    ciclo_atual:1,
+    semana_atual:1,
+    total_semanas:8,
+    folder_id:'',
+    numero_whatsapp:''
+  };
+  currentGoal = null;
+  weeklyReports = [];
+  selectedReport = null;
+  clientContext = null;
+  clientWeeklyNote = null;
+  renderClients();
+  fillClientForm();
+  resetReports();
+  $('nome').focus();
+}
+
+function renderMetas(metas){
+  $('metas').innerHTML = metas.map((m, i)=>`
+    <div class="meta" data-i="${i}">
+      <div class="field">
+        <label>Meta</label>
+        <input data-k="nome" value="${m.nome || ''}">
+      </div>
+      <div class="field">
+        <label>Objetivo</label>
+        <input data-k="meta_valor" type="number" min="0" step="1" value="${m.meta_valor || 0}">
+      </div>
+      <div class="field">
+        <label>Realizado</label>
+        <input data-k="realizado" type="number" min="0" step="1" value="${m.realizado || 0}">
+      </div>
+      <div class="field">
+        <label>Unidade</label>
+        <input data-k="unidade" value="${m.unidade || ''}">
+      </div>
+    </div>
+  `).join('');
+}
+
+function readMetas(){
+  return Array.from(document.querySelectorAll('.meta')).map(row=>{
+    const out = {};
+    row.querySelectorAll('input').forEach(inp=>{
+      const k = inp.dataset.k;
+      out[k] = (k === 'meta_valor' || k === 'realizado') ? Number(inp.value || 0) : inp.value.trim();
+    });
+    return out;
+  });
+}
+
+function sampleProtocol(){
+  const nome = $('nome').value.trim() || 'Atleta';
+  const ciclo = asNum('ciclo', 1);
+  const total = asNum('totalSemanas', 8);
+  return {
+    nome: nome,
+    cycleNumber: ciclo,
+    startDate: $('dataInicio').value || todayISO(),
+    cycleWeeks: total,
+    progressao: [
+      {semana:1, sets:3, reps:'12', cargaRec:''},
+      {semana:2, sets:3, reps:'12', cargaRec:''},
+      {semana:3, sets:3, reps:'10', cargaRec:'subir'},
+      {semana:4, sets:3, reps:'10', cargaRec:''},
+      {semana:5, sets:4, reps:'8', cargaRec:'subir'},
+      {semana:6, sets:4, reps:'8', cargaRec:''},
+      {semana:7, sets:4, reps:'6-8', cargaRec:'subir'},
+      {semana:8, sets:3, reps:'12', cargaRec:'descer'}
+    ],
+    workouts: [
+      {
+        id:'A',
+        name:'Treino A - Corpo inteiro',
+        exercises:[
+          {nome:'Agachamento livre', exercise_ref:'agachamento-livre', exercise_id:143, rest:60, media:'', mediaType:'img', note:'Controle a descida e mantenha coluna neutra.'}
+        ]
+      }
+    ],
+    quotes:[
+      'Treino concluido. Habito reforcado.',
+      'Mais um passo guardado.'
+    ]
+  };
+}
+
+function validateProtocol(p){
+  if(!p || typeof p !== 'object') throw new Error('JSON invalido.');
+  if(!Array.isArray(p.workouts) || !p.workouts.length) throw new Error('Inclua workouts com pelo menos um treino.');
+  if(!Array.isArray(p.progressao) || !p.progressao.length) throw new Error('Inclua progressao com semanas, series e reps.');
+  p.workouts.forEach((w, wi)=>{
+    if(!w.id || !w.name) throw new Error('Cada treino precisa de id e name.');
+    if(!Array.isArray(w.exercises) || !w.exercises.length) throw new Error('Treino '+(w.id || wi+1)+' precisa de exercises.');
+    w.exercises.forEach((ex, ei)=>{
+      if(!ex.nome) throw new Error('Exercicio '+(ei+1)+' do treino '+w.id+' precisa de nome.');
+      if(!ex.rest) ex.rest = 60;
+      if(!ex.mediaType) ex.mediaType = 'img';
+      if(ex.media === undefined) ex.media = '';
+      if(ex.exercise_ref === undefined) ex.exercise_ref = ex.exerciseRef || ex.ref || '';
+      if(ex.note === undefined) ex.note = '';
+    });
+  });
+  return p;
+}
+
+function readProtocolJson(){
+  const raw = $('protocolJson').value.trim();
+  if(!raw) throw new Error('Cole ou importe um JSON de treino.');
+  return validateProtocol(JSON.parse(raw));
+}
+
+function resetMediaAudit(){
+  lastMediaAudit = [];
+  $('mediaAudit').classList.add('hidden');
+  $('mediaAudit').innerHTML = '';
+  $('applyMediaBtn').classList.add('hidden');
+}
+
+function resolveExerciseMedia(db, ex){
+  const lib = exerciseLibrary || {};
+  const refCandidate = ex.exercise_ref || exerciseRefFromName(ex.nome);
+  if(lib[refCandidate] && lib[refCandidate].media_url){
+    const item = findExerciseByIdOrName(db, ex);
+    return {
+      status:'ok',
+      method:'library',
+      item: item,
+      url: lib[refCandidate].media_url,
+      ref: refCandidate,
+      message:'Midia encontrada na biblioteca oficial.'
+    };
+  }
+
+  if(ex.exercise_ref){
+    const ref = String(ex.exercise_ref).trim();
+    const found = findExerciseByRef(db, ref);
+    const fallback = found || findExerciseByIdOrName(db, ex);
+    return {
+      status: fallback ? 'ok' : 'warn',
+      method: 'ref',
+      item: fallback,
+      url: ex.media || (fallback && fallback.gif_url) || '',
+      ref: ref,
+      message: fallback ? 'Referencia oficial preenchida; fallback encontrado no catalogo.' : 'Referencia preenchida; ainda sem midia local ou fallback no catalogo.'
+    };
+  }
+
+  if(ex.media){
+    return {status:'ok', method:'manual', item:null, url:ex.media, ref: exerciseRefFromName(ex.nome), message:'GIF/manual ja preenchido no JSON. Recomendo preencher tambem a referencia.'};
+  }
+
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    const item = db[String(ex.exercise_id)];
+    if(namesMatch(item.name, ex.nome)){
+      return {status:'ok', method:'id', item, url:item.gif_url, ref: exerciseRefFromItem(item, ex.nome), message:'ID confirmado pelo nome do exercicio.'};
+    }
+
+    const byNameAfterMismatch = findExerciseByName(db, ex.nome);
+    if(byNameAfterMismatch){
+      return {
+        status:'warn',
+        method:'name',
+        item:byNameAfterMismatch,
+        url:byNameAfterMismatch.gif_url,
+        ref: exerciseRefFromItem(byNameAfterMismatch, ex.nome),
+        message:'ID aponta para "' + item.name + '", mas o nome encontrou "' + byNameAfterMismatch.name + '".'
+      };
+    }
+
+    return {status:'miss', method:'id_mismatch', item, url:null, ref: exerciseRefFromName(ex.nome), message:'ID aponta para "' + item.name + '" e nao achei alternativa por nome.'};
+  }
+
+  const byName = findExerciseByName(db, ex.nome);
+  if(byName){
+    return {status:'warn', method:'name', item:byName, url:byName.gif_url, ref: exerciseRefFromItem(byName, ex.nome), message:'Sem ID confiavel; encontrado por nome.'};
+  }
+
+  return {status:'miss', method:'none', item:null, url:null, ref: exerciseRefFromName(ex.nome), message:'Sem match no catalogo. O Training tentara a referencia gerada pelo nome.'};
+}
+
+function findExerciseByRef(db, ref){
+  const wanted = String(ref || '').trim();
+  if(!wanted) return null;
+  for(const key of Object.keys(db)){
+    const item = db[key];
+    if(exerciseRefFromItem(item, item.name) === wanted) return item;
+  }
+  return null;
+}
+
+function findExerciseByIdOrName(db, ex){
+  if(ex.exercise_id && db[String(ex.exercise_id)]){
+    const item = db[String(ex.exercise_id)];
+    if(!ex.nome || namesMatch(item.name, ex.nome)) return item;
+  }
+  return findExerciseByName(db, ex.nome);
+}
+
+function findExerciseByName(db, nome){
+  const wanted = normExercise(nome);
+  if(!wanted) return null;
+  for(const key of Object.keys(db)){
+    const item = db[key];
+    const dbName = normExercise(item.name);
+    if(dbName === wanted || dbName.includes(wanted) || wanted.includes(dbName)) return item;
+  }
+  return null;
+}
+
+async function auditProtocolMedia(){
+  const box = $('mediaAudit');
+  const applyBtn = $('applyMediaBtn');
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="state">Validando GIFs...</div>';
+  applyBtn.classList.add('hidden');
+  lastMediaAudit = [];
+
+  try{
+    const protocol = readProtocolJson();
+    const db = await loadExercisesDb();
+    await loadExerciseLibrary();
+    const rows = [];
+    protocol.workouts.forEach((w, wi)=>{
+      w.exercises.forEach((ex, ei)=>{
+        const resolved = resolveExerciseMedia(db, ex);
+        rows.push({workout:w, workoutIndex:wi, exercise:ex, exerciseIndex:ei, resolved});
+      });
+    });
+    lastMediaAudit = rows;
+    renderMediaAudit(rows);
+    if(rows.some(r => (r.resolved.ref && !r.exercise.exercise_ref) || (r.resolved.url && !r.exercise.media))){
+      applyBtn.classList.remove('hidden');
+    }
+  }catch(err){
+    box.innerHTML = '<div class="state">Nao foi possivel validar: '+escapeHtml(errorText(err))+'</div>';
+  }
+}
+
+function renderMediaAudit(rows){
+  const box = $('mediaAudit');
+  if(!rows.length){
+    box.innerHTML = '<div class="state">Nenhum exercicio encontrado no protocolo.</div>';
+    return;
+  }
+  const ok = rows.filter(r=>r.resolved.status === 'ok').length;
+  const warn = rows.filter(r=>r.resolved.status === 'warn').length;
+  const miss = rows.filter(r=>r.resolved.status === 'miss').length;
+  const summary = '<div class="state">GIFs: '+ok+' ok, '+warn+' revisar, '+miss+' sem match.</div>';
+  box.innerHTML = summary + rows.map(r=>{
+    const res = r.resolved;
+    const cls = res.status;
+    const img = res.url ? '<img src="'+escapeHtml(res.url)+'" alt="">' : 'Sem GIF';
+    const found = res.item ? 'Encontrado: '+res.item.exercise_id+' - '+res.item.name : 'Encontrado: nenhum';
+    return '<div class="media-row '+cls+'">' +
+      '<div class="media-thumb">'+img+'</div>' +
+      '<div>' +
+        '<div class="media-title">'+escapeHtml(r.workout.id)+' · '+escapeHtml(r.exercise.nome)+'</div>' +
+        '<div class="media-meta">REF: '+escapeHtml(r.exercise.exercise_ref || res.ref || 'sem ref')+'<br>JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
+        '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function applyResolvedMedia(){
+  if(!lastMediaAudit.length){ toast('Valide os GIFs antes de preencher.'); return; }
+  try{
+    const protocol = readProtocolJson();
+    let applied = 0;
+    lastMediaAudit.forEach(row=>{
+      const ex = protocol.workouts[row.workoutIndex].exercises[row.exerciseIndex];
+      if(row.resolved.url && !ex.media){
+        ex.media = row.resolved.url;
+        ex.mediaType = 'img';
+        if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
+        applied++;
+      }
+    });
+    $('protocolJson').value = JSON.stringify(protocol, null, 2);
+    toast(applied ? applied + ' GIF(s) preenchido(s) no JSON.' : 'Nada novo para preencher.');
+    auditProtocolMedia();
+  }catch(err){
+    toast('Erro ao preencher GIFs: ' + errorText(err));
+  }
+}
+
+function renderMediaAudit(rows){
+  const box = $('mediaAudit');
+  if(!rows.length){
+    box.innerHTML = '<div class="state">Nenhum exercicio encontrado no protocolo.</div>';
+    return;
+  }
+  const ok = rows.filter(r=>r.resolved.status === 'ok').length;
+  const warn = rows.filter(r=>r.resolved.status === 'warn').length;
+  const miss = rows.filter(r=>r.resolved.status === 'miss').length;
+  const summary = '<div class="state">GIFs: '+ok+' ok, '+warn+' revisar, '+miss+' sem match. Use os campos abaixo para revisar, trocar ou limpar um GIF antes de publicar.</div>';
+  box.innerHTML = summary + rows.map((r, idx)=>{
+    const res = r.resolved;
+    const cls = res.status;
+    const currentUrl = r.exercise.media || res.url || '';
+    const found = res.item ? 'Encontrado: '+res.item.exercise_id+' - '+res.item.name : 'Encontrado: nenhum';
+    return '<div class="media-row '+cls+'">' +
+      '<div class="media-thumb">'+mediaPreviewHtml(currentUrl)+'</div>' +
+      '<div class="media-content">' +
+        '<div class="media-title">'+escapeHtml(r.workout.id)+' - '+escapeHtml(r.exercise.nome)+'</div>' +
+        '<div class="media-meta">REF: '+escapeHtml(r.exercise.exercise_ref || res.ref || 'sem ref')+'<br>JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
+        '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
+        '<div class="media-controls">' +
+          '<input id="mediaManual'+idx+'" value="'+escapeAttr(currentUrl)+'" placeholder="Cole aqui outro link/ID de GIF para este exercicio">' +
+          '<div class="media-actions">' +
+            '<button class="btn mini secondary" type="button" onclick="applyOneResolvedMedia('+idx+')">Aplicar sugestao</button>' +
+            '<button class="btn mini secondary" type="button" onclick="applyManualMedia('+idx+')">Usar manual</button>' +
+            '<button class="btn mini danger" type="button" onclick="clearExerciseMedia('+idx+')">Limpar GIF</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function updateProtocolMediaAt(rowIndex, mode){
+  if(!lastMediaAudit[rowIndex]){ toast('Valide os GIFs novamente.'); return false; }
+  const row = lastMediaAudit[rowIndex];
+  const protocol = readProtocolJson();
+  const ex = protocol.workouts[row.workoutIndex].exercises[row.exerciseIndex];
+
+  if(mode === 'clear'){
+    ex.media = '';
+    ex.mediaType = 'img';
+  }else if(mode === 'manual'){
+    const field = $('mediaManual'+rowIndex);
+    const value = field ? field.value.trim() : '';
+    if(!value){ toast('Cole um link ou ID antes de usar manual.'); return false; }
+    ex.media = normalizeMediaUrl(value);
+    ex.mediaType = 'img';
+    ex.exercise_ref = ex.exercise_ref || row.resolved.ref || exerciseRefFromName(ex.nome);
+    await saveExerciseLibraryItem(ex, ex.media, row);
+  }else{
+    if(!row.resolved.ref && !row.resolved.url){ toast('Este exercicio nao tem sugestao para aplicar.'); return false; }
+    ex.exercise_ref = row.resolved.ref || exerciseRefFromName(ex.nome);
+    ex.media = '';
+    ex.mediaType = 'img';
+    if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
+    if(row.resolved.url) await saveExerciseLibraryItem(ex, normalizeMediaUrl(row.resolved.url), row);
+  }
+
+  $('protocolJson').value = JSON.stringify(protocol, null, 2);
+  return true;
+}
+
+async function applyOneResolvedMedia(rowIndex){
+  try{
+    if(await updateProtocolMediaAt(rowIndex, 'suggested')){
+      toast('GIF aplicado neste exercicio.');
+      auditProtocolMedia();
+    }
+  }catch(err){ toast('Erro ao aplicar GIF: ' + errorText(err)); }
+}
+
+async function applyManualMedia(rowIndex){
+  try{
+    if(await updateProtocolMediaAt(rowIndex, 'manual')){
+      toast('GIF manual salvo na biblioteca.');
+      auditProtocolMedia();
+    }
+  }catch(err){ toast('Erro ao aplicar GIF manual: ' + errorText(err)); }
+}
+
+function clearExerciseMedia(rowIndex){
+  try{
+    if(updateProtocolMediaAt(rowIndex, 'clear')){
+      toast('GIF removido deste exercicio.');
+      auditProtocolMedia();
+    }
+  }catch(err){ toast('Erro ao limpar GIF: ' + errorText(err)); }
+}
+
+function applyResolvedMedia(){
+  if(!lastMediaAudit.length){ toast('Valide os GIFs antes de preencher.'); return; }
+  try{
+    const protocol = readProtocolJson();
+    let applied = 0;
+    lastMediaAudit.forEach(row=>{
+      const ex = protocol.workouts[row.workoutIndex].exercises[row.exerciseIndex];
+      if((row.resolved.ref && !ex.exercise_ref) || (row.resolved.item && row.resolved.item.exercise_id && !ex.exercise_id)){
+        ex.exercise_ref = row.resolved.ref || exerciseRefFromName(ex.nome);
+        ex.media = '';
+        ex.mediaType = 'img';
+        if(row.resolved.item && row.resolved.item.exercise_id) ex.exercise_id = row.resolved.item.exercise_id;
+        applied++;
+      }
+    });
+    $('protocolJson').value = JSON.stringify(protocol, null, 2);
+    toast(applied ? applied + ' GIF(s) preenchido(s) no JSON.' : 'Nada novo para preencher.');
+    auditProtocolMedia();
+  }catch(err){
+    toast('Erro ao preencher GIFs: ' + errorText(err));
+  }
+}
+
+async function loadProtocol(){
+  if(!selectedClient || creatingClient) return;
+  currentProtocol = null;
+  $('protocolTitle').value = '';
+  $('protocolVersion').value = 1;
+  $('protocolJson').value = '';
+  resetMediaAudit();
+  try{
+    const {data, error} = await supa.from('training_protocols')
+      .select('titulo,versao,protocol_json,ciclo,status,publicado_em')
+      .eq('client_email', selectedClient.email)
+      .eq('status', 'publicado')
+      .order('publicado_em', {ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(error) throw error;
+    if(!data) return;
+    currentProtocol = data;
+    $('protocolTitle').value = data.titulo || '';
+    $('protocolVersion').value = data.versao || 1;
+    $('protocolJson').value = JSON.stringify(data.protocol_json || {}, null, 2);
+    resetMediaAudit();
+  }catch(err){
+    toast('Treino dinamico ainda nao disponivel: ' + errorText(err));
+  }
+}
+
+async function publishProtocol(){
+  if(!selectedClient || creatingClient) return;
+  const btn = $('publishProtocolBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publicando...';
+  try{
+    const protocol = readProtocolJson();
+    protocol.nome = selectedClient.nome || protocol.nome || 'Atleta';
+    protocol.cycleNumber = Number(protocol.cycleNumber || asNum('ciclo', 1));
+    protocol.cycleWeeks = Number(protocol.cycleWeeks || asNum('totalSemanas', 8));
+    protocol.startDate = protocol.startDate || $('dataInicio').value || todayISO();
+
+    const payload = {
+      client_email: selectedClient.email,
+      ciclo: asNum('ciclo', 1),
+      versao: asNum('protocolVersion', 1),
+      titulo: $('protocolTitle').value.trim() || ('Ciclo ' + asNum('ciclo', 1)),
+      status: 'publicado',
+      protocol_json: protocol,
+      data_inicio: protocol.startDate,
+      data_fim: addDaysISO(protocol.startDate, (Number(protocol.cycleWeeks || 8) * 7) - 1),
+      publicado_em: new Date().toISOString()
+    };
+
+    const profileUpdate = {
+      ciclo_atual: payload.ciclo,
+      total_semanas: protocol.cycleWeeks,
+      folder_id: extractDriveFolderId($('folderId').value) || null,
+      numero_whatsapp: $('whatsapp').value.trim() || null
+    };
+    const profileRes = await supa.from('clients')
+      .update(profileUpdate)
+      .eq('email', selectedClient.email);
+    if(profileRes.error) throw profileRes.error;
+
+    const archiveRes = await supa.from('training_protocols')
+      .update({status:'arquivado'})
+      .eq('client_email', selectedClient.email)
+      .eq('ciclo', payload.ciclo)
+      .eq('status', 'publicado');
+    if(archiveRes.error) throw archiveRes.error;
+
+    const {error} = await supa.from('training_protocols').insert(payload);
+    if(error) throw error;
+    currentProtocol = payload;
+    selectedClient = Object.assign({}, selectedClient, profileUpdate);
+    clients = clients.map(c => c.email === selectedClient.email ? selectedClient : c);
+    renderClients();
+    toast('Treino publicado. O cliente vera no Training ao abrir o app.');
+  }catch(err){
+    toast('Erro ao publicar treino: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Publicar treino';
+  }
+}
+
+function notifyTraining(){
+  if(!selectedClient) return;
+  const phone = String($('whatsapp').value || selectedClient.numero_whatsapp || '').replace(/\D/g,'');
+  if(!phone){ toast('Cadastre o WhatsApp do cliente para usar este botao.'); return; }
+  const nome = selectedClient.nome || 'cliente';
+  const title = $('protocolTitle').value.trim() || 'novo ciclo de treino';
+  const msg = 'Oi, '+nome+'! Acabei de publicar seu '+title+' no app. Abre o Training antes do proximo treino e me chama se tiver qualquer duvida.';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
+}
+
+function notifyReport(){
+  if(!selectedClient || !selectedReport) return;
+  if(selectedReport.published !== true){
+    toast('Publique a devolutiva no app antes de avisar o cliente.');
+    return;
+  }
+  const phone = String($('whatsapp').value || selectedClient.numero_whatsapp || '').replace(/\D/g,'');
+  if(!phone){ toast('Cadastre o WhatsApp do cliente para usar este botao.'); return; }
+  const nome = selectedClient.nome || 'cliente';
+  const periodo = fmtPeriod(selectedReport.period_start, selectedReport.period_end);
+  const hasPdf = !!String(selectedReport.drive_file_id || '').trim();
+  const msg = hasPdf
+    ? 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app, com o PDF completo na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.'
+    : 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app. Ela ja esta na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
+}
+
+function formatAnamnesis(anamnesis){
+  const a = anamnesis && typeof anamnesis === 'object' ? anamnesis : {};
+  const rows = [
+    ['Resultado esperado', a.expected_result],
+    ['Dias para treinar', a.training_days],
+    ['Tempo por treino', a.training_time],
+    ['Historico de treino', a.training_history],
+    ['Sono medio', a.sleep],
+    ['Estresse atual', a.stress],
+    ['Estilo de vida', a.lifestyle],
+    ['Comunicacao preferida', a.communication_preference]
+  ];
+  const text = rows
+    .filter(function(row){ return String(row[1] || '').trim(); })
+    .map(function(row){ return row[0] + ': ' + row[1]; })
+    .join('\n');
+  return text || 'Anamnese inicial ainda nao preenchida pelo cliente.';
+}
+
+function clearContextForm(){
+  ['ctxGoal','ctxLimitations','ctxInjuries','ctxFood','ctxMotivation','ctxCommunication','ctxAttention','ctxAnamnesis','weeklyNote','weeklyInstruction'].forEach(id => {
+    if($(id)) $(id).value = '';
+  });
+}
+
+function fillContextForm(){
+  const c = clientContext || {};
+  const n = clientWeeklyNote || {};
+  $('ctxGoal').value = c.primary_goal || '';
+  $('ctxLimitations').value = c.limitations || c.routine_notes || '';
+  $('ctxInjuries').value = c.injuries_pain || '';
+  $('ctxFood').value = c.food_restrictions || '';
+  $('ctxMotivation').value = c.motivation_notes || '';
+  $('ctxCommunication').value = c.communication_style || '';
+  $('ctxAttention').value = c.attention_points || '';
+  $('ctxAnamnesis').value = formatAnamnesis(c.anamnesis);
+  $('weeklyNote').value = n.note || '';
+  $('weeklyInstruction').value = n.instruction || '';
+}
+
+async function loadClientContext(){
+  if(!selectedClient || creatingClient) return;
+  clearContextForm();
+  const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
+  const semana = asNum('semana', selectedClient.semana_atual || 1);
+  try{
+    const [contextRes, noteRes] = await Promise.all([
+      supa.from('client_context')
+        .select('*')
+        .eq('client_email', selectedClient.email)
+        .maybeSingle(),
+      supa.from('client_weekly_notes')
+        .select('*')
+        .eq('client_email', selectedClient.email)
+        .eq('ciclo', ciclo)
+        .eq('semana', semana)
+        .maybeSingle()
+    ]);
+    if(contextRes.error) throw contextRes.error;
+    if(noteRes.error) throw noteRes.error;
+    clientContext = contextRes.data || null;
+    clientWeeklyNote = noteRes.data || null;
+    fillContextForm();
+  }catch(err){
+    toast('Contexto ainda nao disponivel: ' + errorText(err));
+  }
+}
+
+async function saveClientContext(){
+  if(!selectedClient || creatingClient) return;
+  const btn = $('saveContextBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  const ciclo = asNum('ciclo', 1);
+  const semana = asNum('semana', 1);
+  try{
+    const contextPayload = {
+      client_email: selectedClient.email,
+      primary_goal: $('ctxGoal').value.trim() || null,
+      limitations: $('ctxLimitations').value.trim() || null,
+      routine_notes: $('ctxLimitations').value.trim() || null,
+      injuries_pain: $('ctxInjuries').value.trim() || null,
+      food_restrictions: $('ctxFood').value.trim() || null,
+      motivation_notes: $('ctxMotivation').value.trim() || null,
+      communication_style: $('ctxCommunication').value.trim() || null,
+      attention_points: $('ctxAttention').value.trim() || null,
+      anamnesis: (clientContext && clientContext.anamnesis) || {},
+      updated_at: new Date().toISOString()
+    };
+    const notePayload = {
+      client_email: selectedClient.email,
+      ciclo: ciclo,
+      semana: semana,
+      period_start: $('dataInicio').value || null,
+      period_end: $('dataFim').value || null,
+      note: $('weeklyNote').value.trim() || null,
+      instruction: $('weeklyInstruction').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    const [contextRes, noteRes] = await Promise.all([
+      supa.from('client_context')
+        .upsert(contextPayload, {onConflict:'client_email'})
+        .select('*')
+        .single(),
+      supa.from('client_weekly_notes')
+        .upsert(notePayload, {onConflict:'client_email,ciclo,semana'})
+        .select('*')
+        .single()
+    ]);
+    if(contextRes.error) throw contextRes.error;
+    if(noteRes.error) throw noteRes.error;
+    clientContext = contextRes.data;
+    clientWeeklyNote = noteRes.data;
+    toast('Contexto salvo para proximas devolutivas.');
+  }catch(err){
+    toast('Erro ao salvar contexto: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Salvar contexto';
+  }
+}
+
+function contextTextForReport(){
+  const parts = [];
+  if(clientContext){
+    if(clientContext.primary_goal) parts.push('Objetivo: ' + clientContext.primary_goal);
+    if(clientContext.limitations) parts.push('Limitacoes/rotina: ' + clientContext.limitations);
+    if(clientContext.injuries_pain) parts.push('Dores/lesoes: ' + clientContext.injuries_pain);
+    if(clientContext.food_restrictions) parts.push('Restricoes alimentares: ' + clientContext.food_restrictions);
+    if(clientContext.motivation_notes) parts.push('Motivadores: ' + clientContext.motivation_notes);
+    if(clientContext.communication_style) parts.push('Estilo: ' + clientContext.communication_style);
+    if(clientContext.attention_points) parts.push('Atencao: ' + clientContext.attention_points);
+    const anamnesisText = formatAnamnesis(clientContext.anamnesis);
+    if(!anamnesisText.includes('ainda nao preenchida')) parts.push('Anamnese detalhada:\n' + anamnesisText);
+  }
+  if(clientWeeklyNote && clientWeeklyNote.note) parts.push('Nota semanal: ' + clientWeeklyNote.note);
+  if(clientWeeklyNote && clientWeeklyNote.instruction) parts.push('Instrucao semanal: ' + clientWeeklyNote.instruction);
+  return parts.join('\n');
+}
+
+function resetReports(){
+  weeklyReports = [];
+  selectedReport = null;
+  $('reportList').innerHTML = '<div class="state">Carregue os relatorios do cliente.</div>';
+  $('reportDetail').classList.add('hidden');
+  $('copyReportBtn').disabled = true;
+}
+
+function statusLabel(status){
+  if(status === 'ready_for_publication') return 'Pronto';
+  if(status === 'published') return 'Publicado';
+  if(status === 'reviewed') return 'Revisado';
+  return 'Rascunho';
+}
+
+function statusClass(status){
+  if(status === 'ready_for_publication' || status === 'published' || status === 'reviewed') return 'ready';
+  return 'draft';
+}
+
+function reportAiMeta(report){
+  const raw = report && report.raw_data ? report.raw_data : {};
+  const data = report && report.report_data ? report.report_data : {};
+  return {
+    status: raw.ai_status || data.ai_status || '',
+    model: raw.ai_model || data.ai_model || '',
+    error: raw.ai_error || data.ai_error || null
+  };
+}
+
+function reportAiLabel(report){
+  const status = reportAiMeta(report || {}).status;
+  if(status === 'claude') return 'IA: Claude API';
+  if(status === 'fallback_no_key') return 'IA: fallback sem chave';
+  if(status === 'fallback_empty_response') return 'IA: fallback vazio';
+  if(status === 'claude_error') return 'IA: erro Claude';
+  return 'IA: --';
+}
+
+function renderAiStatus(report){
+  const el = $('reportAiStatus');
+  if(!el) return;
+  const meta = reportAiMeta(report || {});
+  el.className = 'ai-status';
+  let title = 'Origem do rascunho: nao identificada';
+  let detail = 'Este rascunho pode ter sido gerado antes do controle de origem da IA.';
+  if(meta.status === 'claude'){
+    el.classList.add('claude');
+    title = 'Origem do rascunho: Claude API';
+    detail = 'Modelo: ' + (meta.model || 'nao informado') + '. Revise antes de publicar.';
+  }else if(meta.status === 'claude_max_tokens'){
+    el.classList.add('error');
+    title = 'Origem do rascunho: Claude API, possivel corte por limite';
+    detail = 'Modelo: ' + (meta.model || 'nao informado') + '. Gere novamente ou use Reescrever com ajustes.';
+  }else if(meta.status === 'fallback_no_key'){
+    el.classList.add('fallback');
+    title = 'Origem do rascunho: fallback sem Claude API';
+    detail = 'A chave ANTHROPIC_API_KEY ainda nao esta configurada nos secrets da Edge Function.';
+  }else if(meta.status === 'fallback_empty_response'){
+    el.classList.add('fallback');
+    title = 'Origem do rascunho: fallback por resposta vazia';
+    detail = 'A Claude API respondeu sem texto util. Foi usado o rascunho estruturado simples.';
+  }else if(meta.status === 'claude_error'){
+    el.classList.add('error');
+    title = 'Origem do rascunho: erro na Claude API';
+    const err = typeof meta.error === 'string'
+      ? meta.error
+      : (meta.error && (meta.error.message || meta.error.code || meta.error.status) ? (meta.error.message || meta.error.code || meta.error.status) : 'erro nao detalhado');
+    detail = 'Foi usado fallback. Detalhe: ' + err;
+  }
+  el.innerHTML = '<strong>' + escapeHtml(title) + '</strong><br>' + escapeHtml(detail);
+}
+
+function fmtPeriod(start, end){
+  const a = start ? start.split('-').reverse().join('/') : '--';
+  const b = end ? end.split('-').reverse().join('/') : '--';
+  return a + ' a ' + b;
+}
+
+async function loadWeeklyReports(showToast){
+  if(!selectedClient || creatingClient) return;
+  $('reportList').innerHTML = '<div class="state">Carregando relatorios...</div>';
+  $('reportDetail').classList.add('hidden');
+  $('copyReportBtn').disabled = true;
+  try{
+    const {data, error} = await supa.from('weekly_reports')
+      .select(REPORT_SELECT)
+      .eq('client_email', selectedClient.email)
+      .order('generated_at', {ascending:false})
+      .limit(12);
+    if(error) throw error;
+    weeklyReports = data || [];
+    renderWeeklyReports();
+    if(showToast) toast('Relatorios carregados.');
+  }catch(err){
+    $('reportList').innerHTML = '<div class="state">Nao foi possivel carregar relatorios: '+escapeHtml(errorText(err))+'</div>';
+  }
+}
+
+async function generateWeeklyReportDraft(){
+  if(!selectedClient || creatingClient) return;
+  updateDateAlerts();
+  const rangeState = dateRangeState();
+  if(rangeState.start && rangeState.end && !rangeState.includesToday){
+    const ok = confirm('O periodo selecionado e ' + fmtPeriod(rangeState.start, rangeState.end) + ' e nao inclui hoje. Dados registrados fora desse periodo nao serao computados. Gerar mesmo assim?');
+    if(!ok) return;
+  }
+  const btn = $('generateReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Gerando...';
+  try{
+    await saveClientContext();
+    const body = {
+      client_email: selectedClient.email,
+      period_start: $('dataInicio').value || undefined,
+      period_end: $('dataFim').value || undefined
+    };
+    const data = await invokeWeeklyReport(body);
+    if(!data || data.ok === false) throw {source:'weekly-report', response:data || null, error:data && data.error ? data.error : 'Funcao nao retornou ok.'};
+    toast('Rascunho semanal gerado.');
+    await loadWeeklyReports();
+    if(data.reports && data.reports[0] && data.reports[0].id) selectReport(data.reports[0].id);
+  }catch(err){
+    const msg = errorText(err);
+    $('reportList').innerHTML = '<div class="state">Erro ao gerar rascunho:<br>'+escapeHtml(msg)+'</div>';
+    toast('Erro ao gerar rascunho: ' + msg);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function invokeWeeklyReport(body){
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session || !session.access_token) throw new Error('Sessao expirada. Entre novamente no Admin.');
+  const res = await fetch(SUPA_URL + '/functions/v1/weekly-report', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer ' + session.access_token,
+      'apikey': SUPA_KEY
+    },
+    body: JSON.stringify(body)
+  });
+  const text = await res.text();
+  let data = null;
+  try{ data = text ? JSON.parse(text) : null; }
+  catch(e){ data = {error:text || 'Resposta invalida da Edge Function.'}; }
+  if(!res.ok){
+    throw {source:'weekly-report-http', status:res.status, response:data, text:text};
+  }
+  return data;
+}
+
+function renderWeeklyReports(){
+  if(!weeklyReports.length){
+    $('reportList').innerHTML = '<div class="state">Ainda nao existe rascunho semanal para este cliente. Depois que a Edge Function rodar, ele aparece aqui.</div>';
+    return;
+  }
+  $('reportList').innerHTML = weeklyReports.map(r=>`
+    <button class="report-btn ${selectedReport && selectedReport.id === r.id ? 'active' : ''}" type="button" data-id="${escapeHtml(r.id)}">
+      <div class="report-head">
+        <div>
+          <div class="report-title">Ciclo ${escapeHtml(r.ciclo || '-')} · Semana ${escapeHtml(r.semana || '-')}</div>
+          <div class="report-period">${escapeHtml(fmtPeriod(r.period_start, r.period_end))}</div>
+          <div class="report-period">${escapeHtml(reportAiLabel(r))}</div>
+        </div>
+        <div class="report-status ${statusClass(r.status)}">${escapeHtml(statusLabel(r.status))}</div>
+      </div>
+    </button>
+  `).join('');
+  document.querySelectorAll('.report-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectReport(btn.dataset.id));
+  });
+}
+
+function selectReport(id){
+  selectedReport = weeklyReports.find(r => r.id === id) || null;
+  renderWeeklyReports();
+  renderReportDetail();
+}
+
+function renderReportDetail(){
+  if(!selectedReport){
+    $('reportDetail').classList.add('hidden');
+    $('copyReportBtn').disabled = true;
+    return;
+  }
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  $('reportDetail').classList.remove('hidden');
+  $('copyReportBtn').disabled = false;
+  $('repTrain').textContent = (tr.sessions || 0) + '/' + ((selectedReport.goals_snapshot || []).find(g => norm(g.nome).includes('treino'))?.meta_valor || '-');
+  $('repNutri').textContent = (nu.food_days || 0) + 'd';
+  $('repWater').textContent = (nu.water_days || 0) + 'd';
+  $('reportAiDraft').value = selectedReport.ai_draft || '';
+  $('reportCoachNotes').value = selectedReport.coach_notes || '';
+  renderAiStatus(selectedReport);
+  $('reportDriveLink').value = selectedReport.drive_file_id || '';
+  $('reportDriveStatus').textContent = selectedReport.drive_file_id ? 'PDF vinculado ao Minha Area. O botao Abrir vai usar este link.' : 'PDF ainda nao vinculado. Sem link, o Minha Area abre o texto da devolutiva.';
+  $('publishReportBtn').disabled = selectedReport.published === true;
+  $('publishReportBtn').textContent = selectedReport.published === true ? 'Publicado' : 'Publicar no app';
+  $('notifyReportBtn').disabled = selectedReport.published !== true;
+  $('deleteReportBtn').disabled = selectedReport.published === true;
+  $('deleteReportBtn').classList.toggle('hidden', selectedReport.published === true);
+}
+
+function buildReportText(){
+  if(!selectedReport) return '';
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  const goals = selectedReport.goals_snapshot || [];
+  const ai = reportAiMeta(selectedReport);
+  const goalLines = goals.length ? goals.map(g => '- ' + (g.nome || 'Meta') + ': ' + (g.realizado || 0) + '/' + (g.meta_valor || 0)).join('\n') : '- Sem metas no snapshot';
+  return [
+    'Relatorio semanal - ' + (selectedClient.nome || selectedClient.email),
+    'Periodo: ' + fmtPeriod(selectedReport.period_start, selectedReport.period_end),
+    'Origem do rascunho: ' + (ai.status || 'nao identificada') + (ai.model ? ' (' + ai.model + ')' : ''),
+    '',
+    'Treino:',
+    '- sessoes: ' + (tr.sessions || 0),
+    '- completas: ' + (tr.complete_sessions || 0),
+    '- series: ' + (tr.sets_done || 0),
+    '',
+    'Nutri:',
+    '- dias com alimentos: ' + (nu.food_days || 0),
+    '- dias com agua: ' + (nu.water_days || 0),
+    '- media kcal: ' + (nu.avg_kcal || 0),
+    '- media proteina: ' + (nu.avg_protein_g || 0) + 'g',
+    '',
+    'Metas:',
+    goalLines,
+    '',
+    'Contexto e nota semanal:',
+    contextTextForReport() || '(sem contexto salvo)',
+    '',
+    'Devolutiva:',
+    $('reportAiDraft').value.trim() || '(sem rascunho)',
+    '',
+    'Ajustes internos do Giovani (nao publicar):',
+    $('reportCoachNotes').value.trim() || '(sem notas)'
+  ].join('\n');
+}
+
+function openReportPdfView(){
+  if(!selectedReport){
+    toast('Selecione um relatorio primeiro.');
+    return;
+  }
+  const text = $('reportAiDraft').value.trim();
+  if(!text){
+    toast('Preencha ou revise a devolutiva antes de gerar PDF.');
+    return;
+  }
+  const tr = selectedReport.training_summary || {};
+  const nu = selectedReport.nutri_summary || {};
+  const title = 'Devolutiva semanal';
+  const clientName = selectedClient ? (selectedClient.nome || selectedClient.email) : 'Cliente';
+  const period = fmtPeriod(selectedReport.period_start, selectedReport.period_end);
+  const win = window.open('', '_blank');
+  if(!win){
+    toast('Permita pop-ups para gerar o PDF.');
+    return;
+  }
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devolutiva Fox</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;background:#f3f0ea;color:#171717;font-family:Arial,Helvetica,sans-serif;line-height:1.5}.sheet{max-width:820px;margin:0 auto;background:#fff;min-height:100vh;padding:34px 38px}.letterhead{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#080808;color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:22px;border:2px solid #080808}.letterbrand{display:flex;align-items:center;gap:12px}.letterbrand img{width:42px;height:42px;object-fit:contain;filter:brightness(0) invert(1);opacity:1}.letterbrand span{font-size:13px;text-transform:uppercase;letter-spacing:2px;font-weight:900;color:#fff}.stamp{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#ffb27d;font-weight:800;text-align:right}.brand{border-bottom:3px solid #ff8c42;padding-bottom:18px;margin-bottom:24px}.brand h1{margin:0;font-size:24px;letter-spacing:.3px}.brand p{margin:5px 0 0;color:#666;font-size:13px}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 24px}.box{border:1px solid #e2ddd3;border-radius:8px;padding:11px 12px;background:#fbfaf7}.k{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:#777;font-weight:800}.v{font-size:16px;font-weight:800;margin-top:4px}.content{white-space:pre-wrap;font-size:14px}.footer{border-top:1px solid #e2ddd3;margin-top:32px;padding-top:14px;color:#777;font-size:11px}.workflow{font-size:12px;color:#5f6470;background:#f7f7fb;border:1px solid #e1e3ef;border-radius:8px;padding:10px 12px;margin:0 0 18px}.actions{position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;background:#f3f0ea;padding:10px}.actions button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#7b8fd4;color:#fff}.secondary{background:#fff;color:#222;border:1px solid #ddd!important}@media print{body{background:#fff}.sheet{padding:0;max-width:none}.actions,.workflow{display:none}}</style></head><body><div class="actions"><button class="secondary" onclick="window.close()">Fechar</button><button class="primary" onclick="window.print()">Salvar como PDF</button></div><main class="sheet"><div class="letterhead"><div class="letterbrand"><img src="fox-logo-sem-fundo.svg" alt="Fox Performance"><span>Fox Performance</span></div><div class="stamp">Devolutiva<br>Semanal</div></div><header class="brand"><h1></h1><p></p></header><div class="workflow">Depois de salvar o PDF, suba o arquivo no Drive do cliente e cole o link no campo Link do PDF no Drive no painel admin.</div><section class="meta"><div class="box"><div class="k">Cliente</div><div class="v" id="pdfClient"></div></div><div class="box"><div class="k">Periodo</div><div class="v" id="pdfPeriod"></div></div><div class="box"><div class="k">Publicacao</div><div class="v" id="pdfDate"></div></div><div class="box"><div class="k">Treinos</div><div class="v" id="pdfTrain"></div></div><div class="box"><div class="k">Nutri</div><div class="v" id="pdfNutri"></div></div><div class="box"><div class="k">Agua</div><div class="v" id="pdfWater"></div></div></section><section class="content" id="pdfText"></section><footer class="footer">Documento gerado pelo painel Fox Performance.</footer></main></body></html>');
+  win.document.querySelector('h1').textContent = title;
+  win.document.querySelector('header p').textContent = 'Acompanhamento personalizado de ' + clientName;
+  win.document.getElementById('pdfClient').textContent = clientName;
+  win.document.getElementById('pdfPeriod').textContent = period;
+  win.document.getElementById('pdfDate').textContent = new Date().toLocaleDateString('pt-BR');
+  win.document.getElementById('pdfTrain').textContent = (tr.sessions || 0) + ' sessoes';
+  win.document.getElementById('pdfNutri').textContent = (nu.food_days || 0) + ' dias';
+  win.document.getElementById('pdfWater').textContent = (nu.water_days || 0) + ' dias';
+  win.document.getElementById('pdfText').textContent = text;
+  win.document.close();
+}
+
+async function saveReportReview(status){
+  if(!selectedReport) return;
+  const btn = status ? $('readyReportBtn') : $('saveReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Salvando...';
+  try{
+    const patch = {
+      ai_draft: $('reportAiDraft').value.trim() || null,
+      coach_notes: $('reportCoachNotes').value.trim() || null,
+      status: status || 'reviewed',
+      updated_at: new Date().toISOString()
+    };
+    const {data, error} = await supa.from('weekly_reports')
+      .update(patch)
+      .eq('id', selectedReport.id)
+      .select(REPORT_SELECT)
+      .single();
+    if(error) throw error;
+    selectedReport = data;
+    weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
+    renderWeeklyReports();
+    renderReportDetail();
+    toast(status ? 'Relatorio marcado como pronto.' : 'Revisao salva.');
+  }catch(err){
+    toast('Erro ao salvar relatorio: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function rewriteReportWithAdjustments(){
+  if(!selectedReport) return;
+  const notes = $('reportCoachNotes').value.trim();
+  if(!notes){
+    toast('Escreva os ajustes do Giovani antes de reescrever.');
+    return;
+  }
+  const btn = $('rewriteReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Reescrevendo...';
+  try{
+    const data = await invokeWeeklyReport({
+      action: 'rewrite',
+      report_id: selectedReport.id,
+      current_draft: $('reportAiDraft').value.trim(),
+      coach_notes: notes
+    });
+    if(!data || data.ok === false) throw {source:'weekly-report-rewrite', response:data || null, error:data && data.error ? data.error : 'Funcao nao retornou ok.'};
+    toast('Rascunho reescrito com seus ajustes.');
+    await loadWeeklyReports();
+    if(data.report && data.report.id) selectReport(data.report.id);
+  }catch(err){
+    toast('Erro ao reescrever: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function publishReportToApp(){
+  if(!selectedReport) return;
+  if(!$('reportAiDraft').value.trim() && !$('reportCoachNotes').value.trim()){
+    toast('Revise ou preencha a devolutiva antes de publicar.');
+    return;
+  }
+  const btn = $('publishReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Publicando...';
+  try{
+    const patch = {
+      ai_draft: $('reportAiDraft').value.trim() || null,
+      coach_notes: $('reportCoachNotes').value.trim() || null,
+      status: 'published',
+      published: true,
+      published_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    const {data, error} = await supa.from('weekly_reports')
+      .update(patch)
+      .eq('id', selectedReport.id)
+      .select(REPORT_SELECT)
+      .single();
+    if(error) throw error;
+    selectedReport = data;
+    weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
+    renderWeeklyReports();
+    renderReportDetail();
+    toast('Devolutiva publicada no Minha Area.');
+  }catch(err){
+    toast('Erro ao publicar devolutiva: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+    renderReportDetail();
+  }
+}
+
+async function saveReportDriveLink(){
+  if(!selectedReport) return;
+  const link = $('reportDriveLink').value.trim();
+  if(link && !/^https?:\/\//i.test(link)){
+    toast('Cole um link completo, com https://');
+    return;
+  }
+  const btn = $('saveReportDriveBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Salvando...';
+  try{
+    const {data, error} = await supa.from('weekly_reports')
+      .update({
+        drive_file_id: link || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', selectedReport.id)
+      .select(REPORT_SELECT)
+      .single();
+    if(error) throw error;
+    selectedReport = data;
+    weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
+    renderWeeklyReports();
+    renderReportDetail();
+    toast(link ? 'Link do PDF salvo.' : 'Link do PDF removido.');
+  }catch(err){
+    toast('Erro ao salvar link do PDF: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function deleteReportDraft(){
+  if(!selectedReport) return;
+  if(selectedReport.published === true){
+    toast('Relatorio publicado fica preservado no historico.');
+    return;
+  }
+  if(!confirm('Excluir este rascunho? Esta acao nao afeta a devolutiva publicada no app.')) return;
+  const id = selectedReport.id;
+  const btn = $('deleteReportBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Excluindo...';
+  try{
+    const {error} = await supa.from('weekly_reports')
+      .delete()
+      .eq('id', id)
+      .eq('published', false);
+    if(error) throw error;
+    weeklyReports = weeklyReports.filter(r => r.id !== id);
+    selectedReport = weeklyReports[0] || null;
+    renderWeeklyReports();
+    renderReportDetail();
+    toast('Rascunho excluido.');
+  }catch(err){
+    toast('Erro ao excluir rascunho: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function copyReportSummary(){
+  if(!selectedReport) return;
+  const text = buildReportText();
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Resumo copiado.');
+  }catch(err){
+    toast('Nao consegui copiar automaticamente.');
+  }
+}
+
+async function loadGoal(){
+  const ciclo = asNum('ciclo', selectedClient.ciclo_atual || 1);
+  const semana = asNum('semana', selectedClient.semana_atual || 1);
+  const {data, error} = await supa.from('weekly_goals')
+    .select('metas,foco_semana,data_inicio,data_fim,publicado')
+    .eq('client_email', selectedClient.email)
+    .eq('ciclo', ciclo)
+    .eq('semana', semana)
+    .maybeSingle();
+
+  if(error){
+    toast('Nao foi possivel carregar metas: ' + error.message);
+    return;
+  }
+  if(!data) return;
+  currentGoal = data;
+  if(Array.isArray(data.metas) && data.metas.length) renderMetas(data.metas);
+  $('foco').value = data.foco_semana || '';
+  if(data.data_inicio) $('dataInicio').value = data.data_inicio;
+  if(data.data_fim) $('dataFim').value = data.data_fim;
+  updateDateAlerts();
+}
+
+async function publishGoals(e){
+  e.preventDefault();
+  if(!selectedClient) return;
+
+  const btn = $('publishBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publicando...';
+
+  const ciclo = asNum('ciclo', 1);
+  const semana = asNum('semana', 1);
+  const total = asNum('totalSemanas', 8);
+  const metas = readMetas();
+
+  try{
+    const profileUpdate = {
+      ciclo_atual: ciclo,
+      semana_atual: semana,
+      total_semanas: total,
+      folder_id: extractDriveFolderId($('folderId').value) || null,
+      numero_whatsapp: $('whatsapp').value.trim() || null
+    };
+    const profileRes = await supa.from('clients')
+      .update(profileUpdate)
+      .eq('email', selectedClient.email);
+    if(profileRes.error) throw profileRes.error;
+
+    const payload = {
+      client_email: selectedClient.email,
+      ciclo: ciclo,
+      semana: semana,
+      metas: metas,
+      foco_semana: $('foco').value.trim(),
+      data_inicio: $('dataInicio').value || null,
+      data_fim: $('dataFim').value || null,
+      publicado: true
+    };
+    const goalRes = await supa.from('weekly_goals')
+      .upsert(payload, {onConflict:'client_email,ciclo,semana'});
+    if(goalRes.error) throw goalRes.error;
+
+    selectedClient = Object.assign({}, selectedClient, profileUpdate);
+    clients = clients.map(c => c.email === selectedClient.email ? selectedClient : c);
+    currentGoal = payload;
+    renderClients();
+    updateDateAlerts();
+    toast('Metas publicadas. O cliente ja pode ver no Dashboard.');
+  }catch(err){
+    toast('Erro ao publicar: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Publicar metas';
+  }
+}
+
+async function saveClient(){
+  if(!creatingClient) return;
+  const nome = $('nome').value.trim();
+  const email = $('email').value.trim().toLowerCase();
+  if(!nome || !email || email.indexOf('@') < 0){
+    toast('Informe nome e email validos.');
+    return;
+  }
+  const payload = {
+    nome: nome,
+    email: email,
+    ciclo_atual: asNum('ciclo', 1),
+    semana_atual: asNum('semana', 1),
+    total_semanas: asNum('totalSemanas', 8),
+    folder_id: extractDriveFolderId($('folderId').value) || null,
+    numero_whatsapp: $('whatsapp').value.trim() || null
+  };
+  const btn = $('saveClientBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  try{
+    const {data, error} = await supa.from('clients')
+      .upsert(payload, {onConflict:'email'})
+      .select('email,nome,ciclo_atual,semana_atual,total_semanas,folder_id,numero_whatsapp')
+      .single();
+    if(error) throw error;
+    clients = clients.filter(c => c.email !== data.email).concat([data]).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||'')));
+    creatingClient = false;
+    selectedClient = data;
+    fillClientForm();
+    renderClients();
+    toast('Cliente salvo. Agora publique as metas semanais.');
+  }catch(err){
+    toast('Erro ao salvar cliente: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Salvar cadastro';
+  }
+}
+
+async function deleteSelectedClient(){
+  if(!selectedClient || creatingClient || !selectedClient.email) return;
+  const email = String(selectedClient.email || '').toLowerCase();
+  const nome = selectedClient.nome || email;
+  const typed = prompt('Para excluir o acesso de ' + nome + ', digite o email completo do cliente:');
+  if(typed === null) return;
+  if(String(typed).trim().toLowerCase() !== email){
+    toast('Email diferente. Exclusao cancelada.');
+    return;
+  }
+  if(!confirm('Confirmar exclusao do cliente ' + email + '? O acesso sera removido, mas historicos e relatorios ja salvos ficam preservados.')) return;
+  const btn = $('deleteClientBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Excluindo...';
+  try{
+    const {error} = await supa.from('clients')
+      .delete()
+      .eq('email', email);
+    if(error) throw error;
+    clients = clients.filter(c => String(c.email || '').toLowerCase() !== email);
+    selectedClient = null;
+    creatingClient = false;
+    currentGoal = null;
+    weeklyReports = [];
+    selectedReport = null;
+    clientContext = null;
+    clientWeeklyNote = null;
+    renderClients();
+    $('goalForm').classList.add('hidden');
+    $('emptyForm').classList.remove('hidden');
+    $('emptyForm').textContent = 'Cliente excluido. Selecione outro cliente ou cadastre um novo.';
+    toast('Cliente excluido do acesso ao app.');
+  }catch(err){
+    toast('Erro ao excluir cliente: ' + errorText(err));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+$('clientSearch').addEventListener('input', renderClients);
+$('goalForm').addEventListener('submit', publishGoals);
+$('newClientBtn').addEventListener('click', startNewClient);
+$('saveClientBtn').addEventListener('click', saveClient);
+$('deleteClientBtn').addEventListener('click', deleteSelectedClient);
+$('reloadGoalBtn').addEventListener('click', loadGoal);
+$('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
+$('useCurrentWeekReportBtn').addEventListener('click', useCurrentWeek);
+$('loadProtocolBtn').addEventListener('click', loadProtocol);
+$('publishProtocolBtn').addEventListener('click', publishProtocol);
+$('sampleProtocolBtn').addEventListener('click', ()=>{
+  $('protocolJson').value = JSON.stringify(sampleProtocol(), null, 2);
+  if(!$('protocolTitle').value) $('protocolTitle').value = 'Ciclo ' + asNum('ciclo', 1);
+  resetMediaAudit();
+});
+$('auditMediaBtn').addEventListener('click', auditProtocolMedia);
+$('applyMediaBtn').addEventListener('click', applyResolvedMedia);
+$('notifyTrainingBtn').addEventListener('click', notifyTraining);
+$('saveContextBtn').addEventListener('click', saveClientContext);
+$('reloadContextBtn').addEventListener('click', loadClientContext);
+$('generateReportBtn').addEventListener('click', generateWeeklyReportDraft);
+$('loadReportsBtn').addEventListener('click', function(){ loadWeeklyReports(true); });
+$('copyReportBtn').addEventListener('click', copyReportSummary);
+$('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
+$('rewriteReportBtn').addEventListener('click', rewriteReportWithAdjustments);
+$('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
+$('publishReportBtn').addEventListener('click', publishReportToApp);
+$('printReportBtn').addEventListener('click', openReportPdfView);
+$('saveReportDriveBtn').addEventListener('click', saveReportDriveLink);
+$('notifyReportBtn').addEventListener('click', notifyReport);
+$('deleteReportBtn').addEventListener('click', deleteReportDraft);
+$('dataInicio').addEventListener('change', updateDateAlerts);
+$('dataFim').addEventListener('change', updateDateAlerts);
+$('protocolJson').addEventListener('input', resetMediaAudit);
+$('protocolFile').addEventListener('change', function(){
+  const file = this.files && this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const parsed = validateProtocol(JSON.parse(String(reader.result || '')));
+      $('protocolJson').value = JSON.stringify(parsed, null, 2);
+      if(!$('protocolTitle').value) $('protocolTitle').value = file.name.replace(/\.json$/i,'');
+      resetMediaAudit();
+      toast('JSON importado e validado.');
+    }catch(err){
+      toast('JSON invalido: ' + errorText(err));
+    }
+  };
+  reader.readAsText(file);
+});
+$('logoutBtn').addEventListener('click', async()=>{
+  await supa.auth.signOut();
+  window.location.href = 'login.html';
+});
+$('ciclo').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
+$('semana').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
+
+boot();
+</script>
+</body>
+</html>

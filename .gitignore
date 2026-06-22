@@ -1,0 +1,30 @@
+# Secrets e variáveis de ambiente
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.json
+
+# Supabase local
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

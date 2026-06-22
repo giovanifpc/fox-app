@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Preview - Minha Area Rings</title>
+<style>
+:root{
+  --bg:#090909;
+  --folder:#e3b33d;
+  --folder-dark:#b88414;
+  --paper:#fbf7eb;
+  --ink:#15120c;
+  --muted:#73664b;
+  --line:#dfd2b1;
+  --treino:#ff8c42;
+  --hidrat:#4fc3f7;
+  --nutri:#22c55e;
+  --sono:#a855f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+body{max-width:520px;margin:0 auto;padding:18px 14px 32px}
+.folder{
+  position:relative;
+  padding-top:28px;
+}
+.tab{
+  position:absolute;
+  top:0;
+  left:8px;
+  min-width:176px;
+  height:34px;
+  padding:9px 18px 0;
+  background:linear-gradient(180deg,#f1c75a,#d9a32b);
+  border:1px solid var(--folder-dark);
+  border-bottom:0;
+  border-radius:9px 18px 0 0;
+  color:#5a3900;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+}
+.cover{
+  background:linear-gradient(180deg,#f3c85a 0%,#e1ad34 100%);
+  border:1px solid var(--folder-dark);
+  border-radius:0 12px 12px 12px;
+  padding:14px;
+  box-shadow:0 18px 40px rgba(0,0,0,.42);
+}
+.cover-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+  padding:4px 2px 13px;
+  border-bottom:1px solid rgba(92,58,0,.22);
+}
+.eyebrow{font-family:"Courier New",monospace;font-size:9px;font-weight:700;letter-spacing:1.4px;color:#6b4600;text-transform:uppercase}
+.name{margin-top:4px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1e1506;line-height:1}
+.fox-mark{
+  width:34px;
+  height:34px;
+  object-fit:contain;
+  opacity:.38;
+  filter:sepia(1) saturate(.55) brightness(.65);
+}
+.letterhead{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  opacity:.62;
+}
+.letterhead-text{
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+  color:#4e3303;
+  white-space:nowrap;
+  line-height:1.1;
+}
+.paper{
+  position:relative;
+  margin-top:14px;
+  background:
+    linear-gradient(90deg,rgba(170,130,50,.13) 1px,transparent 1px) 0 0/28px 28px,
+    linear-gradient(180deg,#fffdf6,#f5ead1);
+  border:1px solid rgba(117,82,13,.24);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 4px 14px rgba(73,48,4,.18);
+}
+.paper::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:5px;
+  background:linear-gradient(180deg,var(--treino),var(--hidrat),var(--nutri),var(--sono));
+}
+.paper-inner{padding:15px 14px 13px 18px}
+.paper-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:13px;
+}
+.title{font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;color:#342714}
+.date{font-family:"Courier New",monospace;font-size:9px;color:#8a7a59;white-space:nowrap}
+.progress-wrap{
+  display:grid;
+  grid-template-columns:138px 1fr;
+  gap:14px;
+  align-items:center;
+}
+.rings{
+  width:138px;
+  height:138px;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.rings svg{width:138px;height:138px}
+.center{
+  position:absolute;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  line-height:1;
+  min-width:34px;
+  min-height:34px;
+  justify-content:center;
+  background:rgba(255,253,246,.9);
+  border:1px solid rgba(119,86,25,.18);
+  border-radius:50%;
+  box-shadow:0 5px 12px rgba(78,50,4,.13), inset 0 1px 0 rgba(255,255,255,.85);
+}
+.center strong{font-family:Georgia,serif;font-size:14px;color:#1c1509}
+.center span{margin-top:2px;font-size:4.8px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;color:#81704e}
+.score{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.58);
+  border-radius:8px;
+  padding:10px 10px 11px;
+}
+.score-label{font-size:9px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:#7b6a47;margin-bottom:6px}
+.score-value{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#15120c}
+.score-note{font-size:10px;line-height:1.35;color:#75684f;margin-top:4px}
+.metric-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:13px;
+}
+.metric{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.62);
+  border-radius:8px;
+  padding:9px 9px 8px;
+  min-height:68px;
+}
+.metric-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.metric-name{font-size:9px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#4c402b}
+.dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.bar{height:6px;border-radius:999px;background:#e6dbc0;overflow:hidden}
+.fill{height:100%;border-radius:999px}
+.metric-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:#6f634a}
+.metric-foot strong{color:#1e170d}
+.stamp{
+  position:absolute;
+  right:13px;
+  bottom:12px;
+  transform:rotate(-8deg);
+  border:2px solid rgba(177,66,39,.32);
+  color:rgba(177,66,39,.58);
+  border-radius:50%;
+  width:54px;
+  height:54px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+  line-height:1.25;
+}
+.achievements{
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed rgba(101,72,16,.35);
+  border-radius:8px;
+  background:rgba(255,255,255,.25);
+}
+.ach-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+.ach-title{
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:#5b4b2d;
+}
+.ach-count{
+  font-family:"Courier New",monospace;
+  font-size:9px;
+  font-weight:700;
+  color:#8a7a59;
+  white-space:nowrap;
+}
+.ach-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:6px;
+}
+.medal{
+  min-height:48px;
+  border:1px solid rgba(224,211,179,.9);
+  border-radius:7px;
+  background:rgba(255,255,255,.5);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:5px 2px;
+}
+.medal-icon{
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:13px;
+  background:#ded4bc;
+  color:#94866a;
+  filter:grayscale(1);
+  opacity:.55;
+}
+.medal span{
+  font-size:6px;
+  line-height:1.15;
+  color:#8a806c;
+  text-align:center;
+  font-weight:800;
+}
+.medal.on{
+  border-color:rgba(255,140,66,.45);
+  background:linear-gradient(180deg,rgba(255,255,255,.76),rgba(255,237,205,.55));
+  box-shadow:0 4px 12px rgba(255,140,66,.12);
+}
+.medal.on .medal-icon{
+  background:linear-gradient(135deg,#ffd36b,#ff8c42);
+  color:#3b2505;
+  filter:none;
+  opacity:1;
+  box-shadow:0 3px 8px rgba(255,140,66,.25);
+}
+.medal.on span{color:#4a3820}
+.medal.seed{
+  border-color:rgba(130,96,28,.34);
+  background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(240,224,184,.52));
+}
+.medal.seed .medal-icon{
+  background:linear-gradient(135deg,#f5e3ad,#d6a73d);
+  color:#4a3103;
+  filter:none;
+  opacity:1;
+}
+.medal.seed span{color:#5a4624}
+@media (max-width:390px){
+  body{padding-left:10px;padding-right:10px}
+  .progress-wrap{grid-template-columns:126px 1fr;gap:10px}
+  .rings,.rings svg{width:126px;height:126px}
+  .score-value{font-size:26px}
+  .metric{padding:8px 7px}
+  .ach-grid{grid-template-columns:repeat(5,1fr);gap:5px}
+  .medal{min-height:45px}
+  .medal span{font-size:5.6px}
+}
+</style>
+</head>
+<body>
+  <main class="folder">
+    <div class="tab">Giovani</div>
+    <section class="cover">
+      <header class="cover-head">
+        <div>
+          <div class="eyebrow">Ciclo 1 · Semana 1 de 8</div>
+        </div>
+        <div class="letterhead">
+          <img class="fox-mark" src="fox-logo-sem-fundo.svg" alt="">
+          <div class="letterhead-text">Fox<br>Performance</div>
+        </div>
+      </header>
+
+      <article class="paper">
+        <div class="paper-inner">
+          <div class="paper-top">
+            <div class="title">Metas da semana</div>
+            <div class="date">17-23 JUN</div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="rings" aria-label="Progresso semanal">
+              <svg viewBox="0 0 138 138">
+                <circle cx="69" cy="69" r="60" fill="none" stroke="#eadfca" stroke-width="10"/>
+                <circle cx="69" cy="69" r="60" fill="none" stroke="var(--treino)" stroke-width="10" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="216" transform="rotate(-90 69 69)"/>
+                <circle cx="69" cy="69" r="47" fill="none" stroke="#eadfca" stroke-width="10"/>
+                <circle cx="69" cy="69" r="47" fill="none" stroke="var(--hidrat)" stroke-width="10" stroke-linecap="round" stroke-dasharray="295" stroke-dashoffset="84" transform="rotate(-90 69 69)"/>
+                <circle cx="69" cy="69" r="34" fill="none" stroke="#eadfca" stroke-width="10"/>
+                <circle cx="69" cy="69" r="34" fill="none" stroke="var(--nutri)" stroke-width="10" stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="92" transform="rotate(-90 69 69)"/>
+                <circle cx="69" cy="69" r="21" fill="none" stroke="#eadfca" stroke-width="10"/>
+                <circle cx="69" cy="69" r="21" fill="none" stroke="var(--sono)" stroke-width="10" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="57" transform="rotate(-90 69 69)"/>
+              </svg>
+              <div class="center">
+                <strong>58%</strong>
+                <span>adesao</span>
+              </div>
+            </div>
+
+            <aside class="score">
+              <div class="score-label">Resumo</div>
+              <div class="score-value">12/21</div>
+              <div class="score-note">Pontos de rotina concluidos nesta semana.</div>
+            </aside>
+          </div>
+
+          <div class="metric-grid">
+            <section class="metric">
+              <div class="metric-head"><div class="metric-name">Treino</div><div class="dot" style="background:var(--treino)"></div></div>
+              <div class="bar"><div class="fill" style="width:43%;background:var(--treino)"></div></div>
+              <div class="metric-foot"><span>Feito</span><strong>3/7</strong></div>
+            </section>
+            <section class="metric">
+              <div class="metric-head"><div class="metric-name">Hidratacao</div><div class="dot" style="background:var(--hidrat)"></div></div>
+              <div class="bar"><div class="fill" style="width:71%;background:var(--hidrat)"></div></div>
+              <div class="metric-foot"><span>Feito</span><strong>5/7</strong></div>
+            </section>
+            <section class="metric">
+              <div class="metric-head"><div class="metric-name">Nutri</div><div class="dot" style="background:var(--nutri)"></div></div>
+              <div class="bar"><div class="fill" style="width:57%;background:var(--nutri)"></div></div>
+              <div class="metric-foot"><span>Feito</span><strong>4/7</strong></div>
+            </section>
+            <section class="metric">
+              <div class="metric-head"><div class="metric-name">Sono</div><div class="dot" style="background:var(--sono)"></div></div>
+              <div class="bar"><div class="fill" style="width:57%;background:var(--sono)"></div></div>
+              <div class="metric-foot"><span>Feito</span><strong>4/7</strong></div>
+            </section>
+          </div>
+
+          <section class="achievements">
+            <div class="ach-head">
+              <div class="ach-title">Conquistas do ciclo</div>
+              <div class="ach-count">3/9 liberadas</div>
+            </div>
+            <div class="ach-grid">
+              <div class="medal seed"><div class="medal-icon">FOX</div><span>Quadro<br>ativo</span></div>
+              <div class="medal on"><div class="medal-icon">1</div><span>Primeiro<br>treino</span></div>
+              <div class="medal on"><div class="medal-icon">A</div><span>Volta<br>A-B-C</span></div>
+              <div class="medal on"><div class="medal-icon">5</div><span>5<br>treinos</span></div>
+              <div class="medal"><div class="medal-icon">2</div><span>2 sem.<br>seguidas</span></div>
+              <div class="medal"><div class="medal-icon">10</div><span>10<br>treinos</span></div>
+              <div class="medal"><div class="medal-icon">+</div><span>Subiu<br>carga</span></div>
+              <div class="medal"><div class="medal-icon">4</div><span>4 sem.<br>seguidas</span></div>
+              <div class="medal"><div class="medal-icon">3</div><span>3 voltas<br>completas</span></div>
+              <div class="medal"><div class="medal-icon">*</div><span>Ciclo<br>completo</span></div>
+            </div>
+          </section>
+        </div>
+        <div class="stamp">Semana<br>ativa</div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

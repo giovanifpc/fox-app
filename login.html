@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="app-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app-icon-192.png">
+<title>Fox Performance</title>
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#111;--border:#222;
+  --purple:#7B8FD4;--text:#e8e8e8;--gray:#888;--faint:#444;
+  --font:'Inter','SF Pro Display',-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px}
+.login-logo{margin-bottom:40px;text-align:center}
+.login-logo-icon{width:72px;height:72px;background:var(--surface);border:1px solid var(--border);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 32px rgba(123,143,212,.15)}
+.login-brand{font-size:1.4rem;font-weight:800;letter-spacing:3px;color:var(--text);text-transform:uppercase}
+.login-sub{font-size:.75rem;color:var(--gray);letter-spacing:1.5px;margin-top:4px}
+.login-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px}
+.login-title{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.login-desc{font-size:.82rem;color:var(--gray);line-height:1.5;margin-bottom:24px}
+.input-group{margin-bottom:16px}
+.input-label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.8px;color:var(--gray);text-transform:uppercase;margin-bottom:8px}
+.input-field{width:100%;background:#161616;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:.95rem;color:var(--text);font-family:var(--font);outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--purple)}
+.input-field::placeholder{color:var(--faint)}
+.btn-primary{width:100%;background:var(--purple);border:none;border-radius:10px;padding:15px;font-size:.95rem;font-weight:700;color:#fff;cursor:pointer;letter-spacing:.5px;transition:opacity .2s;margin-top:4px}
+.btn-primary:active{opacity:.8}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.login-msg{margin-top:16px;padding:12px 16px;border-radius:10px;font-size:.85rem;text-align:center;display:none}
+.login-msg.success{background:rgba(123,143,212,.1);border:1px solid rgba(123,143,212,.3);color:var(--purple)}
+.login-msg.error{background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);color:#ff6b6b}
+.login-footer{margin-top:32px;font-size:.72rem;color:var(--faint);text-align:center;letter-spacing:.5px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.success-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;display:none}
+.success-icon{font-size:56px;margin-bottom:24px}
+.success-title{font-size:1.4rem;font-weight:800;margin-bottom:12px}
+.success-text{font-size:.9rem;color:var(--gray);line-height:1.6;max-width:300px}
+.success-email{color:var(--purple);font-weight:600}
+.btn-secondary{margin-top:28px;background:transparent;border:1px solid #333;border-radius:10px;padding:12px 28px;color:#888;font-size:.85rem;cursor:pointer;font-family:var(--font)}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">
+    <div class="login-logo-icon">
+      <svg viewBox="0 0 48 48" width="38" height="38" fill="none">
+        <path d="M8 14a3 3 0 013-3h8l3 4h13a3 3 0 013 3v14a3 3 0 01-3 3H11a3 3 0 01-3-3V14z" fill="#7B8FD4" opacity=".5"/>
+        <path d="M8 20h32v11a3 3 0 01-3 3H11a3 3 0 01-3-3V20z" fill="#7B8FD4"/>
+      </svg>
+    </div>
+    <div class="login-brand">Fox Performance</div>
+    <div class="login-sub">Consultoria · Área do Cliente</div>
+  </div>
+  <div class="login-card">
+    <div class="login-title">Acesse sua área</div>
+    <div class="login-desc">Digite seu e-mail cadastrado. Vamos enviar um link de acesso seguro — sem senha necessária.</div>
+    <div class="input-group">
+      <label class="input-label" for="emailInput">E-mail</label>
+      <input class="input-field" type="email" id="emailInput" placeholder="seu@email.com" autocomplete="email" inputmode="email">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="sendMagicLink()">Enviar link de acesso</button>
+    <div class="login-msg" id="loginMsg"></div>
+  </div>
+  <div class="login-footer">Acesso seguro via link · Sem senha</div>
+</div>
+
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">📬</div>
+  <div class="success-title">Link enviado!</div>
+  <div class="success-text">
+    Enviamos um link de acesso para<br>
+    <span class="success-email" id="successEmail"></span><br><br>
+    Abra seu e-mail e clique no link para entrar. O link expira em 1 hora.
+  </div>
+  <button class="btn-secondary" onclick="tryAgain()">Não recebeu? Tentar novamente</button>
+</div>
+
+<!-- SDK oficial do Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://jxwodkpssivmcnbrsukm.supabase.co';
+const SUPA_KEY = 'sb_publishable_agSM3r3S7rb333VEmW2tiQ_Ng6GYV3K';
+const REDIRECT_URL = 'https://giovanifpc.github.io/fox-app/login.html';
+
+// Inicializar cliente Supabase
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+async function isAllowedClient(email){
+  const {data, error} = await supa.rpc('is_allowed_client', {check_email: email});
+  if(error) throw error;
+  return data === true;
+}
+
+// ── Processar token do magic link ─────────────────────────
+async function processAuthCallback(){
+  const hash = window.location.hash;
+  if(!hash) return false;
+  const params = new URLSearchParams(hash.substring(1));
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  const error = params.get('error');
+
+  if(error){
+    window.history.replaceState(null,'',window.location.pathname);
+    showMsg('Link inválido ou expirado. Solicite um novo.','error');
+    return true;
+  }
+
+  if(!access_token) return false;
+
+  // Definir sessão via SDK
+  const {data, error: sessErr} = await supa.auth.setSession({
+    access_token, refresh_token
+  });
+
+  if(sessErr){
+    showMsg('Erro ao autenticar. Tente novamente.','error');
+    return true;
+  }
+
+  const userEmail = data && data.user && data.user.email ? data.user.email.toLowerCase() : '';
+  try{
+    const allowed = await isAllowedClient(userEmail);
+    if(!allowed){
+      await supa.auth.signOut();
+      window.history.replaceState(null,'',window.location.pathname);
+      showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+      return true;
+    }
+  }catch(e){
+    await supa.auth.signOut();
+    showMsg('Nao foi possivel validar seu acesso agora. Tente novamente em instantes.','error');
+    return true;
+  }
+
+  // Sucesso — redirecionar para o app
+  window.location.replace('index.html');
+  return true;
+}
+
+// ── Verificar sessão ativa ────────────────────────────────
+async function checkSession(){
+  const {data:{session}} = await supa.auth.getSession();
+  if(!session) return;
+  try{
+    const allowed = await isAllowedClient(session.user.email);
+    if(allowed) window.location.replace('index.html');
+    else await supa.auth.signOut();
+  }catch(e){
+    await supa.auth.signOut();
+  }
+}
+
+// ── Enviar magic link via SDK ─────────────────────────────
+async function sendMagicLink(){
+  const email = document.getElementById('emailInput').value.trim().toLowerCase();
+  const btn = document.getElementById('loginBtn');
+
+  if(!email || !email.includes('@')){
+    showMsg('Digite um e-mail válido.','error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando...';
+  document.getElementById('loginMsg').style.display = 'none';
+
+  try{
+    const allowed = await isAllowedClient(email);
+    if(!allowed){
+      showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar link de acesso';
+      return;
+    }
+  }catch(e){
+    showMsg('Nao foi possivel validar seu acesso agora. Tente novamente em instantes.','error');
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar link de acesso';
+    return;
+  }
+
+  const {error} = await supa.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: REDIRECT_URL }
+  });
+
+  if(error){
+    if(error.message.includes('not allowed') || error.message.includes('blocked')){
+      showMsg('Este e-mail não está cadastrado. Entre em contato com seu consultor.','error');
+    } else {
+      showMsg('Erro ao enviar: ' + error.message,'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar link de acesso';
+  } else {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'flex';
+    document.getElementById('successEmail').textContent = email;
+  }
+}
+
+function tryAgain(){
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').innerHTML = 'Enviar link de acesso';
+  document.getElementById('loginMsg').style.display = 'none';
+}
+
+function showMsg(text, type){
+  const msg = document.getElementById('loginMsg');
+  msg.textContent = text;
+  msg.className = `login-msg ${type}`;
+  msg.style.display = 'block';
+}
+
+function showAccessDeniedIfNeeded(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('access') === 'denied'){
+    window.history.replaceState(null,'',window.location.pathname);
+    showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
+  }
+}
+
+document.getElementById('emailInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter') sendMagicLink();
+});
+
+// Inicializar
+(async()=>{
+  const isCallback = await processAuthCallback();
+  if(!isCallback) await checkSession();
+  showAccessDeniedIfNeeded();
+})();
+</script>
+</body>
+</html>

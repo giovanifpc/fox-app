@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fox Performance</title>
+<style>
+  body{margin:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#888;font-size:14px}
+</style>
+</head>
+<body>
+<div>Redirecionando...</div>
+<script>
+// Captura o hash com o token do Supabase e redireciona para login.html
+// O GitHub Pages cai aqui quando a rota não existe
+(function(){
+  var hash = window.location.hash;
+  var search = window.location.search;
+  
+  // Tem token de auth — redirecionar para login.html preservando o hash
+  if(hash && (hash.includes('access_token') || hash.includes('error'))){
+    window.location.replace('/fox-app/login.html' + hash);
+    return;
+  }
+  
+  // Tem query string de erro — redirecionar para login.html preservando
+  if(search && (search.includes('error') || search.includes('token'))){
+    window.location.replace('/fox-app/login.html' + search + hash);
+    return;
+  }
+  
+  // Nenhum token — ir para o app
+  window.location.replace('/fox-app/');
+})();
+</script>
+</body>
+</html>
