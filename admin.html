@@ -2411,7 +2411,7 @@ $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
   };
 
   function toSlug(str){
-    return str.normalize('NFD').replace(/[Ì€-Í¯]/g,'')
+    return str.normalize('NFD').replace(/[̀-ͯ]/g,'')
       .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   }
 
