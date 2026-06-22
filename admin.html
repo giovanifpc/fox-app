@@ -128,10 +128,21 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .hidden{display:none!important}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(18px);opacity:0;transition:.25s;background:#171922;border:1px solid var(--purple);border-radius:12px;color:#fff;padding:12px 16px;font-size:13px;z-index:50;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* dashboard */
+.dash{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.dash-card{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:14px}
+.dash-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.dash-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dash-list{display:flex;flex-direction:column;gap:5px}
+.dash-item{font-size:12px;color:var(--text);background:#101116;border:1px solid var(--line);border-radius:8px;padding:7px 9px;line-height:1.35}
+.dash-item .di-name{font-weight:800}
+.dash-item .di-sub{color:var(--muted);font-size:11px;margin-top:1px}
+.dash-empty{font-size:12px;color:var(--faint);padding:6px 0}
 @media(max-width:760px){
   body{padding:18px 14px 34px}
   .top{flex-direction:column}
   .grid{grid-template-columns:1fr}
+  .dash{grid-template-columns:1fr}
   .context-grid{grid-template-columns:1fr}
   .row,.row.two,.meta{grid-template-columns:1fr}
   .pill{white-space:normal}
@@ -152,6 +163,23 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 
 <div id="blocked" class="state hidden">
   Acesso restrito ao Giovani. Entre com o email autorizado e abra esta pagina novamente.
+</div>
+
+<div id="dashboard" class="hidden">
+  <div class="dash">
+    <div class="dash-card">
+      <div class="dash-label"><span class="dash-dot" style="background:var(--green)"></span>Treinou essa semana</div>
+      <div class="dash-list" id="dashTrained"><div class="dash-empty">Carregando...</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label"><span class="dash-dot" style="background:var(--danger)"></span>Sem check-in essa semana</div>
+      <div class="dash-list" id="dashMissing"><div class="dash-empty">Carregando...</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label"><span class="dash-dot" style="background:var(--amber)"></span>Fim de ciclo em breve</div>
+      <div class="dash-list" id="dashEndingSoon"><div class="dash-empty">Carregando...</div></div>
+    </div>
+  </div>
 </div>
 
 <main id="app" class="grid hidden">
@@ -737,9 +765,68 @@ async function boot(){
     return;
   }
 
+  $('dashboard').classList.remove('hidden');
   $('app').classList.remove('hidden');
-  await loadClients();
+  await Promise.all([loadClients(), loadDashboard()]);
 }
+
+async function loadDashboard(){
+  try{
+    // semana ISO atual (segunda-feira)
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0,0,0,0);
+    const weekStart = monday.toISOString().slice(0,10);
+
+    // Carregar clientes e relatórios da semana em paralelo
+    const [{data: allClients}, {data: weekReports}] = await Promise.all([
+      supa.from('clients').select('email,nome,semana_atual,total_semanas'),
+      supa.from('weekly_reports')
+        .select('client_email,generated_at,published')
+        .gte('generated_at', weekStart + 'T00:00:00')
+    ]);
+
+    const clientList = allClients || [];
+    const reports = weekReports || [];
+
+    // Clientes com report essa semana = "treinou / fez check-in"
+    const emailsWithReport = new Set(reports.map(r => r.client_email));
+
+    // Card 1: treinou essa semana
+    const trained = clientList.filter(c => emailsWithReport.has(c.email));
+    $('dashTrained').innerHTML = trained.length
+      ? trained.map(c => `<div class="dash-item"><div class="di-name">${escapeHtml(c.nome||c.email)}</div></div>`).join('')
+      : '<div class="dash-empty">Nenhum ainda esta semana.</div>';
+
+    // Card 2: sem check-in essa semana
+    const missing = clientList.filter(c => !emailsWithReport.has(c.email));
+    $('dashMissing').innerHTML = missing.length
+      ? missing.map(c => `<div class="dash-item"><div class="di-name">${escapeHtml(c.nome||c.email)}</div></div>`).join('')
+      : '<div class="dash-empty">Todos fizeram check-in!</div>';
+
+    // Card 3: fim de ciclo em breve (faltam 2 semanas ou menos)
+    const ending = clientList.filter(c => {
+      const total = c.total_semanas || 8;
+      const atual = c.semana_atual || 1;
+      return (total - atual) <= 2;
+    });
+    $('dashEndingSoon').innerHTML = ending.length
+      ? ending.map(c => {
+          const total = c.total_semanas || 8;
+          const atual = c.semana_atual || 1;
+          const left = total - atual;
+          return `<div class="dash-item"><div class="di-name">${escapeHtml(c.nome||c.email)}</div><div class="di-sub">Sem ${atual}/${total} — falta${left===1?'':'m'} ${left} semana${left===1?'':'s'}</div></div>`;
+        }).join('')
+      : '<div class="dash-empty">Nenhum terminando em breve.</div>';
+  }catch(err){
+    ['dashTrained','dashMissing','dashEndingSoon'].forEach(id=>{
+      $(id).innerHTML = '<div class="dash-empty">Erro ao carregar.</div>';
+    });
+  }
+}
+
 
 async function loadClients(){
   $('clientList').innerHTML = '<div class="state">Carregando clientes...</div>';

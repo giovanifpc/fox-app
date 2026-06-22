@@ -504,7 +504,11 @@ async function boot(){
   setTimeout(function(){
     var sp = document.getElementById('splash');
     sp.classList.add('hide');
-    setTimeout(function(){ sp.classList.add('gone'); document.getElementById('entry').classList.add('show'); maybeShowSleepModal(); }, 450);
+    setTimeout(function(){
+      sp.classList.add('gone');
+      document.getElementById('entry').classList.add('show');
+      try{ if(!localStorage.getItem('fox_onboarded')) openTutorial(); else maybeShowSleepModal(); }catch(e){ maybeShowSleepModal(); }
+    }, 450);
   }, 850);
 }
 
@@ -852,6 +856,7 @@ function openTutorial(){
 function closeTutorial(){
   var el = document.getElementById('tutorialOverlay');
   if(el) el.classList.remove('show');
+  try{ localStorage.setItem('fox_onboarded','1'); }catch(e){}
 }
 async function logoutApp(){
   if(!confirm('Sair desta conta e voltar para a tela de login?')) return;
