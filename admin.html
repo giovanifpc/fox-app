@@ -816,6 +816,7 @@ async function boot(){
 
   $('adminContainer').classList.remove('hidden');
   await Promise.all([loadClients(), loadPendencias()]);
+  setInterval(loadPendencias, 30000);
 }
 
 async function loadDashboard(){
@@ -1002,16 +1003,9 @@ async function _markNotified(reportId){
 }
 
 async function selectClientByEmail(email, tabName){
-  switchTab(tabName||'clients');
-  const allItems = document.querySelectorAll('#clientList .client-item');
-  for(const item of allItems){
-    if(item.dataset.email === email){ item.click(); return; }
-  }
-  await loadClients();
-  setTimeout(()=>{
-    const it = document.querySelector(`#clientList .client-item[data-email="${email}"]`);
-    if(it) it.click();
-  }, 300);
+  if(!clients.length) await loadClients();
+  await selectClient(email);
+  switchTab(tabName || 'clients');
 }
 
 async function loadClients(){
