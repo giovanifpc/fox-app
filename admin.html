@@ -823,7 +823,6 @@ async function saveExerciseLibraryItem(ex, mediaUrl, row){
 }
 
 async function boot(){
-  const ac=document.getElementById("adminContainer"); console.log("[boot] adminContainer:",ac,"children:",ac?.children.length,"tab-pending:",document.getElementById("tab-pending"),"pendCountRed:",document.getElementById("pendCountRed"),"pendingBadge:",document.getElementById("pendingBadge"));
   const {data:{session}} = await supa.auth.getSession();
   if(!session){
     $('adminEmail').textContent = 'Sem sessao';
@@ -1116,7 +1115,6 @@ async function loadPendencias(){
 
     // contadores
     const elRed=document.getElementById('pendCountRed'),elAmb=document.getElementById('pendCountAmber'),elGrn=document.getElementById('pendCountGreen'),badge=document.getElementById('pendingBadge');
-    console.log('[fox debug] pendCountRed:',elRed,'tab-pending:',document.getElementById('tab-pending'));
     if(elRed) elRed.textContent=red; if(elAmb) elAmb.textContent=amber; if(elGrn) elGrn.textContent=green;
     if(badge){badge.textContent=red+amber;badge.classList.toggle('hidden',red+amber===0);}
 
