@@ -838,7 +838,8 @@ async function boot(){
   }
 
   $('adminContainer').classList.remove('hidden');
-  await Promise.all([loadClients(), loadPendencias()]);
+  await loadClients();
+  await loadPendencias();
   setInterval(loadPendencias, 30000);
 }
 
@@ -1069,7 +1070,7 @@ async function loadPendencias(){
         <div class="pend-actions">${actions}</div>
       </div>`);
     }
-    repCards.innerHTML = repHtml.length ? repHtml.join('') : '<div class="pend-empty">Nenhuma devolutiva gerada essa semana.</div>';
+    if(repCards) repCards.innerHTML = repHtml.length ? repHtml.join('') : '<div class="pend-empty">Nenhuma devolutiva gerada essa semana.</div>';
 
     // --- Engajamento (sem relatorio essa semana)
     const engCards = document.getElementById('pendEngagement');
@@ -1086,7 +1087,7 @@ async function loadPendencias(){
         <div class="pend-actions">${btn}</div>
       </div>`;
     });
-    engCards.innerHTML = engHtml.length ? engHtml.join('') : '<div class="pend-empty">Todos fizeram check-in essa semana.</div>';
+    if(engCards) engCards.innerHTML = engHtml.length ? engHtml.join('') : '<div class="pend-empty">Todos fizeram check-in essa semana.</div>';
 
     // --- Fim de ciclo
     const cycleCards = document.getElementById('pendCycle');
@@ -1110,7 +1111,7 @@ async function loadPendencias(){
         <div class=”pend-actions”>${renewBtn}</div>
       </div>`;
     });
-    cycleCards.innerHTML = cycHtml.length ? cycHtml.join('') : '<div class="pend-empty">Nenhum cliente encerrando ciclo em breve.</div>';
+    if(cycleCards) cycleCards.innerHTML = cycHtml.length ? cycHtml.join('') : '<div class="pend-empty">Nenhum cliente encerrando ciclo em breve.</div>';
 
     // contadores
     document.getElementById('pendCountRed').textContent = red;
