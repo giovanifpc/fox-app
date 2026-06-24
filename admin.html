@@ -194,25 +194,32 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
   <nav class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('pending')">Pendencias <span class="tab-badge hidden" id="pendingBadge">0</span></button>
     <button class="tab-btn" onclick="switchTab('clients')">Clientes</button>
+    <button class="tab-btn" onclick="switchTab('treinos')">Treinos</button>
     <button class="tab-btn" onclick="switchTab('reports')">Devolutivas</button>
     <button class="tab-btn" onclick="switchTab('context')">Contexto</button>
   </nav>
 
   <!-- aba: pendencias -->
-  <div id="tab-pending" class="tab-content active">
-    <div class="pend-summary">
-      <div class="pend-stat"><div class="pend-stat-num num-red" id="pendCountRed">-</div><div class="pend-stat-lbl">Pendentes</div></div>
-      <div class="pend-stat"><div class="pend-stat-num num-amber" id="pendCountAmber">-</div><div class="pend-stat-lbl">Atencao</div></div>
-      <div class="pend-stat"><div class="pend-stat-num num-green" id="pendCountGreen">-</div><div class="pend-stat-lbl">Concluidos</div></div>
+  <div id=”tab-pending” class=”tab-content active”>
+    <div id=”focoDia” style=”margin-bottom:14px;border-radius:13px;padding:14px 16px;background:var(--bg-card2);border:1px solid var(--line)”></div>
+    <div class=”pend-summary”>
+      <div class=”pend-stat”><div class=”pend-stat-num num-red” id=”pendCountRed”>-</div><div class=”pend-stat-lbl”>Pendentes</div></div>
+      <div class=”pend-stat”><div class=”pend-stat-num num-amber” id=”pendCountAmber”>-</div><div class=”pend-stat-lbl”>Atencao</div></div>
+      <div class=”pend-stat”><div class=”pend-stat-num num-green” id=”pendCountGreen”>-</div><div class=”pend-stat-lbl”>Concluidos</div></div>
     </div>
-    <div class="pend-section-title">Devolutivas</div>
-    <div class="pend-cards" id="pendReports"><div class="pend-empty">Carregando...</div></div>
-    <div class="pend-divider"></div>
-    <div class="pend-section-title">Engajamento â€” sem treino essa semana</div>
-    <div class="pend-cards" id="pendEngagement"><div class="pend-empty">Carregando...</div></div>
-    <div class="pend-divider"></div>
-    <div class="pend-section-title">Fim de ciclo em breve</div>
-    <div class="pend-cards" id="pendCycle"><div class="pend-empty">Carregando...</div></div>
+    <div id=”pendQuarta” style=”display:none”>
+      <div class=”pend-section-title”>Check de quarta — acompanhamento ativo</div>
+      <div class=”pend-cards” id=”pendCheckins”><div class=”pend-empty”>Carregando...</div></div>
+      <div class=”pend-divider”></div>
+    </div>
+    <div class=”pend-section-title”>Devolutivas</div>
+    <div class=”pend-cards” id=”pendReports”><div class=”pend-empty”>Carregando...</div></div>
+    <div class=”pend-divider”></div>
+    <div class=”pend-section-title”>Engajamento — sem treino essa semana</div>
+    <div class=”pend-cards” id=”pendEngagement”><div class=”pend-empty”>Carregando...</div></div>
+    <div class=”pend-divider”></div>
+    <div class=”pend-section-title”>Fim de ciclo em breve</div>
+    <div class=”pend-cards” id=”pendCycle”><div class=”pend-empty”>Carregando...</div></div>
   </div>
 
   <!-- aba: clientes -->
@@ -304,10 +311,24 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 
         </div>
       </details>
-      <details class="flow-section">
-        <summary>Treino do ciclo<span class="flow-kicker">Publicacao do protocolo, validacao de GIFs e aviso ao cliente.</span></summary>
-        <div class="flow-body">
-      <div class="protocol-box">
+      </div><!-- end flow-stack clientes -->
+    </form>
+  </section>
+  </main>
+  </div><!-- end tab-clients -->
+
+
+  <!-- aba: treinos -->
+  <div id="tab-treinos" class="tab-content">
+    <div class="client-bar">
+      <div>
+        <div class="client-bar-name" id="treinosClientName">Nenhum cliente selecionado</div>
+        <div class="client-bar-hint">Selecione um cliente na aba Clientes para publicar o treino.</div>
+      </div>
+      <button class="btn secondary" type="button" onclick="switchTab('clients')">Ir para Clientes</button>
+    </div>
+    <div id="treinosTabContent" style="padding:16px">
+<div class="protocol-box">
         <div class="protocol-hint">
           Cole um protocolo em JSON ou importe um arquivo .json. O Training do cliente sempre usa o ultimo treino publicado; se nada estiver publicado, usa o treino padrao do app.
         </div>
@@ -350,6 +371,14 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
               <div style="position:relative;margin-bottom:10px">
                 <input id="fmtSearch" type="text" autocomplete="off" placeholder="ðŸ” Buscar exercicio na biblioteca e adicionar..." style="width:100%;background:#101116;border:1px solid var(--purple);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px">
                 <div id="fmtSearchResults" style="display:none;position:absolute;z-index:99;width:100%;background:#1a1d28;border:1px solid var(--line);border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
+              </div>
+              <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                <span style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;font-weight:700;width:100%">+ Cardio:</span>
+                <button type="button" class="btn secondary" style="width:auto;padding:5px 10px;font-size:12px" onclick="fmtAddCardio('Caminhada livre','Mantenha ritmo constante, respire pelo nariz.',30)">Caminhada</button>
+                <button type="button" class="btn secondary" style="width:auto;padding:5px 10px;font-size:12px" onclick="fmtAddCardio('Esteira','Velocidade entre 5-7 km/h para queima de gordura.',30)">Esteira</button>
+                <button type="button" class="btn secondary" style="width:auto;padding:5px 10px;font-size:12px" onclick="fmtAddCardio('Bike ergometrica','Mantenha cadencia constante, ajuste a resistencia conforme conforto.',30)">Bike</button>
+                <button type="button" class="btn secondary" style="width:auto;padding:5px 10px;font-size:12px" onclick="fmtAddCardio('Escada (step)','Suba em ritmo constante, apoie o pe inteiro no degrau.',20)">Escada</button>
+                <button type="button" class="btn secondary" style="width:auto;padding:5px 10px;font-size:12px" onclick="fmtAddCardio('Eliptico','Movimento fluido, mantenha postura ereta e respire de forma controlada.',30)">Eliptico</button>
               </div>
               <div class="fmt-workout" data-wid="A">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -399,12 +428,8 @@ Caminhada | ritmo leve a moderado | 30min cardio"></textarea>
       </div>
         </div>
       </details>
-
-      </div><!-- end flow-stack clientes -->
-    </form>
-  </section>
-  </main>
-  </div><!-- end tab-clients -->
+    </div>
+  </div><!-- end tab-treinos -->
 
   <!-- aba: devolutivas -->
   <div id="tab-reports" class="tab-content">
@@ -882,9 +907,95 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   const content = document.getElementById('tab-'+name);
   if(content) content.classList.add('active');
-  const idx = {pending:0,clients:1,reports:2,context:3}[name];
+  const idx = {pending:0,clients:1,treinos:2,reports:3,context:4}[name];
   const btns = document.querySelectorAll('.tab-btn');
   if(btns[idx]) btns[idx].classList.add('active');
+}
+
+/* --- foco do dia --- */
+const FOCO_DIA = {
+  0: {emoji:'🗓️', titulo:'Domingo — publicar devolutivas', desc:'Revise os rascunhos, ajuste e publique para cada cliente. Eles recebem o fechamento da semana.', cor:'#7b8fd4'},
+  1: {emoji:'🚀', titulo:'Segunda — publicar metas', desc:'Defina o foco da semana para cada cliente e avise no WhatsApp. Isso ativa o cliente no inicio da semana.', cor:'#3dba6a'},
+  2: {emoji:'📋', titulo:'Terça — acompanhamento livre', desc:'Sem tarefa fixa. Bom momento para ajustes pontuais ou responder duvidas que chegaram.', cor:'#9a9a9a'},
+  3: {emoji:'💬', titulo:'Quarta — check ativo', desc:'Hora de mostrar presença. Envie uma mensagem personalizada para cada cliente com base na ultima devolutiva.', cor:'#f59e0b'},
+  4: {emoji:'📋', titulo:'Quinta — acompanhamento livre', desc:'Sem tarefa fixa. Acompanhe respostas do check de quarta e registre no contexto do cliente.', cor:'#9a9a9a'},
+  5: {emoji:'📊', titulo:'Sexta — fechar dados', desc:'Garanta que os contextos e notas de cada cliente estao atualizados. Os rascunhos serao gerados automaticamente as 2h de sabado.', cor:'#4A9EBF'},
+  6: {emoji:'✏️', titulo:'Sabado — rascunhos prontos', desc:'Os rascunhos foram gerados de madrugada. Revise e deixe prontos para publicar amanha (domingo).', cor:'#a855f7'}
+};
+
+function renderFocoDia(day){
+  const f = FOCO_DIA[day];
+  const el = document.getElementById('focoDia');
+  if(!el) return;
+  el.style.borderColor = f.cor;
+  el.innerHTML = `<div style=”display:flex;align-items:center;gap:10px;margin-bottom:6px”>
+    <span style=”font-size:22px”>${f.emoji}</span>
+    <span style=”font-size:13px;font-weight:800;color:${f.cor}”>${f.titulo}</span>
+  </div>
+  <div style=”font-size:12px;color:var(--muted);line-height:1.6”>${f.desc}</div>`;
+}
+
+function extrairPontoAjuste(aiDraft){
+  if(!aiDraft) return null;
+  const lower = aiDraft.toLowerCase();
+  const markers = ['pontos de ajuste', 'ponto de ajuste'];
+  for(const m of markers){
+    const idx = lower.indexOf(m);
+    if(idx === -1) continue;
+    // pular até o próximo parágrafo após o marcador
+    const afterMarker = aiDraft.slice(idx + m.length);
+    const paraMatch = afterMarker.match(/[\r\n]+([^\r\n].{20,})/);
+    if(paraMatch) return paraMatch[1].replace(/\*\*/g,'').trim().slice(0, 180);
+  }
+  return null;
+}
+
+async function loadChecksQuarta(clients){
+  const checkins = document.getElementById('pendCheckins');
+  if(!checkins) return;
+
+  // buscar último relatório publicado de cada cliente
+  const emails = clients.map(c=>c.email);
+  const {data: lastReports} = await supa.from('weekly_reports')
+    .select('client_email,ai_draft,period_start,period_end')
+    .eq('published', true)
+    .in('client_email', emails)
+    .order('published_at', {ascending:false});
+
+  // pegar o mais recente por cliente
+  const byEmail = {};
+  (lastReports||[]).forEach(r=>{ if(!byEmail[r.client_email]) byEmail[r.client_email] = r; });
+
+  const html = clients.map(c=>{
+    const phone = String(c.numero_whatsapp||'').replace(/\D/g,'');
+    const rep = byEmail[c.email];
+    const ponto = rep ? extrairPontoAjuste(rep.ai_draft) : null;
+    const periodo = rep ? fmtPeriod(rep.period_start, rep.period_end) : '';
+
+    const contextoHtml = ponto
+      ? `<div style=”font-size:11px;color:var(--muted);margin:6px 0 4px;line-height:1.5;font-style:italic”>”${escapeHtml(ponto)}”</div>`
+      : `<div style=”font-size:11px;color:var(--muted);margin:6px 0 4px”>Sem devolutiva publicada ainda.</div>`;
+
+    const msgBase = ponto
+      ? `Oi, ${c.nome}! Como voce esta indo essa semana? Na ultima devolutiva, o ponto de atencao era: “${ponto.slice(0,100)}${ponto.length>100?'...':''}” — como esta esse aspecto agora?`
+      : `Oi, ${c.nome}! Como voce esta indo essa semana? Tudo certo com os treinos?`;
+    const msgEncoded = encodeURIComponent(msgBase);
+
+    const btnWa = phone
+      ? `<a class=”btn secondary pend-tag amber” href=”https://wa.me/${phone}?text=${msgEncoded}” target=”_blank” style=”text-decoration:none”>Enviar WA</a>`
+      : `<button class=”btn secondary pend-tag amber” onclick=”selectClientByEmail('${c.email}','clients')” title=”Cadastrar WhatsApp”>Sem WA</button>`;
+
+    return `<div class=”pend-card amber”>
+      <div class=”pend-card-body” style=”flex:1”>
+        <div class=”pend-card-name”>${escapeHtml(c.nome)}</div>
+        ${periodo ? `<div class=”pend-card-sub”>Ref: ${periodo}</div>` : ''}
+        ${contextoHtml}
+      </div>
+      <div class=”pend-actions”>${btnWa}</div>
+    </div>`;
+  }).join('');
+
+  checkins.innerHTML = html || '<div class=”pend-empty”>Nenhum cliente cadastrado.</div>';
 }
 
 /* â”€â”€ aba pendencias â”€â”€ */
@@ -897,6 +1008,8 @@ async function loadPendencias(){
     monday.setHours(0,0,0,0);
     const weekStart = monday.toISOString().slice(0,10);
 
+    renderFocoDia(day);
+
     const [{data:allClients},{data:weekReports}] = await Promise.all([
       supa.from('clients').select('email,nome,semana_atual,total_semanas,numero_whatsapp'),
       supa.from('weekly_reports')
@@ -908,6 +1021,15 @@ async function loadPendencias(){
     const clients = allClients || [];
     const reports = weekReports || [];
     const reportedEmails = new Set(reports.map(r=>r.client_email));
+
+    // --- check de quarta
+    const quartaSection = document.getElementById('pendQuarta');
+    if(day === 3){
+      quartaSection.style.display = '';
+      await loadChecksQuarta(clients);
+    } else {
+      quartaSection.style.display = 'none';
+    }
 
     // --- contadores
     let red=0, amber=0, green=0;
@@ -932,7 +1054,7 @@ async function loadPendencias(){
         const msgEncoded = encodeURIComponent('Oi, '+nome+'! Sua devolutiva semanal ja esta disponivel no app, referente ao periodo '+periodo+'. Quando olhar, me chama!');
         actions = phone
           ? `<a class="btn secondary pend-tag amber" href="https://wa.me/${phone}?text=${msgEncoded}" target="_blank" onclick="_markNotified('${r.id}')">Avisar WA</a>`
-          : `<span class="pend-tag amber">Sem WA</span>`;
+          : `<button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${r.client_email}','clients')" title="Cadastrar WhatsApp">Sem WA</button>`;
       } else if(r.status==='ready'){
         amber++;
         colorClass='amber'; tag='Publicar';
@@ -978,9 +1100,16 @@ async function loadPendencias(){
     const cycHtml = endingSoon.map(c=>{
       amber++;
       const restantes = Number(c.total_semanas||8) - Number(c.semana_atual||0);
-      return `<div class="pend-card amber">
-        <div class="pend-card-body"><div class="pend-card-name">${escapeHtml(c.nome)}</div><div class="pend-card-sub">S${c.semana_atual}/${c.total_semanas} â€” ${restantes<=0?'Ciclo encerrado':restantes+' semana(s) restante(s)'}</div></div>
-        <div class="pend-actions"><button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${c.email}','clients')">Planejar</button></div>
+      const encerrado = restantes <= 0;
+      const colorClass = encerrado ? 'red' : 'amber';
+      if(encerrado) { red++; amber--; }
+      const label = encerrado ? 'Ciclo encerrado' : restantes+' semana(s) restante(s)';
+      const renewBtn = encerrado
+        ? `<button class=”btn secondary pend-tag red” onclick=”renovarCicloConfirm('${c.email}','${escapeHtml(c.nome)}',${c.ciclo_atual||1},${c.total_semanas||8})”>Renovar ciclo</button>`
+        : `<button class=”btn secondary pend-tag amber” onclick=”selectClientByEmail('${c.email}','clients')”>Planejar</button>`;
+      return `<div class=”pend-card ${colorClass}”>
+        <div class=”pend-card-body”><div class=”pend-card-name”>${escapeHtml(c.nome)}</div><div class=”pend-card-sub”>S${c.semana_atual}/${c.total_semanas} — ${label}</div></div>
+        <div class=”pend-actions”>${renewBtn}</div>
       </div>`;
     });
     cycleCards.innerHTML = cycHtml.length ? cycHtml.join('') : '<div class="pend-empty">Nenhum cliente encerrando ciclo em breve.</div>';
@@ -1062,11 +1191,13 @@ function _updateClientBars(){
   const rContent = document.getElementById('reportTabContent');
   const cName = document.getElementById('contextClientName');
   const cContent = document.getElementById('contextTabContent');
+  const tn = document.getElementById('treinosClientName');
   if(nome){
     if(rName) rName.textContent = nome;
     if(rContent) rContent.classList.remove('hidden');
     if(cName) cName.textContent = nome;
     if(cContent) cContent.classList.remove('hidden');
+    if(tn) tn.textContent = nome;
   } else {
     if(rName) rName.textContent = 'Nenhum cliente selecionado';
     if(rContent) rContent.classList.add('hidden');
@@ -2129,12 +2260,73 @@ async function publishReportToApp(){
     renderWeeklyReports();
     renderReportDetail();
     toast('Devolutiva publicada no Minha Area.');
+    _promptAdvanceWeek();
   }catch(err){
     toast('Erro ao publicar devolutiva: ' + errorText(err));
   }finally{
     btn.disabled = false;
     btn.textContent = oldText;
     renderReportDetail();
+  }
+}
+
+function _promptAdvanceWeek(){
+  if(!selectedClient) return;
+  const semAtual = Number(selectedClient.semana_atual || 1);
+  const total = Number(selectedClient.total_semanas || 8);
+  if(semAtual >= total){
+    // último ciclo — oferecer renovação
+    if(confirm('Última semana do ciclo! Deseja renovar o ciclo agora?\n\n' +
+      selectedClient.nome + ' — Ciclo ' + (selectedClient.ciclo_atual||1) + ' → Ciclo ' + ((selectedClient.ciclo_atual||1)+1) + ', Semana 1/' + total)){
+      _renewCycle(selectedClient.email, selectedClient.ciclo_atual||1, total);
+    }
+    return;
+  }
+  const proxima = semAtual + 1;
+  if(confirm('Avançar semana de ' + selectedClient.nome + '?\n\nS' + semAtual + ' → S' + proxima + ' (de ' + total + ')')){
+    _advanceWeek(selectedClient.email, proxima, total);
+  }
+}
+
+async function _advanceWeek(email, novaSemana, total){
+  try{
+    const {error} = await supa.from('clients')
+      .update({semana_atual: novaSemana})
+      .eq('email', email);
+    if(error) throw error;
+    selectedClient = Object.assign({}, selectedClient, {semana_atual: novaSemana});
+    clients = clients.map(c => c.email === email ? selectedClient : c);
+    $('semana').value = novaSemana;
+    renderClients();
+    toast('Semana avançada para S' + novaSemana + '/' + total + '.');
+    loadPendencias();
+  }catch(err){
+    toast('Erro ao avançar semana: ' + errorText(err));
+  }
+}
+
+function renovarCicloConfirm(email, nome, cicloAtual, totalSemanas){
+  if(confirm('Renovar ciclo de ' + nome + '?\n\nCiclo ' + cicloAtual + ' → Ciclo ' + (cicloAtual+1) + ', Semana 1/' + totalSemanas)){
+    _renewCycle(email, cicloAtual, totalSemanas);
+  }
+}
+
+async function _renewCycle(email, cicloAtual, totalSemanas){
+  try{
+    const novoCiclo = cicloAtual + 1;
+    const {error} = await supa.from('clients')
+      .update({ciclo_atual: novoCiclo, semana_atual: 1})
+      .eq('email', email);
+    if(error) throw error;
+    selectedClient = Object.assign({}, selectedClient, {ciclo_atual: novoCiclo, semana_atual: 1});
+    clients = clients.map(c => c.email === email ? selectedClient : c);
+    $('ciclo').value = novoCiclo;
+    $('semana').value = 1;
+    renderClients();
+    toast('Ciclo renovado! ' + selectedClient.nome + ' iniciou o Ciclo ' + novoCiclo + '.');
+    loadPendencias();
+  }catch(err){
+    toast('Erro ao renovar ciclo: ' + errorText(err));
   }
 }
 
@@ -2580,6 +2772,12 @@ $('useCurrentWeekBtn').addEventListener('click', useCurrentWeek);
       if(!results.contains(e.target) && e.target !== input) results.style.display='none';
     });
   }
+
+  function fmtAddCardio(nome, note, mins){
+    const target = document.querySelector('.fmt-exlist:focus') || document.querySelector('.fmt-exlist');
+    if(target){ target.value += nome + ' | ' + note + ' | ' + mins + 'min cardio\n'; target.focus(); }
+  }
+  window.fmtAddCardio = fmtAddCardio;
 
   document.addEventListener('DOMContentLoaded',()=>{
     $('fmtGenerate').addEventListener('click', generateJson);
