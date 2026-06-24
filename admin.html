@@ -954,6 +954,7 @@ async function loadChecksQuarta(clients){
 
   // buscar último relatório publicado de cada cliente
   const emails = clients.map(c=>c.email);
+  if(!emails.length){ checkins.innerHTML='<div class="pend-empty">Nenhum cliente cadastrado.</div>'; return; }
   const {data: lastReports} = await supa.from('weekly_reports')
     .select('client_email,ai_draft,period_start,period_end')
     .eq('published', true)
@@ -1121,7 +1122,7 @@ async function loadPendencias(){
     badge.textContent = red+amber;
     badge.classList.toggle('hidden', red+amber === 0);
 
-  } catch(e){ console.error('loadPendencias',e); }
+  } catch(e){ console.error('loadPendencias',e); const fd=document.getElementById('focoDia'); if(fd) fd.innerHTML='<span style="color:#e05555;font-size:12px">Erro ao carregar: '+String(e)+'</span>'; }
 }
 
 async function _markNotified(reportId){
