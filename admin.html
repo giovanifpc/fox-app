@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -200,26 +200,26 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
   </nav>
 
   <!-- aba: pendencias -->
-  <div id=”tab-pending” class=”tab-content active”>
-    <div id=”focoDia” style=”margin-bottom:14px;border-radius:13px;padding:14px 16px;background:var(--surface);border:1px solid var(--line)”></div>
-    <div class=”pend-summary”>
-      <div class=”pend-stat”><div class=”pend-stat-num num-red” id=”pendCountRed”>-</div><div class=”pend-stat-lbl”>Pendentes</div></div>
-      <div class=”pend-stat”><div class=”pend-stat-num num-amber” id=”pendCountAmber”>-</div><div class=”pend-stat-lbl”>Atencao</div></div>
-      <div class=”pend-stat”><div class=”pend-stat-num num-green” id=”pendCountGreen”>-</div><div class=”pend-stat-lbl”>Concluidos</div></div>
+  <div id="tab-pending" class="tab-content active">
+    <div id="focoDia" style="margin-bottom:14px;border-radius:13px;padding:14px 16px;background:var(--surface);border:1px solid var(--line)"></div>
+    <div class="pend-summary">
+      <div class="pend-stat"><div class="pend-stat-num num-red" id="pendCountRed">-</div><div class="pend-stat-lbl">Pendentes</div></div>
+      <div class="pend-stat"><div class="pend-stat-num num-amber" id="pendCountAmber">-</div><div class="pend-stat-lbl">Atencao</div></div>
+      <div class="pend-stat"><div class="pend-stat-num num-green" id="pendCountGreen">-</div><div class="pend-stat-lbl">Concluidos</div></div>
     </div>
-    <div id=”pendQuarta” style=”display:none”>
-      <div class=”pend-section-title”>Check de quarta — acompanhamento ativo</div>
-      <div class=”pend-cards” id=”pendCheckins”><div class=”pend-empty”>Carregando...</div></div>
-      <div class=”pend-divider”></div>
+    <div id="pendQuarta" style="display:none">
+      <div class="pend-section-title">Check de quarta — acompanhamento ativo</div>
+      <div class="pend-cards" id="pendCheckins"><div class="pend-empty">Carregando...</div></div>
+      <div class="pend-divider"></div>
     </div>
-    <div class=”pend-section-title”>Devolutivas</div>
-    <div class=”pend-cards” id=”pendReports”><div class=”pend-empty”>Carregando...</div></div>
-    <div class=”pend-divider”></div>
-    <div class=”pend-section-title”>Engajamento — sem treino essa semana</div>
-    <div class=”pend-cards” id=”pendEngagement”><div class=”pend-empty”>Carregando...</div></div>
-    <div class=”pend-divider”></div>
-    <div class=”pend-section-title”>Fim de ciclo em breve</div>
-    <div class=”pend-cards” id=”pendCycle”><div class=”pend-empty”>Carregando...</div></div>
+    <div class="pend-section-title">Devolutivas</div>
+    <div class="pend-cards" id="pendReports"><div class="pend-empty">Carregando...</div></div>
+    <div class="pend-divider"></div>
+    <div class="pend-section-title">Engajamento — sem treino essa semana</div>
+    <div class="pend-cards" id="pendEngagement"><div class="pend-empty">Carregando...</div></div>
+    <div class="pend-divider"></div>
+    <div class="pend-section-title">Fim de ciclo em breve</div>
+    <div class="pend-cards" id="pendCycle"><div class="pend-empty">Carregando...</div></div>
   </div>
 
   <!-- aba: clientes -->
@@ -369,7 +369,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
             </div>
             <div id="fmtWorkouts">
               <div style="position:relative;margin-bottom:10px">
-                <input id="fmtSearch" type="text" autocomplete="off" placeholder="ðŸ” Buscar exercicio na biblioteca e adicionar..." style="width:100%;background:#101116;border:1px solid var(--purple);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px">
+                <input id="fmtSearch" type="text" autocomplete="off" placeholder="ðŸ" Buscar exercicio na biblioteca e adicionar..." style="width:100%;background:#101116;border:1px solid var(--purple);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px">
                 <div id="fmtSearchResults" style="display:none;position:absolute;z-index:99;width:100%;background:#1a1d28;border:1px solid var(--line);border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
               </div>
               <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
@@ -891,7 +891,7 @@ async function loadDashboard(){
           const total = c.total_semanas || 8;
           const atual = c.semana_atual || 1;
           const left = total - atual;
-          return `<div class="dash-item"><div class="di-name">${escapeHtml(c.nome||c.email)}</div><div class="di-sub">Sem ${atual}/${total} â€” falta${left===1?'':'m'} ${left} semana${left===1?'':'s'}</div></div>`;
+          return `<div class="dash-item"><div class="di-name">${escapeHtml(c.nome||c.email)}</div><div class="di-sub">Sem ${atual}/${total} â€" falta${left===1?'':'m'} ${left} semana${left===1?'':'s'}</div></div>`;
         }).join('')
       : '<div class="dash-empty">Nenhum terminando em breve.</div>';
   }catch(err){
@@ -901,7 +901,7 @@ async function loadDashboard(){
   }
 }
 
-/* â”€â”€ navegacao por abas â”€â”€ */
+/* â"€â"€ navegacao por abas â"€â"€ */
 function switchTab(name){
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -928,11 +928,11 @@ function renderFocoDia(day){
   const el = document.getElementById('focoDia');
   if(!el) return;
   el.style.borderColor = f.cor;
-  el.innerHTML = `<div style=”display:flex;align-items:center;gap:10px;margin-bottom:6px”>
-    <span style=”font-size:22px”>${f.emoji}</span>
-    <span style=”font-size:13px;font-weight:800;color:${f.cor}”>${f.titulo}</span>
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <span style="font-size:22px">${f.emoji}</span>
+    <span style="font-size:13px;font-weight:800;color:${f.cor}">${f.titulo}</span>
   </div>
-  <div style=”font-size:12px;color:var(--muted);line-height:1.6”>${f.desc}</div>`;
+  <div style="font-size:12px;color:var(--muted);line-height:1.6">${f.desc}</div>`;
 }
 
 function extrairPontoAjuste(aiDraft){
@@ -974,32 +974,32 @@ async function loadChecksQuarta(clients){
     const periodo = rep ? fmtPeriod(rep.period_start, rep.period_end) : '';
 
     const contextoHtml = ponto
-      ? `<div style=”font-size:11px;color:var(--muted);margin:6px 0 4px;line-height:1.5;font-style:italic”>”${escapeHtml(ponto)}”</div>`
-      : `<div style=”font-size:11px;color:var(--muted);margin:6px 0 4px”>Sem devolutiva publicada ainda.</div>`;
+      ? `<div style="font-size:11px;color:var(--muted);margin:6px 0 4px;line-height:1.5;font-style:italic">"${escapeHtml(ponto)}"</div>`
+      : `<div style="font-size:11px;color:var(--muted);margin:6px 0 4px">Sem devolutiva publicada ainda.</div>`;
 
     const msgBase = ponto
-      ? `Oi, ${c.nome}! Como voce esta indo essa semana? Na ultima devolutiva, o ponto de atencao era: “${ponto.slice(0,100)}${ponto.length>100?'...':''}” — como esta esse aspecto agora?`
+      ? `Oi, ${c.nome}! Como voce esta indo essa semana? Na ultima devolutiva, o ponto de atencao era: "${ponto.slice(0,100)}${ponto.length>100?'...':''}" — como esta esse aspecto agora?`
       : `Oi, ${c.nome}! Como voce esta indo essa semana? Tudo certo com os treinos?`;
     const msgEncoded = encodeURIComponent(msgBase);
 
     const btnWa = phone
-      ? `<a class=”btn secondary pend-tag amber” href=”https://wa.me/${phone}?text=${msgEncoded}” target=”_blank” style=”text-decoration:none”>Enviar WA</a>`
-      : `<button class=”btn secondary pend-tag amber” onclick=”selectClientByEmail('${c.email}','clients')” title=”Cadastrar WhatsApp”>Sem WA</button>`;
+      ? `<a class="btn secondary pend-tag amber" href="https://wa.me/${phone}?text=${msgEncoded}" target="_blank" style="text-decoration:none">Enviar WA</a>`
+      : `<button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${c.email}','clients')" title="Cadastrar WhatsApp">Sem WA</button>`;
 
-    return `<div class=”pend-card amber”>
-      <div class=”pend-card-body” style=”flex:1”>
-        <div class=”pend-card-name”>${escapeHtml(c.nome)}</div>
-        ${periodo ? `<div class=”pend-card-sub”>Ref: ${periodo}</div>` : ''}
+    return `<div class="pend-card amber">
+      <div class="pend-card-body" style="flex:1">
+        <div class="pend-card-name">${escapeHtml(c.nome)}</div>
+        ${periodo ? `<div class="pend-card-sub">Ref: ${periodo}</div>` : ''}
         ${contextoHtml}
       </div>
-      <div class=”pend-actions”>${btnWa}</div>
+      <div class="pend-actions">${btnWa}</div>
     </div>`;
   }).join('');
 
-  checkins.innerHTML = html || '<div class=”pend-empty”>Nenhum cliente cadastrado.</div>';
+  checkins.innerHTML = html || '<div class="pend-empty">Nenhum cliente cadastrado.</div>';
 }
 
-/* â”€â”€ aba pendencias â”€â”€ */
+/* â"€â"€ aba pendencias â"€â"€ */
 async function loadPendencias(){
   const now = new Date();
   const day = now.getDay();
@@ -1105,11 +1105,11 @@ async function loadPendencias(){
       if(encerrado) { red++; amber--; }
       const label = encerrado ? 'Ciclo encerrado' : restantes+' semana(s) restante(s)';
       const renewBtn = encerrado
-        ? `<button class=”btn secondary pend-tag red” onclick=”renovarCicloConfirm('${c.email}','${escapeHtml(c.nome)}',${c.ciclo_atual||1},${c.total_semanas||8})”>Renovar ciclo</button>`
-        : `<button class=”btn secondary pend-tag amber” onclick=”selectClientByEmail('${c.email}','clients')”>Planejar</button>`;
-      return `<div class=”pend-card ${colorClass}”>
-        <div class=”pend-card-body”><div class=”pend-card-name”>${escapeHtml(c.nome)}</div><div class=”pend-card-sub”>S${c.semana_atual}/${c.total_semanas} — ${label}</div></div>
-        <div class=”pend-actions”>${renewBtn}</div>
+        ? `<button class="btn secondary pend-tag red" onclick="renovarCicloConfirm('${c.email}','${escapeHtml(c.nome)}',${c.ciclo_atual||1},${c.total_semanas||8})">Renovar ciclo</button>`
+        : `<button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${c.email}','clients')">Planejar</button>`;
+      return `<div class="pend-card ${colorClass}">
+        <div class="pend-card-body"><div class="pend-card-name">${escapeHtml(c.nome)}</div><div class="pend-card-sub">S${c.semana_atual}/${c.total_semanas} — ${label}</div></div>
+        <div class="pend-actions">${renewBtn}</div>
       </div>`;
     });
     if(cycleCards) cycleCards.innerHTML = cycHtml.length ? cycHtml.join('') : '<div class="pend-empty">Nenhum cliente encerrando ciclo em breve.</div>';
