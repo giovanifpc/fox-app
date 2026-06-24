@@ -1114,12 +1114,10 @@ async function loadPendencias(){
     if(cycleCards) cycleCards.innerHTML = cycHtml.length ? cycHtml.join('') : '<div class="pend-empty">Nenhum cliente encerrando ciclo em breve.</div>';
 
     // contadores
-    document.getElementById('pendCountRed').textContent = red;
-    document.getElementById('pendCountAmber').textContent = amber;
-    document.getElementById('pendCountGreen').textContent = green;
-    const badge = document.getElementById('pendingBadge');
-    badge.textContent = red+amber;
-    badge.classList.toggle('hidden', red+amber === 0);
+    const elRed=document.getElementById('pendCountRed'),elAmb=document.getElementById('pendCountAmber'),elGrn=document.getElementById('pendCountGreen'),badge=document.getElementById('pendingBadge');
+    console.log('[fox debug] pendCountRed:',elRed,'tab-pending:',document.getElementById('tab-pending'));
+    if(elRed) elRed.textContent=red; if(elAmb) elAmb.textContent=amber; if(elGrn) elGrn.textContent=green;
+    if(badge){badge.textContent=red+amber;badge.classList.toggle('hidden',red+amber===0);}
 
   } catch(e){ console.error('loadPendencias',e); const fd=document.getElementById('focoDia'); if(fd) fd.innerHTML='<span style="color:#e05555;font-size:12px">Erro ao carregar: '+String(e)+'</span>'; }
 }
