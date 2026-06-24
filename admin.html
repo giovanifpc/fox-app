@@ -823,6 +823,7 @@ async function saveExerciseLibraryItem(ex, mediaUrl, row){
 }
 
 async function boot(){
+  const ac=document.getElementById("adminContainer"); console.log("[boot] adminContainer:",ac,"children:",ac?.children.length,"tab-pending:",document.getElementById("tab-pending"),"pendCountRed:",document.getElementById("pendCountRed"),"pendingBadge:",document.getElementById("pendingBadge"));
   const {data:{session}} = await supa.auth.getSession();
   if(!session){
     $('adminEmail').textContent = 'Sem sessao';
