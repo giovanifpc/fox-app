@@ -1023,10 +1023,10 @@ async function loadPendencias(){
     // --- check de quarta
     const quartaSection = document.getElementById('pendQuarta');
     if(day === 3){
-      quartaSection.style.display = '';
+      if(quartaSection) quartaSection.style.display = '';
       loadChecksQuarta(clients).catch(eq=>{ console.error('loadChecksQuarta',eq); const el=document.getElementById('pendCheckins'); if(el) el.innerHTML='<div class="pend-empty">Erro ao carregar checks.</div>'; });
     } else {
-      quartaSection.style.display = 'none';
+      if(quartaSection) quartaSection.style.display = 'none';
     }
 
     // --- contadores
