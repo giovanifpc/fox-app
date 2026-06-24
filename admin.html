@@ -1026,7 +1026,8 @@ async function loadPendencias(){
     const quartaSection = document.getElementById('pendQuarta');
     if(day === 3){
       quartaSection.style.display = '';
-      await loadChecksQuarta(clients);
+      try{ await loadChecksQuarta(clients); }
+      catch(eq){ console.error('loadChecksQuarta',eq); document.getElementById('pendCheckins').innerHTML='<div class="pend-empty">Erro ao carregar checks.</div>'; }
     } else {
       quartaSection.style.display = 'none';
     }
