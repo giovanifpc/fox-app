@@ -1,4 +1,4 @@
-const VERSION = 'fox-v1.0.1';
+const VERSION = 'fox-v1.0.2';
 const CACHE = 'fox-app-' + VERSION;
 
 const SHELL = [
@@ -37,8 +37,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Supabase, auth, APIs externas — sempre rede
-  if (url.includes('supabase.co') || url.includes('googleapis') || url.includes('cdn.jsdelivr')) {
+  // Supabase, auth, APIs externas e admin — sempre rede
+  if (url.includes('supabase.co') || url.includes('googleapis') || url.includes('cdn.jsdelivr') || url.includes('/admin')) {
     return; // deixa o browser resolver normalmente
   }
 
