@@ -592,8 +592,8 @@ const EXERCISES_JSON_URLS = [
 ];
 const META_DEFS = [
   {nome:'Treinos', unidade:'sessoes', meta_valor:3, realizado:0},
-  {nome:'HidrataÃ§Ã£o', unidade:'dias', meta_valor:7, realizado:0},
-  {nome:'DiÃ¡rio Nutri', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Hidratação', unidade:'dias', meta_valor:7, realizado:0},
+  {nome:'Diário Nutri', unidade:'dias', meta_valor:7, realizado:0},
   {nome:'Sono 7h+', unidade:'dias', meta_valor:7, realizado:0}
 ];
 const REPORT_SELECT = 'id,client_email,ciclo,semana,period_start,period_end,status,generated_at,training_summary,nutri_summary,sleep_summary,checkin_summary,goals_snapshot,report_data,raw_data,ai_draft,coach_notes,published,published_at,drive_file_id,notified_at';
@@ -1487,7 +1487,7 @@ function renderMediaAudit(rows){
     return '<div class="media-row '+cls+'">' +
       '<div class="media-thumb">'+img+'</div>' +
       '<div>' +
-        '<div class="media-title">'+escapeHtml(r.workout.id)+' Â· '+escapeHtml(r.exercise.nome)+'</div>' +
+        '<div class="media-title">'+escapeHtml(r.workout.id)+' · '+escapeHtml(r.exercise.nome)+'</div>' +
         '<div class="media-meta">REF: '+escapeHtml(r.exercise.exercise_ref || res.ref || 'sem ref')+'<br>JSON ID: '+escapeHtml(r.exercise.exercise_id || 'sem ID')+'<br>'+escapeHtml(found)+'</div>' +
         '<div class="media-status">'+escapeHtml(res.message)+'</div>' +
       '</div>' +
@@ -2050,7 +2050,7 @@ function renderWeeklyReports(){
     <button class="report-btn ${selectedReport && selectedReport.id === r.id ? 'active' : ''}" type="button" data-id="${escapeHtml(r.id)}">
       <div class="report-head">
         <div>
-          <div class="report-title">Ciclo ${escapeHtml(r.ciclo || '-')} Â· Semana ${escapeHtml(r.semana || '-')}</div>
+          <div class="report-title">Ciclo ${escapeHtml(r.ciclo || '-')} · Semana ${escapeHtml(r.semana || '-')}</div>
           <div class="report-period">${escapeHtml(fmtPeriod(r.period_start, r.period_end))}</div>
           <div class="report-period">${escapeHtml(reportAiLabel(r))}</div>
         </div>
