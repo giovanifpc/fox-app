@@ -999,15 +999,14 @@ async function loadChecksQuarta(clients){
 
 /* â”€â”€ aba pendencias â”€â”€ */
 async function loadPendencias(){
+  const now = new Date();
+  const day = now.getDay();
+  renderFocoDia(day);
   try{
-    const now = new Date();
-    const day = now.getDay();
     const monday = new Date(now);
     monday.setDate(now.getDate() - (day===0?6:day-1));
     monday.setHours(0,0,0,0);
     const weekStart = monday.toISOString().slice(0,10);
-
-    renderFocoDia(day);
 
     const [{data:allClients},{data:weekReports}] = await Promise.all([
       supa.from('clients').select('email,nome,semana_atual,total_semanas,numero_whatsapp'),
@@ -1025,8 +1024,7 @@ async function loadPendencias(){
     const quartaSection = document.getElementById('pendQuarta');
     if(day === 3){
       quartaSection.style.display = '';
-      try{ await loadChecksQuarta(clients); }
-      catch(eq){ console.error('loadChecksQuarta',eq); document.getElementById('pendCheckins').innerHTML='<div class="pend-empty">Erro ao carregar checks.</div>'; }
+      loadChecksQuarta(clients).catch(eq=>{ console.error('loadChecksQuarta',eq); const el=document.getElementById('pendCheckins'); if(el) el.innerHTML='<div class="pend-empty">Erro ao carregar checks.</div>'; });
     } else {
       quartaSection.style.display = 'none';
     }
