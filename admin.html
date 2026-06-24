@@ -133,7 +133,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:10px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
 .tab-btn.active{color:var(--text);border-bottom-color:var(--purple)}
 .tab-badge{background:var(--danger);color:#fff;font-size:10px;font-weight:900;border-radius:999px;min-width:17px;height:17px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center}
-.tab-content{display:none}
+.tab-content:not(.active){display:none!important}
 .tab-content.active{display:block}
 /* pending cards */
 .pend-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
@@ -201,7 +201,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 
   <!-- aba: pendencias -->
   <div id=”tab-pending” class=”tab-content active”>
-    <div id=”focoDia” style=”margin-bottom:14px;border-radius:13px;padding:14px 16px;background:var(--bg-card2);border:1px solid var(--line)”></div>
+    <div id=”focoDia” style=”margin-bottom:14px;border-radius:13px;padding:14px 16px;background:var(--surface);border:1px solid var(--line)”></div>
     <div class=”pend-summary”>
       <div class=”pend-stat”><div class=”pend-stat-num num-red” id=”pendCountRed”>-</div><div class=”pend-stat-lbl”>Pendentes</div></div>
       <div class=”pend-stat”><div class=”pend-stat-num num-amber” id=”pendCountAmber”>-</div><div class=”pend-stat-lbl”>Atencao</div></div>
@@ -1011,7 +1011,7 @@ async function loadPendencias(){
     const [{data:allClients},{data:weekReports}] = await Promise.all([
       supa.from('clients').select('email,nome,semana_atual,total_semanas,numero_whatsapp'),
       supa.from('weekly_reports')
-        .select('id,client_email,ciclo,semana,period_start,period_end,status,published,published_at,notified_at,generated_at,ai_draft')
+        .select('id,client_email,ciclo,semana,period_start,period_end,status,published,published_at,notified_at,generated_at')
         .gte('generated_at', weekStart+'T00:00:00')
         .order('generated_at',{ascending:false})
     ]);
