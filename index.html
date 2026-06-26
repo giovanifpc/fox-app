@@ -943,6 +943,7 @@ function openModule(which){
       if(src) f.setAttribute('src', src);
     }
     f.classList.add('active');
+    try{ f.contentWindow.postMessage({type:'fox-module-activated'},'*'); }catch(e){}
     document.body.classList.add('in-module');
   }
   if(which === 'drive'){

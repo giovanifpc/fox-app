@@ -371,7 +371,7 @@ select option{background:var(--surface);}
 #fhb .t{color:#f0f0f0;font-size:13px;font-weight:600}
 body{padding-top:44px!important}
 </style>
-<div id="fhb" onclick="parent.postMessage('fox-back','*')"><span class="a">&#8249;</span><span class="t">Fox Performance</span></div>
+<div id="fhb" onclick="handleNutriBack()"><span class="a">&#8249;</span><span class="t">Fox Performance</span></div>
 
 
 <!-- SPLASH -->
@@ -1589,6 +1589,17 @@ let backPressCount = 0;
 let backPressTimer = null;
 function isInsideHub(){
   try{ return window.parent && window.parent !== window; }catch(e){ return false; }
+}
+
+function handleNutriBack(){
+  const openModal = document.querySelector('.modal-overlay.open');
+  if(openModal){ openModal.classList.remove('open'); return; }
+  const hoje = document.getElementById('page-hoje');
+  if(hoje && !hoje.classList.contains('active')){
+    showPage('hoje', document.querySelectorAll('.nav-btn')[0]);
+    return;
+  }
+  parent.postMessage('fox-back','*');
 }
 
 window.addEventListener('popstate', function(e) {

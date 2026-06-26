@@ -1162,7 +1162,7 @@ function openPublishedReport(rep){ openReportOverlay(rep); }
 </script>
 </head>
 <body>
-<div id="fhb" onclick="parent.postMessage('fox-back','*')">
+<div id="fhb" onclick="handleAreaBack()">
   <span class="a">&#8249;</span>
   <span class="t">Minha Área · <span id="clientNameSub"></span></span>
 </div>
@@ -1878,7 +1878,16 @@ window.addEventListener("message",function(e){
   if(e.data.type==="fox-training-data"){ trainingData=e.data.data; window.FOX_TRAINING_DATA=e.data.data; foxRefreshDashboardProgress(); }
   if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; window.FOX_NUTRI_DATA=e.data.data; foxRefreshDashboardProgress(); }
   if(e.data.type==="fox-sleep-data"){ window.FOX_SLEEP_DATA=e.data.data; foxRefreshDashboardProgress(); }
+  if(e.data.type==="fox-module-activated"){ closeReportOverlay(); closeHistoryOverlay(); }
 });
+
+function handleAreaBack(){
+  const ro = document.getElementById('reportOverlay');
+  const ho = document.getElementById('historyOverlay');
+  if(ro && ro.classList.contains('active')){ closeReportOverlay(); return; }
+  if(ho && ho.classList.contains('active')){ closeHistoryOverlay(); return; }
+  parent.postMessage('fox-back','*');
+}
 
 function initFeedback(){ renderLastFeedback(); }
 
