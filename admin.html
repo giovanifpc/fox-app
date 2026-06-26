@@ -181,7 +181,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
       <div class="sub">Publicacao de metas semanais para o app do cliente.</div>
     </div>
   </div>
-  <div class="pill" id="adminEmail">Validando acesso...</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button onclick="window.location.href='index.html'" style="background:none;border:1px solid rgba(123,143,212,.35);border-radius:8px;color:var(--purple);font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;letter-spacing:.4px">&#8249; Hub</button>
+    <div class="pill" id="adminEmail">Validando acesso...</div>
+  </div>
 </header>
 
 <div id="blocked" class="state hidden">
@@ -471,19 +474,12 @@ Caminhada | ritmo leve a moderado | 30min cardio"></textarea>
             <label for="reportCoachNotes">Ajustes internos do Giovani</label>
             <textarea id="reportCoachNotes" placeholder="Cliente nao ve este campo. Use para pedir mudancas no botao Reescrever com ajustes ou guardar sua leitura final."></textarea>
           </div>
-          <div class="field">
-            <label for="reportDriveLink">Link do PDF no Drive</label>
-            <input id="reportDriveLink" type="url" placeholder="Cole aqui o link do PDF depois de subir no Drive">
-            <div class="protocol-hint" id="reportDriveStatus" style="margin-top:8px">PDF ainda nao vinculado.</div>
-          </div>
           <div class="actions">
             <button class="btn primary" type="button" id="saveReportBtn">Salvar revisao</button>
             <button class="btn secondary" type="button" id="rewriteReportBtn">Reescrever com ajustes</button>
-            <button class="btn secondary" type="button" id="readyReportBtn">Marcar pronto</button>
             <button class="btn secondary" type="button" id="publishReportBtn">Publicar no app</button>
-            <button class="btn secondary" type="button" id="printReportBtn">Gerar PDF</button>
-            <button class="btn secondary" type="button" id="saveReportDriveBtn">Salvar link PDF</button>
             <button class="btn secondary" type="button" id="notifyReportBtn">Avisar no WhatsApp</button>
+            <button class="btn secondary" type="button" id="printReportBtn">Baixar PDF (backup)</button>
             <button class="btn secondary" type="button" id="deleteReportBtn">Excluir rascunho</button>
           </div>
         </div>
@@ -1064,10 +1060,6 @@ async function loadPendencias(){
         actions = phone
           ? `<a class="btn secondary pend-tag amber" href="https://wa.me/${phone}?text=${msgEncoded}" target="_blank" onclick="_markNotified('${r.id}')">Avisar WA</a>`
           : `<button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${r.client_email}','clients')" title="Cadastrar WhatsApp">Sem WA</button>`;
-      } else if(r.status==='ready'){
-        amber++;
-        colorClass='amber'; tag='Publicar';
-        actions=`<button class="btn secondary pend-tag amber" onclick="selectClientByEmail('${r.client_email}','reports')">Publicar</button>`;
       } else {
         red++;
         colorClass='red'; tag='Revisar';
@@ -1751,10 +1743,7 @@ async function notifyReport(){
   if(!phone){ toast('Cadastre o WhatsApp do cliente para usar este botao.'); return; }
   const nome = selectedClient.nome || 'cliente';
   const periodo = fmtPeriod(selectedReport.period_start, selectedReport.period_end);
-  const hasPdf = !!String(selectedReport.drive_file_id || '').trim();
-  const msg = hasPdf
-    ? 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app, com o PDF completo na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.'
-    : 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app. Ela ja esta na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.';
+  const msg = 'Oi, '+nome+'! Acabei de publicar sua devolutiva semanal no app. Ela ja esta na sua Minha Area, referente ao periodo '+periodo+'. Quando olhar, me chama para alinharmos os proximos passos.';
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
   const now = new Date().toISOString();
   await supa.from('weekly_reports').update({notified_at: now}).eq('id', selectedReport.id);
@@ -2101,8 +2090,6 @@ function renderReportDetail(){
   $('reportAiDraft').value = selectedReport.ai_draft || '';
   $('reportCoachNotes').value = selectedReport.coach_notes || '';
   renderAiStatus(selectedReport);
-  $('reportDriveLink').value = selectedReport.drive_file_id || '';
-  $('reportDriveStatus').textContent = selectedReport.drive_file_id ? 'PDF vinculado ao Minha Area. O botao Abrir vai usar este link.' : 'PDF ainda nao vinculado. Sem link, o Minha Area abre o texto da devolutiva.';
   $('publishReportBtn').disabled = selectedReport.published === true;
   $('publishReportBtn').textContent = selectedReport.published === true ? 'Publicado' : 'Publicar no app';
   $('notifyReportBtn').disabled = selectedReport.published !== true;
@@ -2182,7 +2169,7 @@ function openReportPdfView(){
 
 async function saveReportReview(status){
   if(!selectedReport) return;
-  const btn = status ? $('readyReportBtn') : $('saveReportBtn');
+  const btn = $('saveReportBtn');
   btn.disabled = true;
   const oldText = btn.textContent;
   btn.textContent = 'Salvando...';
@@ -2203,7 +2190,7 @@ async function saveReportReview(status){
     weeklyReports = weeklyReports.map(r => r.id === data.id ? data : r);
     renderWeeklyReports();
     renderReportDetail();
-    toast(status ? 'Relatorio marcado como pronto.' : 'Revisao salva.');
+    toast('Revisao salva.');
   }catch(err){
     toast('Erro ao salvar relatorio: ' + errorText(err));
   }finally{
@@ -2342,23 +2329,12 @@ async function _renewCycle(email, cicloAtual, totalSemanas){
   }
 }
 
-async function saveReportDriveLink(){
+async function saveReportDriveLink_REMOVED(){
   if(!selectedReport) return;
-  const link = $('reportDriveLink').value.trim();
-  if(link && !/^https?:\/\//i.test(link)){
-    toast('Cole um link completo, com https://');
-    return;
-  }
-  const btn = $('saveReportDriveBtn');
-  btn.disabled = true;
-  const oldText = btn.textContent;
-  btn.textContent = 'Salvando...';
+  // função removida — link Drive não é mais usado
   try{
     const {data, error} = await supa.from('weekly_reports')
-      .update({
-        drive_file_id: link || null,
-        updated_at: new Date().toISOString()
-      })
+      .update({ updated_at: new Date().toISOString() })
       .eq('id', selectedReport.id)
       .select(REPORT_SELECT)
       .single();
@@ -2819,10 +2795,8 @@ $('loadReportsBtn').addEventListener('click', function(){ loadWeeklyReports(true
 $('copyReportBtn').addEventListener('click', copyReportSummary);
 $('saveReportBtn').addEventListener('click', ()=>saveReportReview('reviewed'));
 $('rewriteReportBtn').addEventListener('click', rewriteReportWithAdjustments);
-$('readyReportBtn').addEventListener('click', ()=>saveReportReview('ready_for_publication'));
 $('publishReportBtn').addEventListener('click', publishReportToApp);
 $('printReportBtn').addEventListener('click', openReportPdfView);
-$('saveReportDriveBtn').addEventListener('click', saveReportDriveLink);
 $('notifyReportBtn').addEventListener('click', notifyReport);
 $('deleteReportBtn').addEventListener('click', deleteReportDraft);
 $('dataInicio').addEventListener('change', updateDateAlerts);
