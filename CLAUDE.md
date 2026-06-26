@@ -33,7 +33,7 @@ fox-app/
 ├── nutri.html          # NutriTracker (refeições + água + macros)
 ├── minha-area.html     # Área do cliente (relatórios, documentos, evolução)
 ├── admin.html          # Painel admin exclusivo do Giovani
-├── sw.js               # Service Worker (cache versionado, fox-v1.0.3)
+├── sw.js               # Service Worker (cache versionado, fox-v1.0.4)
 ├── site.webmanifest    # PWA manifest
 ├── exercises.json      # Biblioteca de exercícios para autocomplete
 ├── data/exercises.json # Exercícios estruturados
@@ -48,6 +48,17 @@ fox-app/
 ## Navegação entre módulos
 
 O `index.html` abre os outros módulos via `openModule(which)` usando `<iframe class="module-frame">` em fullscreen — não é SPA com rotas. Os módulos (`training`, `nutri`, `drive`) são carregados como iframes sobre o hub.
+
+**Iframes são reutilizados** (não destruídos ao fechar) — ao reabrir um módulo, `openModule()` envia `{type:'fox-module-activated'}` via `postMessage` para que o módulo resete seu estado interno (feche overlays, modais, telas secundárias).
+
+**Botão voltar (`#fhb`)** em cada módulo chama uma função local antes de enviar `fox-back` ao Hub:
+- `minha-area.html` → `handleAreaBack()`: fecha `reportOverlay` ou `historyOverlay` se ativos; senão vai ao Hub
+- `training.html` → `handleBack()`: tela de execução → pede confirmação; outras telas → volta à home do treino; home → vai ao Hub
+- `nutri.html` → `handleNutriBack()`: fecha modal aberto; se não estiver na aba "hoje" → vai pra "hoje"; senão vai ao Hub
+
+**Comunicação Hub ↔ Módulos via `postMessage`:**
+- Hub → Módulo: `{type:'fox-module-activated'}`, `{type:'fox-training-data'}`, `{type:'fox-nutri-data'}`, `{type:'fox-sleep-data'}`
+- Módulo → Hub: `'fox-back'` (voltar ao hub), `{type:'fox-open-module', module}`
 
 ---
 
@@ -155,13 +166,41 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 
 ## Service Worker
 
-- Versão atual: `fox-v1.0.3` (bumpar a cada deploy que afete arquivos cacheados)
-- Estratégia: **cache-first** para shell assets, **network-only** para Supabase, googleapis, cdn.jsdelivr e `/admin`
+- Versão atual: `fox-v1.0.4` (bumpar a cada deploy que afete arquivos cacheados)
+- Estratégia HTML: **network-first** com fallback para cache — cliente sempre recebe versão nova quando online
+- Estratégia assets: **cache-first** com atualização em background
+- **Network-only** (nunca cacheado): Supabase, googleapis, cdn.jsdelivr, `/admin`
 - `admin.html` excluído do cache (sempre busca da rede)
 - Para forçar atualização: bumpar a constante `VERSION` no `sw.js`
+- `index.html` faz `setInterval(() => reg.update(), 3 * 60 * 1000)` para detectar novas versões do SW
 
 **Shell cacheado:**
 `index.html`, `login.html`, `training.html`, `nutri.html`, `minha-area.html`, `site.webmanifest`, ícones, `fox-logo-sem-fundo.svg`, `banner alongamento.png`, `exercises.json`
+
+---
+
+## Minha Área — estrutura atual
+
+**Abas:** Início · Treino · Nutrição · Perfil · Feedback
+
+- **Início:** card de devolutiva com 3 botões (Ler / Baixar PDF / Anteriores), progresso, medidas rápidas
+- **Perfil** (ex-Medidas): anamnese + medidas corporais
+- **Feedback** (ex-Relatório): chips de energia (1–5) + textarea + envio via WhatsApp para o Giovani
+
+**Overlays de devolutiva:**
+- `#reportOverlay` — leitura fullscreen com letterhead e botão de download PDF
+- `#historyOverlay` — lista de todas as devolutivas publicadas
+- Ambos fecham via `handleAreaBack()` ou ao receber `fox-module-activated`
+- `allDevolutivas[]` armazena todas as devolutivas publicadas (fetch sem `.limit(1)`)
+
+---
+
+## Admin — estrutura atual
+
+- **Header:** botão "‹ Hub" para voltar ao `index.html`
+- **Pendências:** cards por cliente; devolutivas publicadas mostram "Avisar WA" diretamente (sem estado intermediário "pronto")
+- **Devolutivas:** editar `ai_draft` → `coach_notes` → reescrever com Claude → publicar
+  - Sem campo de link de Drive, sem botão "Marcar pronto", sem botão "Salvar PDF"
 
 ---
 
@@ -171,6 +210,8 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 - **Curly quotes no código:** aspas tipográficas (`"`) corrompiam `getElementById` em todos os elementos. Sempre usar aspas ASCII (`"`)
 - **`admin.html` no cache:** causava versão desatualizada do painel. Está excluído do SW
 - **OTP 8 dígitos:** Supabase envia código de 8 dígitos — campo aceita 6-8 (`maxlength="8"`)
+- **Botão voltar ignorava estado interno:** `#fhb` mandava `fox-back` direto ao Hub mesmo com overlay aberto. Resolvido com `handleAreaBack()` / `handleBack()` / `handleNutriBack()` em cada módulo
+- **Overlay persistia ao reabrir módulo:** iframes são reutilizados; `openModule()` agora envia `fox-module-activated` para que o módulo resete overlays/modais
 
 ---
 
