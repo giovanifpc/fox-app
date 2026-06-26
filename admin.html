@@ -1041,6 +1041,16 @@ async function loadPendencias(){
       const nome = client ? client.nome : r.client_email;
       let colorClass, tag, actions;
 
+      if(!client){
+        red++;
+        const sub = r.period_start ? fmtPeriod(r.period_start,r.period_end) : ('Ciclo '+r.ciclo+' S'+r.semana);
+        repHtml.push(`<div class="pend-card red">
+          <div class="pend-card-body"><div class="pend-card-name" style="color:var(--muted)">${escapeHtml(r.client_email)}</div><div class="pend-card-sub">Cliente removido · ${sub}</div></div>
+          <div class="pend-actions"><button class="btn secondary pend-tag red" onclick="deleteOrphanReport('${r.id}')">Excluir</button></div>
+        </div>`);
+        continue;
+      }
+
       if(r.notified_at){
         green++;
         colorClass='green'; tag='Concluido';
@@ -1119,6 +1129,12 @@ async function loadPendencias(){
     if(badge){badge.textContent=red+amber;badge.classList.toggle('hidden',red+amber===0);}
 
   } catch(e){ console.error('loadPendencias',e); const fd=document.getElementById('focoDia'); if(fd) fd.innerHTML='<span style="color:#e05555;font-size:12px">Erro ao carregar: '+String(e)+'</span>'; }
+}
+
+async function deleteOrphanReport(reportId){
+  if(!confirm('Excluir este relatório? O cliente não existe mais no sistema.')) return;
+  await supa.from('weekly_reports').delete().eq('id', reportId);
+  loadPendencias();
 }
 
 async function _markNotified(reportId){
