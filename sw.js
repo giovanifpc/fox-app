@@ -1,4 +1,4 @@
-const VERSION = 'fox-v1.0.2';
+const VERSION = 'fox-v1.0.3';
 const CACHE = 'fox-app-' + VERSION;
 
 const SHELL = [
