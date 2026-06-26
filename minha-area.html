@@ -151,27 +151,29 @@ canvas{display:block;width:100%}
 .delta.neu{background:rgba(100,100,100,.15);color:var(--gray)}
 /* RELATÓRIO */
 .relatorio-wrap{}
-.rel-card{background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:16px;margin-bottom:12px}
-.rel-title{font-size:15px;font-weight:800;margin-bottom:4px}
-.rel-sub{font-size:12px;color:var(--gray);margin-bottom:14px;line-height:1.5}
-.rel-status{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.rel-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
-.rel-badge.ok{background:rgba(82,183,136,.15);color:var(--green)}
-.rel-badge.wait{background:rgba(255,140,66,.15);color:var(--amber)}
-.btn-rel{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-dim));
+.fb-chip-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.fb-chip{flex:1;min-width:48px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;
+  color:var(--gray);cursor:pointer;transition:.15s;line-height:1.4}
+.fb-chip:active{opacity:.7}
+.fb-chip.selected{border-color:var(--purple);color:var(--white);background:rgba(123,143,212,.15)}
+.fb-textarea{width:100%;background:var(--card);border:1px solid var(--border);
+  color:var(--white);border-radius:11px;padding:13px 14px;font-family:var(--font);
+  font-size:14px;line-height:1.55;resize:none;outline:none;min-height:120px;margin-bottom:14px}
+.fb-textarea:focus{border-color:var(--purple)}
+.fb-send-btn{width:100%;background:linear-gradient(135deg,#25d366,#128c7e);
   color:#fff;border:none;border-radius:11px;padding:15px;
-  font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;
-  transition:.2s;margin-bottom:10px;letter-spacing:.3px}
-.btn-rel:active{transform:scale(.97)}
-.btn-wpp{width:100%;background:linear-gradient(135deg,#25d366,#128c7e);
-  color:#fff;border:none;border-radius:11px;padding:15px;
-  font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;
-  transition:.2s;display:none;letter-spacing:.3px}
-.btn-wpp:active{transform:scale(.97)}
-.btn-wpp.visible{display:block}
-.rel-loading{text-align:center;padding:20px;color:var(--gray);display:none}
-.rel-loading.show{display:block}
+  font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px}
+.fb-send-btn:active{transform:scale(.97)}
+.fb-last{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px;margin-top:16px}
+.fb-last-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--faint);
+  font-weight:700;margin-bottom:8px}
+.fb-last-row{display:flex;align-items:center;gap:10px}
+.fb-last-ico{font-size:20px;flex-shrink:0}
+.fb-last-meta{font-size:11px;color:var(--gray)}
+.fb-last-text{font-size:13px;color:var(--white);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Toast */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
   background:#1c1c1c;border:1px solid var(--purple);color:var(--white);
@@ -1377,10 +1379,10 @@ function openPublishedReport(rep){ openReportOverlay(rep); }
     <span class="nav-ico">📷</span><span>Fotos</span>
   </button>
   <button class="nav-btn" id="nav-checkin" onclick="setView('checkin')">
-    <span class="nav-ico">📏</span><span>Medidas</span>
+    <span class="nav-ico">👤</span><span>Perfil</span>
   </button>
   <button class="nav-btn" id="nav-relatorio" onclick="setView('relatorio')">
-    <span class="nav-ico">📊</span><span>Relatório</span>
+    <span class="nav-ico">💬</span><span>Feedback</span>
   </button>
   <button class="nav-btn" id="nav-financeiro" onclick="setView('financeiro')">
     <span class="nav-ico">💰</span><span>Pag.</span>
@@ -1539,19 +1541,33 @@ function openPublishedReport(rep){ openReportOverlay(rep); }
   <div id="ci-hist"></div>
 </div>
 
-<!-- RELATÓRIO -->
+<!-- FEEDBACK SEMANAL -->
 <div class="page" id="page-relatorio">
-  <div class="rel-card">
-    <div class="rel-title">📊 Relatório Fox Performance</div>
-    <div class="rel-sub">Gera um PDF completo com seus dados de treino, nutrição e evolução de medidas para enviar ao Giovani.</div>
-    <div class="rel-status" id="relStatus"></div>
-    <div class="rel-loading" id="relLoading">Coletando dados dos módulos...</div>
-    <button class="btn-rel" id="btnGerarRel" onclick="gerarRelatorio()">📄 Gerar relatório completo</button>
-    <button class="btn-wpp" id="btnWpp" onclick="enviarWhatsapp()">💬 Enviar para o Giovani</button>
+  <div class="card">
+    <div style="font-size:15px;font-weight:800;margin-bottom:4px">Feedback da semana</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:16px;line-height:1.5">Como foi? Compartilhe com o Giovani — treinos, alimentação, dificuldades, conquistas.</div>
+    <div style="font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px">Nível de energia</div>
+    <div class="fb-chip-row" id="fbChips">
+      <div class="fb-chip" data-e="1" onclick="selectEnergia(1)"><div style="font-size:18px">😫</div>Péssima</div>
+      <div class="fb-chip" data-e="2" onclick="selectEnergia(2)"><div style="font-size:18px">😐</div>Fraca</div>
+      <div class="fb-chip" data-e="3" onclick="selectEnergia(3)"><div style="font-size:18px">🙂</div>OK</div>
+      <div class="fb-chip" data-e="4" onclick="selectEnergia(4)"><div style="font-size:18px">😊</div>Boa</div>
+      <div class="fb-chip" data-e="5" onclick="selectEnergia(5)"><div style="font-size:18px">🔥</div>Ótima</div>
+    </div>
+    <textarea class="fb-textarea" id="feedbackText" placeholder="Conte o que aconteceu essa semana — treinos, alimentação, dificuldades, conquistas..."></textarea>
+    <button class="fb-send-btn" onclick="enviarFeedback()">💬 Enviar para o Giovani</button>
   </div>
-  <div class="rel-card" id="relPreview" style="display:none">
-    <div class="section-lbl" style="margin-top:0">Resumo</div>
-    <div id="relPreviewContent"></div>
+  <div id="fbLastCard" style="display:none">
+    <div class="fb-last">
+      <div class="fb-last-lbl">Último enviado</div>
+      <div class="fb-last-row">
+        <div class="fb-last-ico" id="fbLastIco"></div>
+        <div style="flex:1;min-width:0">
+          <div class="fb-last-meta" id="fbLastMeta"></div>
+          <div class="fb-last-text" id="fbLastText"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1609,9 +1625,9 @@ let allFiles = [];
 let currentView = "dashboard";
 let trainingData = null;
 let nutriData = null;
-let reportReady = false;
 let currentChartField = "peso";
 let activeChartField = "peso";
+let _fbEnergia = 0;
 
 /* ── NAV ──────────────────────────────────────────────────────────────────── */
 function setView(v){
@@ -1624,7 +1640,7 @@ function setView(v){
   if(v==="docs" && !allFiles.length) loadDrive();
   if(v==="fotos" && !allFiles.length) loadDrive();
   if(v==="checkin"){ renderCheckin(); fillProfileContext(); }
-  if(v==="relatorio") initRelatorio();
+  if(v==="relatorio") initFeedback();
 }
 
 /* ── DRIVE ────────────────────────────────────────────────────────────────── */
@@ -1855,228 +1871,56 @@ function drawChart(arr, fieldId){
   });
 }
 
-/* ── RELATÓRIO ────────────────────────────────────────────────────────────── */
-let pendingRel = null;
-let reportCollecting = false;
-
-function initRelatorio(){
-  updateRelStatus();
-}
-
-function updateRelStatus(){
-  const el = document.getElementById("relStatus");
-  const t = trainingData ? '<span class="rel-badge ok">✓ Training</span>' : '<span class="rel-badge wait">⏳ Training</span>';
-  const n = nutriData ? '<span class="rel-badge ok">✓ Nutrição</span>' : '<span class="rel-badge wait">⏅ Nutrição</span>';
-  const ci = loadCheckins().length>0 ? '<span class="rel-badge ok">✓ Medidas</span>' : '<span class="rel-badge wait">— Medidas</span>';
-  el.innerHTML = t + n + ci;
-}
-
-function gerarRelatorio(){
-  document.getElementById("relLoading").classList.add("show");
-  document.getElementById("btnGerarRel").disabled = true;
-  reportCollecting = true;
-  trainingData = null; nutriData = null;
-  // Request data from both iframes via hub
-  parent.postMessage({type:"fox-request-report-data"},"*");
-  // Timeout fallback: generate with whatever is available after 4s
-  setTimeout(()=>{ if(reportCollecting) buildReport(); }, 4000);
-}
+/* ── FEEDBACK SEMANAL ─────────────────────────────────────────────────────── */
 
 window.addEventListener("message",function(e){
   if(!e.data) return;
-  if(e.data.type==="fox-training-data"){ trainingData=e.data.data; window.FOX_TRAINING_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
-  if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; window.FOX_NUTRI_DATA=e.data.data; foxRefreshDashboardProgress(); tryBuildReport(); }
+  if(e.data.type==="fox-training-data"){ trainingData=e.data.data; window.FOX_TRAINING_DATA=e.data.data; foxRefreshDashboardProgress(); }
+  if(e.data.type==="fox-nutri-data"){ nutriData=e.data.data; window.FOX_NUTRI_DATA=e.data.data; foxRefreshDashboardProgress(); }
   if(e.data.type==="fox-sleep-data"){ window.FOX_SLEEP_DATA=e.data.data; foxRefreshDashboardProgress(); }
 });
 
-function tryBuildReport(){
-  if(reportCollecting && trainingData && nutriData) buildReport();
+function initFeedback(){ renderLastFeedback(); }
+
+function selectEnergia(n){
+  _fbEnergia = n;
+  document.querySelectorAll('#fbChips .fb-chip').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.e) === n);
+  });
 }
 
-function buildReport(){
-  reportCollecting = false;
-  document.getElementById("relLoading").classList.remove("show");
-  document.getElementById("btnGerarRel").disabled = false;
-  updateRelStatus();
-
-  const checkins = loadCheckins();
-  const today = new Date().toLocaleDateString("pt-BR");
-
-  // Build PDF using jsPDF loaded from CDN
-  const script = document.getElementById("jspdf-script");
-  if(!script){
-    const s = document.createElement("script");
-    s.id = "jspdf-script";
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    s.onload = ()=>{ generatePDF(checkins, today); };
-    s.onerror = ()=>{ toast("Sem conexão. Tente novamente."); };
-    document.head.appendChild(s);
-  } else {
-    generatePDF(checkins, today);
-  }
-
-  // Build preview
-  buildPreview(checkins);
+function enviarFeedback(){
+  const text = document.getElementById('feedbackText').value.trim();
+  if(!_fbEnergia && !text){ toast('Selecione a energia ou escreva algo antes de enviar.'); return; }
+  const energiaLabels = ['','😫 Péssima','😐 Fraca','🙂 OK','😊 Boa','🔥 Ótima'];
+  const energiaLabel = _fbEnergia ? energiaLabels[_fbEnergia] : '';
+  const msg = '[FEEDBACK SEMANAL - Fox Performance]' + (energiaLabel ? '\nEnergia: ' + energiaLabel : '') + (text ? '\n---\n' + text : '');
+  const email = String(window.FOX_EMAIL || window.FOX_USER_EMAIL || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'_');
+  const key = 'foxFeedback_' + email;
+  const hist = JSON.parse(localStorage.getItem(key) || '[]');
+  hist.unshift({ date: new Date().toISOString(), energia: _fbEnergia, energiaLabel, text });
+  localStorage.setItem(key, JSON.stringify(hist.slice(0, 20)));
+  window.open('https://wa.me/' + DRIVE_CONFIG.whatsappNumber + '?text=' + encodeURIComponent(msg), '_blank');
+  _fbEnergia = 0;
+  document.querySelectorAll('#fbChips .fb-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('feedbackText').value = '';
+  renderLastFeedback();
+  toast('Feedback enviado!');
 }
 
-function generatePDF(checkins, today){
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-  const PW=210, M=14, CW=PW-M*2;
-  let y=14;
-
-  function newPage(){ doc.addPage(); y=14; header(); }
-  function checkY(n){ if(y+n>278) newPage(); }
-  function header(){
-    doc.setFillColor(10,10,10); doc.rect(0,0,PW,10,"F");
-    doc.setTextColor(123,143,212); doc.setFont("helvetica","bold"); doc.setFontSize(7);
-    doc.text("FOX PERFORMANCE",M,6.5);
-    doc.setTextColor(100,100,100); doc.setFontSize(6.5);
-    doc.text("Relatório Completo · "+today,PW-M,6.5,{align:"right"});
-  }
-
-  // Capa
-  doc.setFillColor(10,10,10); doc.rect(0,0,PW,297,"F");
-  doc.setTextColor(123,143,212); doc.setFont("helvetica","bold"); doc.setFontSize(32);
-  doc.text("FOX",PW/2,100,{align:"center"});
-  doc.setTextColor(240,240,240); doc.setFontSize(12);
-  doc.text("PERFORMANCE",PW/2,112,{align:"center"});
-  doc.setTextColor(100,100,100); doc.setFontSize(9);
-  doc.text("RELATÓRIO COMPLETO",PW/2,124,{align:"center"});
-  const nm = trainingData?.clientName || "Cliente";
-  doc.setTextColor(240,240,240); doc.setFontSize(16); doc.setFont("helvetica","bold");
-  doc.text(nm, PW/2, 148, {align:"center"});
-  doc.setTextColor(100,100,100); doc.setFontSize(8); doc.setFont("helvetica","normal");
-  doc.text(today, PW/2, 158, {align:"center"});
-  doc.addPage(); y=14; header();
-
-  // TREINO
-  if(trainingData){
-    const td = trainingData;
-    doc.setTextColor(123,143,212); doc.setFont("helvetica","bold"); doc.setFontSize(13);
-    doc.text("TREINO", M, y+6); y+=12;
-    doc.setFillColor(20,20,20); doc.rect(M,y,CW,28,"F");
-    doc.setDrawColor(40,40,40); doc.rect(M,y,CW,28);
-    doc.setTextColor(200,200,200); doc.setFont("helvetica","normal"); doc.setFontSize(8);
-    const completed = (td.history||[]).filter(h=>!h.incomplete).length;
-    const incomplete = (td.history||[]).filter(h=>h.incomplete).length;
-    const freqMedia = td.currentWeek>0?(completed/td.currentWeek).toFixed(1):"0";
-    doc.text(`Semana ${td.currentWeek||"—"} de ${td.cycleWeeks||8}`, M+4, y+7);
-    doc.text(`${completed} treinos completos`, M+4, y+14);
-    doc.text(`${incomplete} incompletos`, M+4, y+21);
-    doc.text(`Média: ${freqMedia} treinos/semana`, M+CW/2, y+7);
-    doc.text(`Ciclo ${td.cycleNumber||1} · Início ${td.startDate||"—"}`, M+CW/2, y+14);
-    y+=34; checkY(10);
-  }
-
-  // NUTRIÇÃO
-  if(nutriData && nutriData.profile){
-    const p = nutriData.profile;
-    const days = Object.keys(nutriData.days||{}).sort().reverse();
-    checkY(20);
-    doc.setTextColor(79,195,247); doc.setFont("helvetica","bold"); doc.setFontSize(13);
-    doc.text("NUTRIÇÃO", M, y+6); y+=12;
-    doc.setFillColor(20,20,20); doc.rect(M,y,CW,22,"F");
-    doc.setDrawColor(40,40,40); doc.rect(M,y,CW,22);
-    doc.setTextColor(200,200,200); doc.setFont("helvetica","normal"); doc.setFontSize(8);
-    doc.text(`Cliente: ${p.name||"—"}`, M+4, y+7);
-    doc.text(`Meta calórica: ${p.kcalTarget||"—"} kcal`, M+4, y+14);
-    doc.text(`TMB: ${p.tmb||"—"} kcal`, M+CW/2, y+7);
-    doc.text(`${days.length} dias registrados`, M+CW/2, y+14);
-    y+=28; checkY(10);
-
-    // Last 7 days summary
-    if(days.length){
-      const last7 = days.slice(0,7);
-      doc.setTextColor(150,150,150); doc.setFont("helvetica","bold"); doc.setFontSize(8);
-      doc.text("Últimos registros:", M, y); y+=6;
-      last7.forEach(dk=>{
-        checkY(8);
-        const d = nutriData.days[dk];
-        let totalKcal=0, totalProt=0;
-        Object.values(d.meals||{}).forEach(m=>{
-          m.forEach(f=>{ totalKcal+=f.kcal||0; totalProt+=f.prot||0; });
-        });
-        doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
-        doc.setTextColor(180,180,180);
-        doc.text(`${dk}: ${Math.round(totalKcal)} kcal · ${totalProt.toFixed(0)}g prot`, M+4, y); y+=5.5;
-      });
-      y+=4;
-    }
-  }
-
-  // MEDIDAS
-  if(checkins.length){
-    checkY(20);
-    doc.setTextColor(82,183,136); doc.setFont("helvetica","bold"); doc.setFontSize(13);
-    doc.text("MEDIDAS", M, y+6); y+=12;
-    const first = checkins[checkins.length-1];
-    const last  = checkins[0];
-    const rows = CHECKIN_FIELDS.filter(f=>first[f.id]!=null||last[f.id]!=null);
-    doc.setFillColor(20,20,20); doc.rect(M,y,CW,rows.length*7+10,"F");
-    doc.setDrawColor(40,40,40); doc.rect(M,y,CW,rows.length*7+10);
-    doc.setTextColor(100,100,100); doc.setFont("helvetica","bold"); doc.setFontSize(7);
-    doc.text("Métrica", M+4, y+6);
-    doc.text("Inicial", M+CW*0.4, y+6);
-    doc.text("Atual", M+CW*0.6, y+6);
-    doc.text("Variação", M+CW*0.8, y+6);
-    y+=9;
-    rows.forEach(f=>{
-      checkY(8);
-      const ini = first[f.id]; const cur = last[f.id];
-      const diff = (ini!=null&&cur!=null) ? (cur-ini).toFixed(1) : "—";
-      const sign = parseFloat(diff)>0?"+":"";
-      doc.setTextColor(180,180,180); doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
-      doc.text(f.label+" ("+f.unit+")", M+4, y);
-      doc.text(ini!=null?ini.toString():"—", M+CW*0.4, y);
-      doc.text(cur!=null?cur.toString():"—", M+CW*0.6, y);
-      if(diff!=="—"){
-        const clr = parseFloat(diff)<0&&f.id!=="peso"&&f.id!=="gord"?[82,183,136]:
-                    parseFloat(diff)>0&&(f.id==="peso"||f.id==="gord")?[164,80,74]:[180,180,180];
-        doc.setTextColor(...clr);
-        doc.text(sign+diff, M+CW*0.8, y);
-      }
-      y+=7;
-    });
-    y+=6;
-  }
-
-  // Footer
-  doc.setTextColor(60,60,60); doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
-  doc.text("Fox Performance · Consultoria exclusiva · @giovanifpc", PW/2, 290, {align:"center"});
-
-  doc.save("FoxPerformance_Relatorio_"+nm+"_"+today.replace(/\//g,"-")+".pdf");
-  pendingRel = {clientName:nm, date:today, checkins, trainingData, nutriData};
-  document.getElementById("btnWpp").classList.add("visible");
-  toast("PDF gerado! Toque em 'Enviar para o Giovani'");
-}
-
-function buildPreview(checkins){
-  const el = document.getElementById("relPreview");
-  const cnt = document.getElementById("relPreviewContent");
-  const nm = trainingData?.clientName||"Cliente";
-  const completed = trainingData ? (trainingData.history||[]).filter(h=>!h.incomplete).length : "—";
-  const diasNutri = nutriData ? Object.keys(nutriData.days||{}).length : "—";
-  const pesoAtual = checkins.length ? checkins[0].peso||"—" : "—";
-  cnt.innerHTML = `
-    <div class="ci-hist-item"><span class="ci-hist-date">Cliente</span><span style="font-weight:700">${nm}</span></div>
-    <div class="ci-hist-item"><span class="ci-hist-date">Treinos completos</span><span style="font-weight:700">${completed}</span></div>
-    <div class="ci-hist-item"><span class="ci-hist-date">Dias nutrição</span><span style="font-weight:700">${diasNutri}</span></div>
-    <div class="ci-hist-item"><span class="ci-hist-date">Último peso</span><span style="font-weight:700">${pesoAtual}${pesoAtual!=="—"?" kg":""}</span></div>
-  `;
-  el.style.display="block";
-}
-
-function enviarWhatsapp(){
-  if(!pendingRel) return;
-  const {clientName,date,checkins,trainingData,nutriData} = pendingRel;
-  const completed = trainingData ? (trainingData.history||[]).filter(h=>!h.incomplete).length : "—";
-  const wk = trainingData ? `Semana ${trainingData.currentWeek}` : "";
-  const diasNutri = nutriData ? Object.keys(nutriData.days||{}).length : "—";
-  const pesoAtual = checkins.length&&checkins[0].peso ? `${checkins[0].peso}kg` : "—";
-  const msg = `Olá Giovani! 👋\n\nSegue meu relatório Fox Performance — ${date}\n\n📊 *Treino:* ${completed} treinos completos ${wk?`(${wk})`:""}
-🥗 *Nutrição:* ${diasNutri} dias registrados\n⚖️ *Peso atual:* ${pesoAtual}\n\nPDF em anexo!`;
-  window.open(`https://wa.me/${DRIVE_CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank");
+function renderLastFeedback(){
+  const email = String(window.FOX_EMAIL || window.FOX_USER_EMAIL || 'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'_');
+  const key = 'foxFeedback_' + email;
+  const hist = JSON.parse(localStorage.getItem(key) || '[]');
+  const card = document.getElementById('fbLastCard');
+  if(!card) return;
+  if(!hist.length){ card.style.display = 'none'; return; }
+  const last = hist[0];
+  const icos = ['','😫','😐','🙂','😊','🔥'];
+  document.getElementById('fbLastIco').textContent = last.energia ? icos[last.energia] : '💬';
+  document.getElementById('fbLastMeta').textContent = (last.energiaLabel || '') + (last.date ? ' · ' + new Date(last.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '');
+  document.getElementById('fbLastText').textContent = last.text || '(sem texto)';
+  card.style.display = 'block';
 }
 
 /* ── HELPERS ──────────────────────────────────────────────────────────────── */
