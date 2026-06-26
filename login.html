@@ -92,10 +92,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
   <div class="login-card">
     <div class="login-title">Digite o código</div>
-    <div class="login-desc">Enviamos um código de 6 dígitos para <strong id="otpEmailDisplay"></strong>. Verifique sua caixa de entrada.</div>
+    <div class="login-desc">Enviamos um código para <strong id="otpEmailDisplay"></strong>. Verifique sua caixa de entrada e digite abaixo.</div>
     <div class="input-group" style="margin-top:8px">
       <label class="input-label" for="otpInput">Código</label>
-      <input class="otp-input" type="tel" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+      <input class="otp-input" type="tel" id="otpInput" placeholder="00000000" maxlength="8" inputmode="numeric" autocomplete="one-time-code">
     </div>
     <button class="btn-primary" id="otpBtn" onclick="verifyOtpCode()">Entrar</button>
     <div class="login-msg" id="otpMsg"></div>
@@ -234,8 +234,8 @@ async function verifyOtpCode(){
   const email = window._otpEmail || '';
   const btn = document.getElementById('otpBtn');
 
-  if(!token || token.length < 6){
-    showOtpMsg('Digite o código de 6 dígitos.','error');
+  if(!token || token.length < 6 || token.length > 8){
+    showOtpMsg('Digite o código enviado por e-mail.','error');
     return;
   }
 
