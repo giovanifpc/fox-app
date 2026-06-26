@@ -47,6 +47,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .success-text{font-size:.9rem;color:var(--gray);line-height:1.6;max-width:300px}
 .success-email{color:var(--purple);font-weight:600}
 .btn-secondary{margin-top:28px;background:transparent;border:1px solid #333;border-radius:10px;padding:12px 28px;color:#888;font-size:.85rem;cursor:pointer;font-family:var(--font)}
+.otp-input{width:100%;background:#161616;border:1px solid var(--border);border-radius:10px;padding:16px;font-size:1.6rem;color:var(--text);font-family:var(--font);outline:none;text-align:center;letter-spacing:8px;font-weight:700;transition:border-color .2s}
+.otp-input:focus{border-color:var(--purple)}
+.otp-back{display:inline-block;margin-top:16px;font-size:.8rem;color:var(--gray);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:var(--font)}
 </style>
 </head>
 <body>
@@ -64,26 +67,40 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
   <div class="login-card">
     <div class="login-title">Acesse sua área</div>
-    <div class="login-desc">Digite seu e-mail cadastrado. Vamos enviar um link de acesso seguro — sem senha necessária.</div>
+    <div class="login-desc">Digite seu e-mail cadastrado. Vamos enviar um código de acesso — sem senha necessária.</div>
     <div class="input-group">
       <label class="input-label" for="emailInput">E-mail</label>
       <input class="input-field" type="email" id="emailInput" placeholder="seu@email.com" autocomplete="email" inputmode="email">
     </div>
-    <button class="btn-primary" id="loginBtn" onclick="sendMagicLink()">Enviar link de acesso</button>
+    <button class="btn-primary" id="loginBtn" onclick="sendOtp()">Enviar código de acesso</button>
     <div class="login-msg" id="loginMsg"></div>
   </div>
-  <div class="login-footer">Acesso seguro via link · Sem senha</div>
+  <div class="login-footer">Acesso seguro via código · Sem senha</div>
 </div>
 
-<div class="success-screen" id="successScreen">
-  <div class="success-icon">📬</div>
-  <div class="success-title">Link enviado!</div>
-  <div class="success-text">
-    Enviamos um link de acesso para<br>
-    <span class="success-email" id="successEmail"></span><br><br>
-    Abra seu e-mail e clique no link para entrar. O link expira em 1 hora.
+<!-- Tela de código OTP -->
+<div class="login-screen" id="otpScreen" style="display:none">
+  <div class="login-logo">
+    <div class="login-logo-icon">
+      <svg viewBox="0 0 48 48" width="38" height="38" fill="none">
+        <path d="M8 14a3 3 0 013-3h8l3 4h13a3 3 0 013 3v14a3 3 0 01-3 3H11a3 3 0 01-3-3V14z" fill="#7B8FD4" opacity=".5"/>
+        <path d="M8 20h32v11a3 3 0 01-3 3H11a3 3 0 01-3-3V20z" fill="#7B8FD4"/>
+      </svg>
+    </div>
+    <div class="login-brand">Fox Performance</div>
+    <div class="login-sub">Consultoria · Área do Cliente</div>
   </div>
-  <button class="btn-secondary" onclick="tryAgain()">Não recebeu? Tentar novamente</button>
+  <div class="login-card">
+    <div class="login-title">Digite o código</div>
+    <div class="login-desc">Enviamos um código de 6 dígitos para <strong id="otpEmailDisplay"></strong>. Verifique sua caixa de entrada.</div>
+    <div class="input-group" style="margin-top:8px">
+      <label class="input-label" for="otpInput">Código</label>
+      <input class="otp-input" type="tel" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    </div>
+    <button class="btn-primary" id="otpBtn" onclick="verifyOtpCode()">Entrar</button>
+    <div class="login-msg" id="otpMsg"></div>
+    <div style="text-align:center"><button class="otp-back" onclick="backToEmail()">← Usar outro e-mail</button></div>
+  </div>
 </div>
 
 <!-- SDK oficial do Supabase -->
@@ -162,8 +179,8 @@ async function checkSession(){
   }
 }
 
-// ── Enviar magic link via SDK ─────────────────────────────
-async function sendMagicLink(){
+// ── Enviar código OTP ─────────────────────────────────────
+async function sendOtp(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
   const btn = document.getElementById('loginBtn');
 
@@ -181,20 +198,18 @@ async function sendMagicLink(){
     if(!allowed){
       showMsg('Acesso exclusivo para clientes Fox Performance. Fale com o Giovani para ativar seu acesso.','error');
       btn.disabled = false;
-      btn.innerHTML = 'Enviar link de acesso';
+      btn.innerHTML = 'Enviar código de acesso';
       return;
     }
   }catch(e){
-    showMsg('Nao foi possivel validar seu acesso agora. Tente novamente em instantes.','error');
+    showMsg('Não foi possível validar seu acesso agora. Tente novamente em instantes.','error');
     btn.disabled = false;
-    btn.innerHTML = 'Enviar link de acesso';
+    btn.innerHTML = 'Enviar código de acesso';
     return;
   }
 
-  const {error} = await supa.auth.signInWithOtp({
-    email,
-    options:{ emailRedirectTo: REDIRECT_URL }
-  });
+  // Sem emailRedirectTo → Supabase envia código OTP de 6 dígitos
+  const {error} = await supa.auth.signInWithOtp({ email });
 
   if(error){
     if(error.message.includes('not allowed') || error.message.includes('blocked')){
@@ -203,24 +218,79 @@ async function sendMagicLink(){
       showMsg('Erro ao enviar: ' + error.message,'error');
     }
     btn.disabled = false;
-    btn.innerHTML = 'Enviar link de acesso';
+    btn.innerHTML = 'Enviar código de acesso';
   } else {
+    window._otpEmail = email;
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('successScreen').style.display = 'flex';
-    document.getElementById('successEmail').textContent = email;
+    document.getElementById('otpScreen').style.display = 'flex';
+    document.getElementById('otpEmailDisplay').textContent = email;
+    setTimeout(()=> document.getElementById('otpInput').focus(), 300);
   }
 }
 
-function tryAgain(){
-  document.getElementById('successScreen').style.display = 'none';
+// ── Verificar código OTP ───────────────────────────────────
+async function verifyOtpCode(){
+  const token = document.getElementById('otpInput').value.trim();
+  const email = window._otpEmail || '';
+  const btn = document.getElementById('otpBtn');
+
+  if(!token || token.length < 6){
+    showOtpMsg('Digite o código de 6 dígitos.','error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verificando...';
+  document.getElementById('otpMsg').style.display = 'none';
+
+  const {data, error} = await supa.auth.verifyOtp({ email, token, type: 'email' });
+
+  if(error){
+    showOtpMsg('Código inválido ou expirado. Solicite um novo.','error');
+    btn.disabled = false;
+    btn.innerHTML = 'Entrar';
+    return;
+  }
+
+  const userEmail = data && data.user && data.user.email ? data.user.email.toLowerCase() : '';
+  try{
+    const allowed = await isAllowedClient(userEmail);
+    if(!allowed){
+      await supa.auth.signOut();
+      showOtpMsg('Acesso exclusivo para clientes Fox Performance.','error');
+      btn.disabled = false;
+      btn.innerHTML = 'Entrar';
+      return;
+    }
+  }catch(e){
+    await supa.auth.signOut();
+    showOtpMsg('Não foi possível validar seu acesso. Tente novamente.','error');
+    btn.disabled = false;
+    btn.innerHTML = 'Entrar';
+    return;
+  }
+
+  window.location.replace('index.html');
+}
+
+function backToEmail(){
+  document.getElementById('otpScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginBtn').disabled = false;
-  document.getElementById('loginBtn').innerHTML = 'Enviar link de acesso';
+  document.getElementById('loginBtn').innerHTML = 'Enviar código de acesso';
   document.getElementById('loginMsg').style.display = 'none';
+  document.getElementById('otpInput').value = '';
 }
 
 function showMsg(text, type){
   const msg = document.getElementById('loginMsg');
+  msg.textContent = text;
+  msg.className = `login-msg ${type}`;
+  msg.style.display = 'block';
+}
+
+function showOtpMsg(text, type){
+  const msg = document.getElementById('otpMsg');
   msg.textContent = text;
   msg.className = `login-msg ${type}`;
   msg.style.display = 'block';
@@ -235,7 +305,10 @@ function showAccessDeniedIfNeeded(){
 }
 
 document.getElementById('emailInput').addEventListener('keydown', e=>{
-  if(e.key==='Enter') sendMagicLink();
+  if(e.key==='Enter') sendOtp();
+});
+document.getElementById('otpInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter') verifyOtpCode();
 });
 
 // Inicializar
