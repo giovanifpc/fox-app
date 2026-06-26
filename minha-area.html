@@ -410,7 +410,41 @@ canvas{display:block;width:100%}
   .medal{min-height:45px}
   .medal span{font-size:5.6px}
 }
-
+/* ── Overlays de devolutiva ── */
+.rep-overlay{position:fixed;inset:0;z-index:3000;background:#0a0a0a;overflow-y:auto;display:none}
+.rep-overlay.active{display:block}
+.rep-overlay-bar{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,10,.97);border-bottom:1px solid #1a1a1a;padding:12px 16px;z-index:1;gap:8px}
+.rep-overlay-bar-title{font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1.2px;text-transform:uppercase;text-align:right;flex:1}
+.rep-close-btn{background:none;border:1px solid #333;border-radius:8px;color:var(--gray);font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.rep-content{max-width:520px;margin:0 auto;padding-bottom:40px}
+.rep-letterhead{display:flex;align-items:center;justify-content:space-between;background:#080808;border-bottom:2px solid #1a1a1a;padding:16px 20px}
+.rep-letterbrand{display:flex;align-items:center;gap:10px}
+.rep-letterbrand img{width:36px;height:36px;object-fit:contain;filter:brightness(0) invert(1)}
+.rep-letterbrand span{font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:900;color:#fff}
+.rep-stamp{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--amber);font-weight:800;text-align:right;line-height:1.5}
+.rep-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a1a1a}
+.rep-meta-box{background:#0f0f0f;padding:12px 20px}
+.rep-meta-k{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--faint);font-weight:800}
+.rep-meta-v{font-size:14px;font-weight:800;color:var(--white);margin-top:3px}
+.rep-body{padding:20px 20px 0}
+.rep-body h3{font-size:12px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.8px;margin:22px 0 8px}
+.rep-body h3:first-child{margin-top:0}
+.rep-body p{font-size:14px;line-height:1.7;color:#d0d0d0;margin-bottom:10px}
+.rep-body ul{margin:0 0 12px;padding:0;list-style:none}
+.rep-body li{font-size:14px;line-height:1.65;color:#d0d0d0;padding-left:16px;position:relative;margin-bottom:5px}
+.rep-body li::before{content:"·";position:absolute;left:4px;color:var(--purple)}
+.rep-footer{margin:24px 20px 0;padding:14px 0;border-top:1px solid #1a1a1a;font-size:10px;color:var(--faint);letter-spacing:.8px;text-align:center}
+.rep-pdf-btn{width:100%;background:none;border:1px solid #333;border-radius:10px;color:var(--gray);font-size:12px;font-weight:700;padding:12px;cursor:pointer;margin-top:0}
+.hist-item{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #1a1a1a}
+.hist-item-info{flex:1;min-width:0}
+.hist-item-title{font-size:13px;font-weight:700;color:var(--white)}
+.hist-item-date{font-size:11px;color:var(--gray);margin-top:2px}
+.hist-item-btns{display:flex;gap:6px;flex-shrink:0}
+.hist-btn{background:none;border:1px solid #333;border-radius:8px;color:var(--white);font-size:11px;font-weight:700;padding:7px 11px;cursor:pointer;white-space:nowrap}
+.hist-btn.primary{background:var(--purple);border-color:var(--purple)}
+.dev-btns{display:flex;gap:6px;margin-top:10px}
+.dev-btn{flex:1;background:none;border:1px solid #ccc;border-radius:8px;font-size:9px;font-weight:700;padding:7px 4px;cursor:pointer;text-transform:uppercase;font-family:'Inter',sans-serif;color:#111;text-align:center}
+.dev-btn.primary{background:linear-gradient(135deg,#7B8FD4,#5a6ab0);border-color:transparent;color:#fff}
 </style>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -978,39 +1012,150 @@ async function saveProfileContext(){
   }
 }
 
+let allDevolutivas = [];
+let _currentOverlayRep = null;
+
 function renderSupabaseDevolutiva(rep){
   const t = document.getElementById('dash-dev-title');
   const d = document.getElementById('dash-dev-date');
-  const b = document.getElementById('dash-dev-btn');
   const h = document.getElementById('dash-dev-date-header');
-  const hint = document.getElementById('dash-dev-hint');
+  const btns = document.getElementById('dash-dev-btns');
   const date = rep.published_at || rep.period_end || rep.period_start || new Date().toISOString();
-  if(t) t.textContent = 'Devolutiva ciclo ' + (rep.ciclo || '-') + ' - semana ' + (rep.semana || '-');
+  if(t) t.textContent = 'Devolutiva ciclo ' + (rep.ciclo || '-') + ' · semana ' + (rep.semana || '-');
   if(d) d.textContent = fmtDate(date);
   if(h) h.textContent = new Date(date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  if(hint) hint.textContent = rep.drive_file_id ? '* PDF completo publicado pelo Giovani' : '* devolutiva publicada pelo Giovani';
-  if(b){
-    b.textContent = rep.drive_file_id ? 'Abrir PDF' : 'Abrir texto';
-    b.onclick = function(){ openPublishedReport(rep); };
-  }
+  if(btns) btns.style.display = 'flex';
 }
 
-function openPublishedReport(rep){
-  const driveLink = String(rep.drive_file_id || '').trim();
-  if(/^https?:\/\//i.test(driveLink)){
-    window.open(driveLink, '_blank');
-    return;
+function renderReportContent(text){
+  const lines = String(text || '').split('\n');
+  let html = '';
+  let inList = false;
+  for(let i = 0; i < lines.length; i++){
+    const raw = lines[i];
+    const line = raw.trim();
+    if(!line){
+      if(inList){ html += '</ul>'; inList = false; }
+      continue;
+    }
+    const isBullet = /^[-•*]\s+/.test(line);
+    const isHeader = /^\d+[\.\)]\s+.{0,60}$/.test(line) || (/[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^:]{2,}:$/.test(line) && line.length < 60);
+    if(isBullet){
+      if(!inList){ html += '<ul>'; inList = true; }
+      html += '<li>' + escHtml(line.replace(/^[-•*]\s+/,'')) + '</li>';
+    } else if(isHeader){
+      if(inList){ html += '</ul>'; inList = false; }
+      html += '<h3>' + escHtml(line.replace(/:$/,'')) + '</h3>';
+    } else {
+      if(inList){ html += '</ul>'; inList = false; }
+      html += '<p>' + escHtml(line) + '</p>';
+    }
   }
+  if(inList) html += '</ul>';
+  return html;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function openReportOverlay(rep){
+  _currentOverlayRep = rep;
+  const period = fmtPeriodFromRep(rep);
+  const date = rep.published_at ? new Date(rep.published_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+  const el = document.getElementById('repOvPeriod');
+  const elPeriod = document.getElementById('repOvMetaPeriod');
+  const elDate = document.getElementById('repOvMetaDate');
+  const elBody = document.getElementById('repOvBody');
+  if(el) el.textContent = 'C' + (rep.ciclo||'-') + ' · S' + (rep.semana||'-');
+  if(elPeriod) elPeriod.textContent = period;
+  if(elDate) elDate.textContent = date;
+  if(elBody) elBody.innerHTML = renderReportContent(rep.ai_draft || rep.coach_notes || 'Devolutiva publicada.');
+  const overlay = document.getElementById('reportOverlay');
+  if(overlay){ overlay.classList.add('active'); overlay.scrollTop = 0; }
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReportOverlay(){
+  const overlay = document.getElementById('reportOverlay');
+  if(overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function openHistoryOverlay(){
+  const list = document.getElementById('histOvList');
+  if(!list) return;
+  if(!allDevolutivas.length){
+    list.innerHTML = '<div style="padding:30px 20px;text-align:center;color:#666;font-size:13px">Nenhuma devolutiva anterior.</div>';
+  } else {
+    list.innerHTML = allDevolutivas.map(function(rep, idx){
+      const period = fmtPeriodFromRep(rep);
+      const date = rep.published_at ? new Date(rep.published_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '';
+      return '<div class="hist-item">'
+        + '<div class="hist-item-info"><div class="hist-item-title">Ciclo ' + (rep.ciclo||'-') + ' · Semana ' + (rep.semana||'-') + '</div>'
+        + '<div class="hist-item-date">' + period + (date ? ' · ' + date : '') + '</div></div>'
+        + '<div class="hist-item-btns">'
+        + '<button class="hist-btn primary" onclick="openHistoryReport(' + idx + ')">Ler</button>'
+        + '<button class="hist-btn" onclick="downloadHistoryReportPdf(' + idx + ')">PDF</button>'
+        + '</div></div>';
+    }).join('');
+  }
+  const overlay = document.getElementById('historyOverlay');
+  if(overlay){ overlay.classList.add('active'); overlay.scrollTop = 0; }
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryOverlay(){
+  const overlay = document.getElementById('historyOverlay');
+  if(overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function openHistoryReport(idx){
+  const rep = allDevolutivas[idx];
+  if(!rep) return;
+  closeHistoryOverlay();
+  setTimeout(function(){ openReportOverlay(rep); }, 50);
+}
+
+function openLatestDevolutiva(){
+  if(allDevolutivas.length) openReportOverlay(allDevolutivas[0]);
+}
+
+function downloadLatestDevolutivaPdf(){
+  if(allDevolutivas.length) downloadReportPdf(allDevolutivas[0]);
+}
+
+function downloadCurrentReportPdf(){
+  if(_currentOverlayRep) downloadReportPdf(_currentOverlayRep);
+}
+
+function downloadHistoryReportPdf(idx){
+  const rep = allDevolutivas[idx];
+  if(rep) downloadReportPdf(rep);
+}
+
+function fmtPeriodFromRep(rep){
+  if(rep.period_start && rep.period_end){
+    const s = new Date(rep.period_start+'T12:00:00');
+    const e = new Date(rep.period_end+'T12:00:00');
+    return s.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' a ' + e.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }
+  return 'Ciclo ' + (rep.ciclo||'-') + ' · Semana ' + (rep.semana||'-');
+}
+
+function downloadReportPdf(rep){
   const text = String(rep.ai_draft || '').trim() || 'Devolutiva publicada.';
+  const period = fmtPeriodFromRep(rep);
+  const date = rep.published_at ? new Date(rep.published_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
   const win = window.open('', '_blank');
-  if(!win){
-    toast('Permita pop-ups para abrir a devolutiva.');
-    return;
-  }
-  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devolutiva Fox</title><style>body{margin:0;background:#0b0c12;color:#f4f6ff;font-family:Inter,Arial,sans-serif;padding:24px;line-height:1.55}main{max-width:760px;margin:0 auto}h1{font-size:22px;margin:0 0 16px;color:#ff8f68}pre{white-space:pre-wrap;font:inherit;background:#12141d;border:1px solid #282b38;border-radius:14px;padding:18px}</style></head><body><main><h1>Devolutiva Fox Performance</h1><pre></pre></main></body></html>');
-  win.document.querySelector('pre').textContent = text;
+  if(!win){ toast('Permita pop-ups para baixar o PDF.'); return; }
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devolutiva Fox</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;background:#f3f0ea;color:#171717;font-family:Arial,Helvetica,sans-serif;line-height:1.5}.sheet{max-width:820px;margin:0 auto;background:#fff;min-height:100vh;padding:34px 38px}.letterhead{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#080808;color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:22px}.letterbrand{display:flex;align-items:center;gap:12px}.letterbrand img{width:42px;height:42px;object-fit:contain;filter:brightness(0) invert(1)}.letterbrand span{font-size:13px;text-transform:uppercase;letter-spacing:2px;font-weight:900;color:#fff}.stamp{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#ffb27d;font-weight:800;text-align:right}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 24px}.box{border:1px solid #e2ddd3;border-radius:8px;padding:11px 12px;background:#fbfaf7}.k{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:#777;font-weight:800}.v{font-size:16px;font-weight:800;margin-top:4px}.content{white-space:pre-wrap;font-size:14px;line-height:1.65}.footer{border-top:1px solid #e2ddd3;margin-top:32px;padding-top:14px;color:#777;font-size:11px}.actions{position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;background:#f3f0ea;padding:10px}.actions button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#7b8fd4;color:#fff}.secondary{background:#fff;color:#222;border:1px solid #ddd!important}@media print{body{background:#fff}.sheet{padding:0;max-width:none}.actions{display:none}}</style></head><body><div class="actions"><button class="secondary" onclick="window.close()">Fechar</button><button class="primary" onclick="window.print()">Salvar como PDF</button></div><main class="sheet"><div class="letterhead"><div class="letterbrand"><img src="fox-logo-sem-fundo.svg" alt="Fox Performance"><span>Fox Performance</span></div><div class="stamp">Devolutiva<br>Semanal</div></div><section class="meta"><div class="box"><div class="k">Período</div><div class="v" id="pdfPeriod"></div></div><div class="box"><div class="k">Publicado</div><div class="v" id="pdfDate"></div></div></section><section class="content" id="pdfText"></section><footer class="footer">Fox Performance · Devolutiva personalizada</footer></main></body></html>');
+  win.document.getElementById('pdfPeriod').textContent = period;
+  win.document.getElementById('pdfDate').textContent = date;
+  win.document.getElementById('pdfText').textContent = text;
   win.document.close();
 }
+
+function openPublishedReport(rep){ openReportOverlay(rep); }
 
 </script>
 </head>
@@ -1190,9 +1335,13 @@ function openPublishedReport(rep){
             <div style="font-size:13px;font-weight:600;color:#111;font-family:'Inter',sans-serif" id="dash-dev-title">—</div>
             <div style="font-size:9px;color:#888;margin-top:2px;font-family:'Inter',sans-serif" id="dash-dev-date">—</div>
           </div>
-          <button id="dash-dev-btn" style="background:linear-gradient(135deg,#7B8FD4,#5a6ab0);border:none;border-radius:8px;padding:7px 13px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;flex-shrink:0;font-family:'Inter',sans-serif">Abrir</button>
         </div>
-        <div style="font-size:7.5px;color:#bbb;margin-top:10px;font-family:'Inter',sans-serif" id="dash-dev-hint">* toque em abrir para visualizar a devolutiva completa</div>
+        <div class="dev-btns" id="dash-dev-btns" style="display:none">
+          <button class="dev-btn primary" onclick="openLatestDevolutiva()">Ler</button>
+          <button class="dev-btn" onclick="downloadLatestDevolutivaPdf()">Baixar PDF</button>
+          <button class="dev-btn" onclick="openHistoryOverlay()">Anteriores</button>
+        </div>
+        <div style="font-size:7.5px;color:#bbb;margin-top:8px;font-family:'Inter',sans-serif" id="dash-dev-hint">* sua devolutiva semanal publicada pelo Giovani</div>
       </div>
     </div>
     <!-- FICHA 4: PERFIL -->
@@ -2035,32 +2184,17 @@ async function loadLatestDevolutiva(){
     if(window.FOX_SUPA && loggedEmail){
       const {data, error} = await window.FOX_SUPA
         .from('weekly_reports')
-        .select('id,ciclo,semana,period_start,period_end,published_at,ai_draft,coach_notes,drive_file_id,status')
+        .select('id,ciclo,semana,period_start,period_end,published_at,ai_draft,coach_notes,status')
         .eq('client_email', loggedEmail)
         .eq('published', true)
-        .order('published_at', {ascending:false})
-        .limit(1)
-        .maybeSingle();
-      if(!error && data){
-        renderSupabaseDevolutiva(data);
+        .order('published_at', {ascending:false});
+      if(!error && data && data.length){
+        allDevolutivas = data;
+        renderSupabaseDevolutiva(data[0]);
         return;
       }
     }
-    const folders = await driveList(DRIVE_CONFIG.folderId,"mimeType='application/vnd.google-apps.folder'");
-    const devFolder = folders.find(f=>f.name==='Devolutivas');
-    if(!devFolder) return;
-    const files = await driveList(devFolder.id,"mimeType!='application/vnd.google-apps.folder'");
-    if(!files.length) return;
-    const f = files[0];
-    const t = document.getElementById('dash-dev-title');
-    const d = document.getElementById('dash-dev-date');
-    const b = document.getElementById('dash-dev-btn');
-    const h = document.getElementById('dash-dev-date-header');
-    if(t) t.textContent = f.name.replace(/\.pdf$/i,'').replace(/-/g,' ');
-    if(d) d.textContent = fmtDate(f.modifiedTime)+(f.size?' · '+fmtSize(f.size):'');
-    if(h) h.textContent = new Date(f.modifiedTime).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    if(b) b.onclick = ()=>openFile(f.webViewLink||'');
-  }catch(e){ /* fallback estático já exibido */ }
+  }catch(e){ /* fallback silencioso */ }
 }
 
 </script>
@@ -2101,6 +2235,11 @@ async function loadLatestDevolutiva(){
     history.pushState({area:true}, '', location.href);
     window.addEventListener('popstate', function(){
       if(isInsideHub()){
+        // fechar overlay se aberto
+        const ro = document.getElementById('reportOverlay');
+        const ho = document.getElementById('historyOverlay');
+        if(ro && ro.classList.contains('active')){ closeReportOverlay(); history.pushState({area:true},'',location.href); return; }
+        if(ho && ho.classList.contains('active')){ closeHistoryOverlay(); history.pushState({area:true},'',location.href); return; }
         try{ parent.postMessage('fox-back','*'); }catch(e){}
         history.pushState({area:true}, '', location.href);
       }
@@ -2108,5 +2247,43 @@ async function loadLatestDevolutiva(){
   }catch(e){}
 })();
 </script>
+
+<!-- OVERLAY: Leitor de devolutiva -->
+<div id="reportOverlay" class="rep-overlay">
+  <div class="rep-overlay-bar">
+    <button class="rep-close-btn" onclick="closeReportOverlay()">&#8249; Fechar</button>
+    <span class="rep-overlay-bar-title" id="repOvPeriod"></span>
+  </div>
+  <div class="rep-content">
+    <div class="rep-letterhead">
+      <div class="rep-letterbrand">
+        <img src="fox-logo-sem-fundo.svg" alt="Fox Performance">
+        <span>Fox Performance</span>
+      </div>
+      <div class="rep-stamp">Devolutiva<br>Semanal</div>
+    </div>
+    <div class="rep-meta-grid">
+      <div class="rep-meta-box"><div class="rep-meta-k">Período</div><div class="rep-meta-v" id="repOvMetaPeriod">—</div></div>
+      <div class="rep-meta-box"><div class="rep-meta-k">Publicado</div><div class="rep-meta-v" id="repOvMetaDate">—</div></div>
+    </div>
+    <div class="rep-body" id="repOvBody"></div>
+    <div class="rep-footer">Fox Performance · Devolutiva personalizada</div>
+    <div style="padding:16px 20px 0">
+      <button class="rep-pdf-btn" onclick="downloadCurrentReportPdf()">Baixar como PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: Histórico de devolutivas -->
+<div id="historyOverlay" class="rep-overlay">
+  <div class="rep-overlay-bar">
+    <button class="rep-close-btn" onclick="closeHistoryOverlay()">&#8249; Fechar</button>
+    <span class="rep-overlay-bar-title">Histórico de devolutivas</span>
+  </div>
+  <div class="rep-content">
+    <div id="histOvList" style="padding-top:4px"></div>
+  </div>
+</div>
+
 </body>
 </html>
