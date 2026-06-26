@@ -273,7 +273,10 @@ html,body{height:100%;overflow:hidden}
       <img class="brand-logo" src="fox-logo-sem-fundo.svg" alt="Fox Performance">
       <div class="brand-text">FOX<span>PERFORMANCE</span></div>
     </div>
-    <button class="icon-btn" type="button" onclick="openTutorial()" aria-label="Abrir tutorial da plataforma"><span class="bell-min">?</span><span class="dot" id="noticeDot"></span></button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="icon-btn" id="adminBtn" type="button" onclick="window.location.href='admin.html'" aria-label="Painel Admin" style="display:none;border-color:rgba(255,140,66,.35);color:var(--amber);font-size:13px;font-weight:900;letter-spacing:.5px"><span>ADM</span></button>
+      <button class="icon-btn" type="button" onclick="openTutorial()" aria-label="Abrir tutorial da plataforma"><span class="bell-min">?</span><span class="dot" id="noticeDot"></span></button>
+    </div>
   </header>
 
   <section class="greeting">
@@ -490,6 +493,10 @@ async function boot(){
   if(!session){ window.location.replace('login.html'); return; }
   window.FOX_SESSION = session;
   window.FOX_USER_EMAIL = session.user.email;
+  if(session.user.email.toLowerCase() === 'giovani.work@hotmail.com'){
+    var adminBtn = document.getElementById('adminBtn');
+    if(adminBtn) adminBtn.style.display = 'flex';
+  }
 
   var allowedProfile = await loadProfile(session.user.email);
   if(!allowedProfile){
