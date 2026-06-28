@@ -39,7 +39,8 @@ fox-app/
 ├── data/exercises.json # Exercícios estruturados
 ├── supabase/
 │   └── functions/weekly-report/index.ts  # Edge Function de geração automática
-├── .github/workflows/weekly-report-cron.yml  # Cron: sábado 02h BRT
+├── .github/workflows/weekly-report-cron.yml       # Cron: sábado 02h BRT
+├── .github/workflows/deploy-edge-functions.yml   # Deploy automático da Edge Function
 └── supabase_*.sql      # Scripts de schema do banco (referência)
 ```
 
@@ -146,12 +147,25 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 2. Para cada cliente (em batch, com isolamento de erro):
    - Coleta `training_history` + `nutri_history` + `weekly_goals` + `client_context` + `client_weekly_notes` da semana
    - Gera summaries de treino e nutrição
-   - Chama **Claude API** (`claude-sonnet-4-6`, max_tokens 3200, temp 0.4) para escrever o `ai_draft`
+   - Chama **Claude API** (`claude-sonnet-4-6`, max_tokens 3200, temp 0.75) para escrever o `ai_draft`
    - Se falhar, usa `fallbackDraft` (texto estruturado sem IA)
    - Salva em `weekly_reports` (status: draft, published: false)
 3. Envia email de log via **Resend** para `contatofoxperformance@gmail.com`
 
-**Reescrita:** admin pode enviar `{action:"rewrite", report_id, coach_notes}` → Claude reescreve respeitando os ajustes do Giovani (temp 0.35)
+**Reescrita:** admin pode enviar `{action:"rewrite", report_id, coach_notes}` → Claude reescreve respeitando os ajustes do Giovani (temp 0.70)
+
+**Voz do prompt (geração e reescrita):**
+- Texto em parágrafos corridos, estilo WhatsApp — sem bullets, listas, travessões (—), emojis ou markdown
+- Proibido abrir com: "Espero que esteja bem", "Foi uma semana desafiadora", "Parabéns pela dedicação", "Olá"
+- Palavras banidas: potencializar, alavancar, nortear, jornada, holística
+- Tom: direto, humano, íntimo — como Giovani fala com clientes que conhece há anos
+
+**Deploy da Edge Function:**
+- Feito via GitHub Actions (`.github/workflows/deploy-edge-functions.yml`)
+- Trigger automático: push para `main` com mudanças em `supabase/functions/**`
+- Trigger manual: `workflow_dispatch` no GitHub Actions
+- Secrets necessários no repositório: `SUPABASE_ACCESS_TOKEN` (personal access token do Supabase) e `SUPABASE_PROJECT_REF` (ref do projeto)
+- **Não é possível fazer deploy direto desta sessão** (Docker ausente, proxy bloqueia `api.supabase.com`)
 
 **Variáveis de ambiente da Edge Function:**
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
@@ -192,6 +206,7 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 - `#historyOverlay` — lista de todas as devolutivas publicadas
 - Ambos fecham via `handleAreaBack()` ou ao receber `fox-module-activated`
 - `allDevolutivas[]` armazena todas as devolutivas publicadas (fetch sem `.limit(1)`)
+- `renderReportContent(text)` converte o texto da devolutiva para HTML, removendo markdown legado (`##`, `---`, `**bold**`, `*italic*`)
 
 ---
 
@@ -212,6 +227,8 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 - **OTP 8 dígitos:** Supabase envia código de 8 dígitos — campo aceita 6-8 (`maxlength="8"`)
 - **Botão voltar ignorava estado interno:** `#fhb` mandava `fox-back` direto ao Hub mesmo com overlay aberto. Resolvido com `handleAreaBack()` / `handleBack()` / `handleNutriBack()` em cada módulo
 - **Overlay persistia ao reabrir módulo:** iframes são reutilizados; `openModule()` agora envia `fox-module-activated` para que o módulo resete overlays/modais
+- **Devolutiva com voz robótica e markdown visível:** prompt reescrito com proibições explícitas (bullets, travessões, emojis, linguagem corporativa) e exemplos reais da voz do Giovani. Temperature elevada para 0.75/0.70. `renderReportContent()` strip de markdown legado para devolutivas antigas no banco
+- **Deploy da Edge Function impossível via CLI nesta sessão:** Docker ausente + proxy bloqueia `api.supabase.com`. Solução permanente: GitHub Actions (`deploy-edge-functions.yml`) faz deploy automático a cada push em `supabase/functions/**`
 
 ---
 
