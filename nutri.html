@@ -2182,7 +2182,7 @@ async function fetchOpenFoodSearch(q){
   ];
   for(var i=0;i<urls.length;i++){
     try{
-      var res = await fetch(urls[i], {headers:{'Accept':'application/json'}});
+      var res = await fetch(urls[i], {headers:{'Accept':'application/json'}, signal: AbortSignal.timeout(5000)});
       if(!res.ok) continue;
       var json = await res.json();
       var list = (json.products || []).map(normalizeOpenFoodProduct).filter(function(f){
@@ -2199,10 +2199,12 @@ async function fetchOpenFoodSearch(q){
 }
 async function searchFoodsSmart(q,cat=''){
   const local=searchFoods(q,cat);
-  const openFoods=(await fetchOpenFoodSearch(q)).filter(f=>!cat||f.cat===cat);
-  if(openFoods.length) return mergeFoodResults(sortFoodsByQuery(openFoods,q),sortFoodsByQuery(local,q));
-  const online=await searchOnlineFoods(q,cat);
-  return mergeFoodResults(sortFoodsByQuery(online,q),sortFoodsByQuery(local,q));
+  const [openFoods,online]=await Promise.all([
+    fetchOpenFoodSearch(q).then(r=>r.filter(f=>!cat||f.cat===cat)).catch(()=>[]),
+    searchOnlineFoods(q,cat)
+  ]);
+  const ext=sortFoodsByQuery([...openFoods,...online],q);
+  return mergeFoodResults(ext,sortFoodsByQuery(local,q));
 }
 function parseServingText(txt){
   txt=String(txt||'').toLowerCase().replace(',', '.');
