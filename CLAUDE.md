@@ -33,7 +33,7 @@ fox-app/
 ├── nutri.html          # NutriTracker (refeições + água + macros)
 ├── minha-area.html     # Área do cliente (relatórios, documentos, evolução)
 ├── admin.html          # Painel admin exclusivo do Giovani
-├── sw.js               # Service Worker (cache versionado, fox-v1.0.4)
+├── sw.js               # Service Worker (cache versionado, fox-v1.0.5)
 ├── site.webmanifest    # PWA manifest
 ├── exercises.json      # Biblioteca de exercícios para autocomplete
 ├── data/exercises.json # Exercícios estruturados
@@ -180,7 +180,7 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 
 ## Service Worker
 
-- Versão atual: `fox-v1.0.4` (bumpar a cada deploy que afete arquivos cacheados)
+- Versão atual: `fox-v1.0.5` (bumpar a cada deploy que afete arquivos cacheados)
 - Estratégia HTML: **network-first** com fallback para cache — cliente sempre recebe versão nova quando online
 - Estratégia assets: **cache-first** com atualização em background
 - **Network-only** (nunca cacheado): Supabase, googleapis, cdn.jsdelivr, `/admin`
@@ -195,11 +195,16 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 
 ## Minha Área — estrutura atual
 
-**Abas:** Início · Treino · Nutrição · Perfil · Feedback
+**Abas (ordem na nav):** Início · Feedback · Perfil · Docs · Fotos · Pag.
 
 - **Início:** card de devolutiva com 3 botões (Ler / Baixar PDF / Anteriores), progresso, medidas rápidas
-- **Perfil** (ex-Medidas): anamnese + medidas corporais
-- **Feedback** (ex-Relatório): chips de energia (1–5) + textarea + envio via WhatsApp para o Giovani
+- **Feedback:** chips de energia (1–5) + textarea + envio via WhatsApp para o Giovani
+- **Perfil:** anamnese + medidas corporais
+
+**Anamnese** (`client_context.anamnesis` JSONB) — campos coletados:
+- Objetivo, resultado esperado, rotina, dias/tempo de treino, histórico, lesões, alimentação, sono, estresse, estilo de vida, motivação, comunicação preferida
+- `glp1_use` (boolean) e `glp1_dose` (string) — uso de análogo GLP-1 (Ozempic, Mounjaro, Wegovy, Saxenda)
+- Quando `glp1_use = true`: Edge Function injeta instrução obrigatória no prompt ("meta calórica é referência, foco é proteína")
 
 **Overlays de devolutiva:**
 - `#reportOverlay` — leitura fullscreen com letterhead e botão de download PDF
@@ -213,7 +218,8 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 ## Admin — estrutura atual
 
 - **Header:** botão "‹ Hub" para voltar ao `index.html`
-- **Pendências:** cards por cliente; devolutivas publicadas mostram "Avisar WA" diretamente (sem estado intermediário "pronto")
+- **Abas:** chips com `flex-wrap` e `border-radius` — não transbordam no celular; já prevê aba futura "Conteúdo"
+- **Pendências:** cards por cliente; deduplica por `(client_email, period_start, period_end)` mantendo maior prioridade (verde > âmbar > vermelho); mensagem WhatsApp usa "Olá" e "aba Minha Área"
 - **Devolutivas:** editar `ai_draft` → `coach_notes` → reescrever com Claude → publicar
   - Sem campo de link de Drive, sem botão "Marcar pronto", sem botão "Salvar PDF"
 
@@ -229,6 +235,34 @@ Catálogo de alimentos com macros (leitura para todos autenticados, escrita só 
 - **Overlay persistia ao reabrir módulo:** iframes são reutilizados; `openModule()` agora envia `fox-module-activated` para que o módulo resete overlays/modais
 - **Devolutiva com voz robótica e markdown visível:** prompt reescrito com proibições explícitas (bullets, travessões, emojis, linguagem corporativa) e exemplos reais da voz do Giovani. Temperature elevada para 0.75/0.70. `renderReportContent()` strip de markdown legado para devolutivas antigas no banco
 - **Deploy da Edge Function impossível via CLI nesta sessão:** Docker ausente + proxy bloqueia `api.supabase.com`. Solução permanente: GitHub Actions (`deploy-edge-functions.yml`) faz deploy automático a cada push em `supabase/functions/**`
+- **Busca de alimento no nutri travava >1 min:** `fetchOpenFoodSearch` sem timeout bloqueava tudo. Resolvido com `AbortSignal.timeout(5000)` + `searchFoodsSmart` rodando Open Food Facts e Supabase em paralelo via `Promise.all`
+- **Cards verdes e vermelhos do mesmo cliente/período:** `loadPendencias()` não deduplicava. Resolvido com deduplicação por `(client_email, period_start, period_end)` mantendo maior prioridade
+- **Campo GLP-1 na anamnese:** `glp1_use` e `glp1_dose` salvos em `client_context.anamnesis`; Edge Function injeta instrução no prompt quando `glp1_use=true` — tanto na geração quanto na reescrita
+
+---
+
+## Próximos passos planejados
+
+### Gerador de conteúdo (admin.html — nova aba "Conteúdo")
+
+Nova aba no painel admin para gerar conteúdo de redes sociais via Claude API. 3 tipos:
+
+1. **Post resultado** — seleciona cliente + semana → Claude busca dados reais (treino/nutri/evolução) e gera legenda para Instagram sem identificar o cliente
+2. **Post educativo** — Giovani informa o tema → Claude gera conteúdo educativo curto no tom dele
+3. **Roteiro de Reels** — Giovani informa o assunto → Claude gera roteiro com gancho, desenvolvimento e CTA
+
+**Fluxo de uso:**
+- Giovani acessa aba "Conteúdo" → escolhe tipo → preenche inputs → Claude gera rascunho → Giovani edita e copia para Instagram/CapCut
+- Nenhum dado de cliente é postado diretamente — geração é local, cópia é manual
+
+**Restrições de voz (mesmas das devolutivas):**
+- Sem bullets, sem emojis excessivos, sem linguagem corporativa
+- Tom direto e pessoal, como Giovani escreve no WhatsApp
+
+**Implementação:**
+- Nova aba `tab-btn` "Conteúdo" em `admin.html` (chip-wrap já suporta mais abas)
+- Chamada à Claude API via Edge Function (reutiliza infra do weekly-report) ou client-side
+- Sem persistência em banco — geração efêmera, cópia manual
 
 ---
 
