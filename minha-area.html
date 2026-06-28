@@ -914,12 +914,15 @@ function fillProfileContext(){
     profileStress: a.stress || '',
     profileLifestyle: a.lifestyle || '',
     profileMotivation: c.motivation_notes || '',
-    profileCommunication: a.communication_preference || ''
+    profileCommunication: a.communication_preference || '',
+    profileGlp1Use: a.glp1_use === true ? 'sim' : (a.glp1_use === false ? 'nao' : ''),
+    profileGlp1Dose: a.glp1_dose || ''
   };
   Object.keys(map).forEach(function(id){
     const el = document.getElementById(id);
     if(el && !el.value) el.value = map[id];
   });
+  toggleGlp1Dose(document.getElementById('profileGlp1Use')?.value || '');
 }
 
 function profileFilledCount(){
@@ -960,6 +963,11 @@ function openProfileForm(){
   }, 80);
 }
 
+function toggleGlp1Dose(val){
+  const g = document.getElementById('glp1DoseGroup');
+  if(g) g.style.display = val === 'sim' ? '' : 'none';
+}
+
 async function saveProfileContext(){
   const client = window.FOX_SUPA;
   const userEmail = window.FOX_EMAIL || window.FOX_USER_EMAIL;
@@ -981,7 +989,9 @@ async function saveProfileContext(){
     sleep: text('profileSleep') || null,
     stress: text('profileStress') || null,
     lifestyle: text('profileLifestyle') || null,
-    communication_preference: text('profileCommunication') || null
+    communication_preference: text('profileCommunication') || null,
+    glp1_use: text('profileGlp1Use') === 'sim' ? true : (text('profileGlp1Use') === 'nao' ? false : null),
+    glp1_dose: text('profileGlp1Use') === 'sim' ? (text('profileGlp1Dose') || null) : null
   };
   const routineParts = [text('profileRoutine'), text('profileLifestyle')].filter(Boolean);
   const motivationParts = [text('profileMotivation'), text('profileCommunication') ? 'Comunicacao preferida: ' + text('profileCommunication') : ''].filter(Boolean);
@@ -1496,6 +1506,23 @@ function openPublishedReport(rep){ openReportOverlay(rep); }
         <div class="profile-field">
           <label>Como prefere receber orientacoes</label>
           <textarea id="profileCommunication" placeholder="Ex.: direto, acolhedor, com metas curtas, sem tom de cobranca."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-title">Medicacao</div>
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Voce faz uso de medicacao para controle de peso ou apetite? (ex: Ozempic, Mounjaro, Wegovy, Saxenda)</label>
+          <select id="profileGlp1Use" onchange="toggleGlp1Dose(this.value)">
+            <option value="">Selecione</option>
+            <option value="nao">Nao</option>
+            <option value="sim">Sim</option>
+          </select>
+        </div>
+        <div class="profile-field" id="glp1DoseGroup" style="display:none">
+          <label>Qual medicacao e dose atual? (ex: Mounjaro 5mg)</label>
+          <input type="text" id="profileGlp1Dose" placeholder="ex: Mounjaro 5mg">
         </div>
       </div>
     </div>

@@ -151,6 +151,7 @@ function formatAnamnesis(anamnesis: unknown) {
     ["Estresse atual", a.stress],
     ["Estilo de vida", a.lifestyle],
     ["Comunicacao preferida", a.communication_preference],
+    ["GLP-1 em uso", a.glp1_use === true ? `Sim — ${String(a.glp1_dose || "dose nao informada")}` : null],
   ];
   return rows
     .filter(([, value]) => String(value || "").trim())
@@ -236,6 +237,10 @@ async function generateClaudeDraft(input: {
     };
   }
 
+  const glp1Ctx = (input.reportData as any)?.context?.anamnesis;
+  const glp1Use = glp1Ctx?.glp1_use === true;
+  const glp1Dose = String(glp1Ctx?.glp1_dose || "dose nao informada");
+
   const prompt = [
     "Voce e assistente do Giovani, treinador da Fox Performance.",
     "Gere uma devolutiva semanal para o cliente com base nos dados JSON fornecidos.",
@@ -274,6 +279,11 @@ async function generateClaudeDraft(input: {
     "Escreva em primeira pessoa como o proprio Giovani falando diretamente com o cliente.",
     "Nao cite Giovani em terceira pessoa.",
     "Escreva em portugues do Brasil.",
+    ...(glp1Use ? [
+      "",
+      "MEDICACAO — CONTEXTO OBRIGATORIO:",
+      `Este cliente usa ${glp1Dose} (analogo GLP-1/GIP). A meta calorica e referencia, nao obrigacao. O indicador principal de sucesso nutricional e a adequacao proteica diaria. Nao tratar deficit calorico como falha nas devolutivas.`,
+    ] : []),
     "",
     "Dados:",
     compactForPrompt(input),
@@ -341,6 +351,10 @@ async function rewriteClaudeDraft(input: {
     };
   }
 
+  const glp1Ctx = (input.report as any)?.report_data?.context?.anamnesis;
+  const glp1Use = glp1Ctx?.glp1_use === true;
+  const glp1Dose = String(glp1Ctx?.glp1_dose || "dose nao informada");
+
   const prompt = [
     "Voce e assistente do Giovani, treinador da Fox Performance.",
     "Reescreva a devolutiva semanal aplicando obrigatoriamente os ajustes do Giovani.",
@@ -369,6 +383,11 @@ async function rewriteClaudeDraft(input: {
     "Escreva em primeira pessoa como o proprio Giovani falando diretamente com o cliente.",
     "Nao cite Giovani em terceira pessoa.",
     "Escreva em portugues do Brasil.",
+    ...(glp1Use ? [
+      "",
+      "MEDICACAO — CONTEXTO OBRIGATORIO:",
+      `Este cliente usa ${glp1Dose} (analogo GLP-1/GIP). A meta calorica e referencia, nao obrigacao. O indicador principal de sucesso nutricional e a adequacao proteica diaria. Nao tratar deficit calorico como falha nas devolutivas.`,
+    ] : []),
     "",
     "Relatorio original:",
     compactForPrompt({
