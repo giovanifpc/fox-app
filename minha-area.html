@@ -1030,27 +1030,29 @@ function renderSupabaseDevolutiva(rep){
 }
 
 function renderReportContent(text){
+  function stripMd(s){ return s.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1').replace(/__(.+?)__/g,'$1').replace(/_(.+?)_/g,'$1'); }
   const lines = String(text || '').split('\n');
   let html = '';
   let inList = false;
   for(let i = 0; i < lines.length; i++){
-    const raw = lines[i];
-    const line = raw.trim();
-    if(!line){
+    const line = lines[i].trim();
+    if(!line || /^[-*_]{3,}$/.test(line)){
       if(inList){ html += '</ul>'; inList = false; }
       continue;
     }
-    const isBullet = /^[-•*]\s+/.test(line);
-    const isHeader = /^\d+[\.\)]\s+.{0,60}$/.test(line) || (/[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^:]{2,}:$/.test(line) && line.length < 60);
+    const isMdHeading = /^#{1,6}\s/.test(line);
+    const content = stripMd(isMdHeading ? line.replace(/^#{1,6}\s+/,'') : line);
+    const isBullet = /^[-•*]\s+/.test(line) && !isMdHeading;
+    const isHeader = !isBullet && (isMdHeading || /^\d+[\.\)]\s+.{0,60}$/.test(content) || (/[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][^:]{2,}:$/.test(content) && content.length < 60));
     if(isBullet){
       if(!inList){ html += '<ul>'; inList = true; }
-      html += '<li>' + escHtml(line.replace(/^[-•*]\s+/,'')) + '</li>';
+      html += '<li>' + escHtml(stripMd(line.replace(/^[-•*]\s+/,''))) + '</li>';
     } else if(isHeader){
       if(inList){ html += '</ul>'; inList = false; }
-      html += '<h3>' + escHtml(line.replace(/:$/,'')) + '</h3>';
+      html += '<h3>' + escHtml(content.replace(/:$/,'')) + '</h3>';
     } else {
       if(inList){ html += '</ul>'; inList = false; }
-      html += '<p>' + escHtml(line) + '</p>';
+      html += '<p>' + escHtml(content) + '</p>';
     }
   }
   if(inList) html += '</ul>';
