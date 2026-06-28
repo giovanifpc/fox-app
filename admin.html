@@ -161,6 +161,12 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
 .client-bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .client-bar-name{font-size:14px;font-weight:800}
 .client-bar-hint{font-size:12px;color:var(--muted)}
+/* Motor de Conteudo */
+.content-piece{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.content-piece-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:900;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.content-piece-body{font-size:13px;color:var(--text);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.content-copy-btn{font-size:10px;font-weight:700;background:rgba(123,143,212,.12);border:1px solid rgba(123,143,212,.28);color:var(--purple);border-radius:7px;padding:4px 9px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.content-copy-btn.copied{background:rgba(82,183,136,.12);border-color:rgba(82,183,136,.35);color:var(--green)}
 @media(max-width:760px){
   body{padding:18px 14px 34px}
   .top{flex-direction:column}
@@ -200,6 +206,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.45}
     <button class="tab-btn" onclick="switchTab('treinos')">Treinos</button>
     <button class="tab-btn" onclick="switchTab('reports')">Devolutivas</button>
     <button class="tab-btn" onclick="switchTab('context')">Contexto</button>
+    <button class="tab-btn" onclick="switchTab('content')">Conteudo</button>
   </nav>
 
   <!-- aba: pendencias -->
@@ -570,6 +577,65 @@ Caminhada | ritmo leve a moderado | 30min cardio"></textarea>
     </div><!-- end contextTabContent -->
   </div><!-- end tab-context -->
 
+  <!-- aba: motor de conteudo -->
+  <div id="tab-content" class="tab-content">
+    <div class="client-bar">
+      <div>
+        <div class="client-bar-name" id="contentClientName">Nenhum cliente selecionado</div>
+        <div class="client-bar-hint">Selecione um cliente na aba Clientes para gerar conteudo.</div>
+      </div>
+      <button class="btn secondary" type="button" onclick="switchTab('clients')">Ir para Clientes</button>
+    </div>
+    <div id="contentTabContent" class="hidden">
+      <details class="flow-section" open>
+        <summary>Motor de Conteudo<span class="flow-kicker">Gera historias para Instagram a partir dos dados reais — identidade do aluno preservada.</span></summary>
+        <div class="flow-body">
+          <div class="row two" style="margin-bottom:12px">
+            <div class="field">
+              <label for="contentStart">Periodo — inicio</label>
+              <input id="contentStart" type="date">
+            </div>
+            <div class="field">
+              <label for="contentEnd">Periodo — fim</label>
+              <input id="contentEnd" type="date">
+            </div>
+          </div>
+          <div class="field">
+            <label>Tipo de conteudo</label>
+            <div id="contentTypeChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+              <button class="tab-btn active" data-type="auto" onclick="selectContentType(this)">Auto</button>
+              <button class="tab-btn" data-type="consistencia" onclick="selectContentType(this)">Consistencia</button>
+              <button class="tab-btn" data-type="case" onclick="selectContentType(this)">Estudo de Caso</button>
+              <button class="tab-btn" data-type="diario" onclick="selectContentType(this)">Diario</button>
+              <button class="tab-btn" data-type="licao" onclick="selectContentType(this)">Licao</button>
+              <button class="tab-btn" data-type="bastidores" onclick="selectContentType(this)">Bastidores</button>
+              <button class="tab-btn" data-type="comparativo" onclick="selectContentType(this)">Comparativo</button>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn primary" type="button" id="generateContentBtn">Gerar Conteudo</button>
+          </div>
+        </div>
+      </details>
+
+      <div id="contentResult" class="hidden" style="margin-top:14px">
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+            <div id="contentCaseBadge" style="font-size:13px;font-weight:900;color:var(--purple);letter-spacing:1px"></div>
+            <div id="contentCategoryBadge" style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;border:1px solid var(--amber);color:var(--amber);border-radius:999px;padding:4px 9px"></div>
+          </div>
+          <div id="contentProfile" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+          <div id="contentBestEvent" style="font-size:14px;font-weight:700;color:var(--text)"></div>
+        </div>
+        <div id="contentPieces" style="display:grid;gap:10px"></div>
+        <div class="actions" style="margin-top:14px">
+          <button class="btn secondary" type="button" id="regenerateContentBtn">Regerar</button>
+          <button class="btn secondary" type="button" id="copyAllContentBtn">Copiar Tudo</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- end tab-content -->
+
 </div><!-- end adminContainer -->
 
 
@@ -902,7 +968,7 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   const content = document.getElementById('tab-'+name);
   if(content) content.classList.add('active');
-  const idx = {pending:0,clients:1,treinos:2,reports:3,context:4}[name];
+  const idx = {pending:0,clients:1,treinos:2,reports:3,context:4,content:5}[name];
   const btns = document.querySelectorAll('.tab-btn');
   if(btns[idx]) btns[idx].classList.add('active');
 }
@@ -1203,17 +1269,28 @@ function _updateClientBars(){
   const cName = document.getElementById('contextClientName');
   const cContent = document.getElementById('contextTabContent');
   const tn = document.getElementById('treinosClientName');
+  const ctName = document.getElementById('contentClientName');
+  const ctContent = document.getElementById('contentTabContent');
   if(nome){
     if(rName) rName.textContent = nome;
     if(rContent) rContent.classList.remove('hidden');
     if(cName) cName.textContent = nome;
     if(cContent) cContent.classList.remove('hidden');
     if(tn) tn.textContent = nome;
+    if(ctName) ctName.textContent = nome;
+    if(ctContent) ctContent.classList.remove('hidden');
+    // preenche periodo com a semana atual do cliente (apenas se ainda vazio)
+    const today = new Date().toISOString().slice(0,10);
+    const cs = $('contentStart'), ce = $('contentEnd');
+    if(cs && !cs.value){ const d=new Date(); d.setDate(d.getDate()-6); cs.value=d.toISOString().slice(0,10); }
+    if(ce && !ce.value) ce.value = today;
   } else {
     if(rName) rName.textContent = 'Nenhum cliente selecionado';
     if(rContent) rContent.classList.add('hidden');
     if(cName) cName.textContent = 'Nenhum cliente selecionado';
     if(cContent) cContent.classList.add('hidden');
+    if(ctName) ctName.textContent = 'Nenhum cliente selecionado';
+    if(ctContent) ctContent.classList.add('hidden');
   }
 }
 
@@ -2832,6 +2909,127 @@ $('logoutBtn').addEventListener('click', async()=>{
 });
 $('ciclo').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
 $('semana').addEventListener('change', function(){ loadGoal(); loadClientContext(); });
+
+// --- Motor de Conteudo ---
+let currentFoxContent = null;
+
+function foxCaseNumber(email){
+  const sorted = [...clients].sort((a,b) => norm(a.nome||'').localeCompare(norm(b.nome||''), 'pt-BR', {sensitivity:'base'}));
+  const idx = sorted.findIndex(c => c.email === email);
+  const n = idx >= 0 ? idx + 1 : 1;
+  return 'FOX CASE #' + String(n).padStart(3,'0');
+}
+
+function selectContentType(btn){
+  $('contentTypeChips').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function escHtml(str){
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function generateFoxContent(){
+  if(!selectedClient){ toast('Selecione um cliente na aba Clientes.'); return; }
+  const start = $('contentStart').value;
+  const end = $('contentEnd').value;
+  if(!start||!end){ toast('Preencha o periodo de inicio e fim.'); return; }
+  if(start>end){ toast('Data de inicio deve ser anterior ao fim.'); return; }
+
+  const activeChip = $('contentTypeChips').querySelector('.tab-btn.active');
+  const contentType = activeChip ? activeChip.dataset.type : 'auto';
+  const foxCase = foxCaseNumber(selectedClient.email);
+
+  const btn = $('generateContentBtn');
+  btn.disabled = true;
+  btn.textContent = 'Gerando...';
+  $('contentResult').classList.add('hidden');
+
+  try {
+    const data = await invokeWeeklyReport({
+      action: 'generate_content',
+      client_email: selectedClient.email,
+      period_start: start,
+      period_end: end,
+      fox_case: foxCase,
+      content_type: contentType,
+    });
+    if(!data.ok||!data.content) throw new Error(data.message||'Resposta invalida da IA.');
+    currentFoxContent = data.content;
+    renderFoxContent(data.content);
+    $('contentResult').classList.remove('hidden');
+    $('contentResult').scrollIntoView({behavior:'smooth',block:'start'});
+  } catch(err){
+    toast('Erro ao gerar conteudo: ' + errorText(err));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gerar Conteudo';
+  }
+}
+
+function renderFoxContent(c){
+  $('contentCaseBadge').textContent = c.fox_case || '';
+  $('contentCategoryBadge').textContent = c.category_label || c.category || '';
+  $('contentProfile').textContent = c.anonymous_profile || '';
+  $('contentBestEvent').textContent = c.best_event || '';
+
+  const pieces = [
+    {label:'Titulo', value: c.titulo},
+    {label:'Gancho', value: c.gancho},
+    {label:'Storytelling', value: c.storytelling},
+    {label:'Slides do Carrossel', value: Array.isArray(c.carousel_slides) ? c.carousel_slides.map((s,i)=>`[${i+1}] ${s}`).join('\n\n') : ''},
+    {label:'Legenda Instagram', value: c.instagram_caption},
+    {label:'Hashtags', value: Array.isArray(c.hashtags) ? c.hashtags.join(' ') : ''},
+    {label:'Sugestao de Imagem', value: c.image_suggestion},
+    {label:'Template Sugerido', value: c.layout_template},
+    {label:'CTA', value: c.cta},
+  ];
+
+  $('contentPieces').innerHTML = pieces.filter(p=>p.value).map(p=>`
+    <div class="content-piece">
+      <div class="content-piece-label">
+        <span>${p.label}</span>
+        <button class="content-copy-btn" onclick="copyContentPiece(this,${JSON.stringify(String(p.value))})">Copiar</button>
+      </div>
+      <div class="content-piece-body">${escHtml(p.value)}</div>
+    </div>
+  `).join('');
+}
+
+function copyContentPiece(btn,text){
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copiado!';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },1800);
+  }).catch(()=>toast('Falha ao copiar.'));
+}
+
+function copyAllFoxContent(){
+  if(!currentFoxContent){ toast('Gere o conteudo primeiro.'); return; }
+  const c = currentFoxContent;
+  const slides = Array.isArray(c.carousel_slides) ? c.carousel_slides.map((s,i)=>`[${i+1}] ${s}`).join('\n\n') : '';
+  const tags = Array.isArray(c.hashtags) ? c.hashtags.join(' ') : '';
+  const parts = [
+    c.fox_case && `${c.fox_case} — ${c.category_label||c.category}`,
+    c.anonymous_profile,
+    c.best_event,
+    '',
+    c.titulo && `TITULO:\n${c.titulo}`,
+    c.gancho && `GANCHO:\n${c.gancho}`,
+    c.storytelling && `STORYTELLING:\n${c.storytelling}`,
+    slides && `SLIDES:\n${slides}`,
+    c.instagram_caption && `LEGENDA:\n${c.instagram_caption}`,
+    tags && `HASHTAGS:\n${tags}`,
+    c.image_suggestion && `IMAGEM:\n${c.image_suggestion}`,
+    c.layout_template && `TEMPLATE:\n${c.layout_template}`,
+    c.cta && `CTA:\n${c.cta}`,
+  ].filter(Boolean).join('\n\n');
+  navigator.clipboard.writeText(parts).then(()=>toast('Conteudo copiado!')).catch(()=>toast('Falha ao copiar.'));
+}
+
+$('generateContentBtn').addEventListener('click', generateFoxContent);
+$('regenerateContentBtn').addEventListener('click', generateFoxContent);
+$('copyAllContentBtn').addEventListener('click', copyAllFoxContent);
 
 boot();
 </script>

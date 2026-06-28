@@ -705,6 +705,188 @@ async function sendBatchLog(period: { start: string; end: string }, entries: Bat
   });
 }
 
+async function handleGenerateContent(input: {
+  client_email: string;
+  period_start: string;
+  period_end: string;
+  fox_case: string;
+  content_type: string;
+}): Promise<{ ok: boolean; content: Json }> {
+  if (!input.client_email || !input.period_start || !input.period_end) {
+    throw new Error("client_email, period_start e period_end sao obrigatorios.");
+  }
+
+  const [trainRes, nutriRes, goalsRes, ctxRes] = await Promise.all([
+    supa.from("training_history")
+      .select("completed_at,workout_name,minutes,sets_done,exercises_done,incomplete,detail,raw_data")
+      .eq("client_email", input.client_email)
+      .gte("completed_at", `${input.period_start}T00:00:00.000Z`)
+      .lte("completed_at", `${input.period_end}T23:59:59.999Z`)
+      .order("completed_at", { ascending: true }),
+    supa.from("nutri_history")
+      .select("date_key,kcal,protein_g,water_ml")
+      .eq("client_email", input.client_email)
+      .gte("date_key", input.period_start)
+      .lte("date_key", input.period_end),
+    supa.from("weekly_goals")
+      .select("metas,foco_semana,ciclo,semana")
+      .eq("client_email", input.client_email)
+      .gte("data_inicio", input.period_start)
+      .maybeSingle(),
+    supa.from("client_context")
+      .select("primary_goal,limitations,anamnesis")
+      .eq("client_email", input.client_email)
+      .maybeSingle(),
+  ]);
+
+  const training = (trainRes.data || []) as Json[];
+  const nutri = (nutriRes.data || []) as Json[];
+  const goals = (goalsRes.data?.metas as Json[] | null) || [];
+  const ctx = (ctxRes.data || {}) as Json;
+
+  const trainingSummary = {
+    total_sessions: training.length,
+    complete_sessions: training.filter((t) => !t.incomplete).length,
+    total_minutes: training.reduce((s, t) => s + numberValue(t.minutes), 0),
+    workouts: training.map((t) => ({
+      date: String(t.completed_at || "").slice(0, 10),
+      name: t.workout_name,
+      sets: t.sets_done,
+      incomplete: t.incomplete,
+    })),
+  };
+
+  const nutriSummary = {
+    days_logged: nutri.length,
+    avg_kcal: nutri.length
+      ? Math.round(nutri.reduce((s, n) => s + numberValue(n.kcal), 0) / nutri.length)
+      : 0,
+    avg_protein_g: nutri.length
+      ? Math.round(nutri.reduce((s, n) => s + numberValue(n.protein_g), 0) / nutri.length)
+      : 0,
+    days_with_water: nutri.filter((n) => numberValue(n.water_ml) > 0).length,
+  };
+
+  const anamnesis = ctx.anamnesis && typeof ctx.anamnesis === "object" ? ctx.anamnesis as Json : {};
+
+  const contentTypeInstruction = input.content_type === "auto"
+    ? "Analise os dados e escolha a categoria mais poderosa para essa semana: consistencia | case | diario | licao | bastidores | comparativo."
+    : `Use obrigatoriamente a categoria: ${input.content_type}`;
+
+  const outputSchema = JSON.stringify({
+    fox_case: "string",
+    anonymous_profile: "string — ex.: Ele · faixa dos 40 · objetivo: emagrecimento · 3 meses de acompanhamento",
+    best_event: "string — o acontecimento mais interessante do periodo em 1 frase",
+    category: "string — consistencia|case|diario|licao|bastidores|comparativo",
+    category_label: "string — ex.: CONSISTENCIA",
+    titulo: "string — titulo curto para o post",
+    gancho: "string — primeira frase, deve parar o scroll",
+    storytelling: "string — 2 a 4 paragrafos corridos sem bullets nem markdown",
+    carousel_slides: ["string slide 1", "string slide 2", "string slide 3"],
+    instagram_caption: "string — legenda completa para copiar no Instagram",
+    hashtags: ["#foxperformance", "#consistencia"],
+    image_suggestion: "string — descricao de imagem ilustrativa, sem rosto ou identificadores",
+    layout_template: "string — sugestao de layout: fundo, tipografia, graficos, esquema de cores",
+    cta: "string — chamada para acao discreta, nao vendedora",
+  });
+
+  const dataPayload = JSON.stringify({
+    period: { start: input.period_start, end: input.period_end },
+    fox_case: input.fox_case,
+    goal: ctx.primary_goal || "",
+    limitations: ctx.limitations || "",
+    anamnesis_summary: {
+      objetivo: anamnesis.objetivo || anamnesis.expected_result || "",
+      historico: anamnesis.historico || anamnesis.training_history || "",
+      sono: anamnesis.sono || anamnesis.sleep || "",
+      stress: anamnesis.stress || "",
+    },
+    training: trainingSummary,
+    nutrition: nutriSummary,
+    goals: goals.map((g) => ({ nome: g.nome, meta: g.meta_valor, realizado: g.realizado })),
+  });
+
+  const prompt = [
+    "Voce e um ghostwriter especialista em marketing de conteudo para personal trainers.",
+    "Transforme dados reais de acompanhamento em conteudo para Instagram.",
+    "Objetivo: mostrar competencia atraves de historias reais, nao fazer propaganda.",
+    "",
+    "PRIVACIDADE — REGRAS ABSOLUTAS:",
+    "NUNCA mencione: nome, rosto, cidade, profissao especifica, empresa ou qualquer identificador.",
+    "Use APENAS: genero (Ele/Ela), faixa etaria em decada (ex: faixa dos 40), objetivo geral, tempo de acompanhamento.",
+    `Codigo do case: ${input.fox_case}`,
+    "",
+    "VOZ — REGRAS OBRIGATORIAS:",
+    "Texto corrido, sem bullets, sem listas, sem travessoes (—), sem markdown.",
+    "Tom direto, humano, como quem escreve no WhatsApp.",
+    "Palavras banidas: potencializar, alavancar, nortear, jornada, holistica.",
+    "Sem exageros ou linguagem de propaganda.",
+    "",
+    contentTypeInstruction,
+    "",
+    "SAIDA — retorne APENAS um JSON valido. Nenhum texto antes ou depois. Nenhum markdown nem ```json.",
+    "Estrutura exata:",
+    outputSchema,
+    "",
+    "Dados do periodo:",
+    dataPayload,
+  ].join("\n");
+
+  if (!anthropicApiKey) {
+    throw new Error("ANTHROPIC_API_KEY nao configurado.");
+  }
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": anthropicApiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: anthropicModel,
+      max_tokens: 4000,
+      temperature: 0.80,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Claude API falhou: ${res.status} ${text.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const blocks = Array.isArray(data.content) ? data.content : [];
+  const rawText = blocks
+    .filter((b: Json) => b.type === "text" && typeof b.text === "string")
+    .map((b: Json) => b.text as string)
+    .join("\n\n")
+    .trim();
+
+  if (!rawText) throw new Error("Claude retornou resposta vazia.");
+
+  const stripped = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  let content: Json;
+  try {
+    content = JSON.parse(stripped);
+  } catch {
+    const match = stripped.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Claude nao retornou JSON valido. Inicio: " + stripped.slice(0, 400));
+    content = JSON.parse(match[0]);
+  }
+
+  // Garante que fox_case nao seja sobrescrito pelo Claude
+  (content as Record<string, unknown>).fox_case = input.fox_case;
+
+  return { ok: true, content };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -721,6 +903,19 @@ serve(async (req) => {
     }
 
     const body = (req.method === "POST" ? await req.json().catch(() => ({})) : {}) as Record<string, unknown>;
+
+    if (body.action === "generate_content") {
+      const result = await handleGenerateContent({
+        client_email: String(body.client_email || "").toLowerCase(),
+        period_start: String(body.period_start || defaultPreviousWeek().start),
+        period_end: String(body.period_end || defaultPreviousWeek().end),
+        fox_case: String(body.fox_case || "FOX CASE #001"),
+        content_type: String(body.content_type || "auto"),
+      });
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (body.action === "rewrite") {
       const reportId = String(body.report_id || "");
