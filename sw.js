@@ -1,4 +1,4 @@
-const VERSION = 'fox-v1.0.4';
+const VERSION = 'fox-v1.0.5';
 const CACHE = 'fox-app-' + VERSION;
 
 // Assets estáticos — cache-first (não mudam com frequência)
